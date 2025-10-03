@@ -3,29 +3,23 @@ import { AnimatePresence, motion } from 'framer-motion';
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import LevelSelectionPage from './pages/LevelSelectionPage'; // 1. Impor halaman baru
 
 function App() {
-  // State untuk melacak halaman mana yang aktif: 'welcome', 'login', atau 'register'
+  // 2. Tambahkan 'levelSelection' sebagai kemungkinan view
   const [currentView, setCurrentView] = useState('welcome');
 
   // Fungsi navigasi
   const showLoginPage = () => setCurrentView('login');
   const showRegisterPage = () => setCurrentView('register');
+  // 3. Buat fungsi untuk menampilkan halaman baru
+  const showLevelSelectionPage = () => setCurrentView('levelSelection'); 
   
   // Konfigurasi animasi transisi antar halaman
   const pageVariants = {
-    initial: {
-      opacity: 0,
-      y: 20
-    },
-    in: {
-      opacity: 1,
-      y: 0
-    },
-    out: {
-      opacity: 0,
-      y: -20
-    }
+    initial: { opacity: 0, y: 20 },
+    in: { opacity: 1, y: 0 },
+    out: { opacity: 0, y: -20 }
   };
 
   const pageTransition = {
@@ -47,7 +41,8 @@ function App() {
             variants={pageVariants}
             transition={pageTransition}
           >
-            <LoginPage onSwitchToRegister={showRegisterPage} />
+            {/* 4. Kirim fungsi navigasi baru sebagai prop */}
+            <LoginPage onSwitchToRegister={showRegisterPage} onLoginSuccess={showLevelSelectionPage} />
           </motion.div>
         );
       case 'register':
@@ -63,7 +58,21 @@ function App() {
             <RegisterPage onSwitchToLogin={showLoginPage} />
           </motion.div>
         );
-      default: // Halaman 'welcome' akan menjadi default
+      // 5. Tambahkan case untuk merender halaman baru
+      case 'levelSelection':
+        return (
+          <motion.div
+            key="levelSelection"
+            initial="initial"
+            animate="in"
+            exit="out"
+            variants={pageVariants}
+            transition={pageTransition}
+          >
+            <LevelSelectionPage />
+          </motion.div>
+        );
+      default: // Halaman 'welcome'
         return (
           <motion.div
             key="welcome"
