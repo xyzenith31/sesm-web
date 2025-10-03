@@ -23,7 +23,7 @@ const LevelSelectionPage = () => {
             {/* Bagian Bawah Header (Judul) */}
             <div className="ml-2 mb-4">
               <p className="text-2xl font-light tracking-wider">Let's</p>
-              <h1 className="text-4xl font-bold tracking-wider">PILIHAN JENJANG</h1>
+              <h1 className="text-4xl font-bold tracking-wider">PILIH JENJANG</h1>
             </div>
           </header>
           
@@ -52,7 +52,7 @@ const LevelSelectionPage = () => {
       <div className="hidden md:flex flex-col items-center justify-center p-8 h-screen">
         <div className="text-center mb-12">
             <p className="text-2xl font-light text-gray-500 tracking-wider">Let's</p>
-            <h1 className="text-5xl font-bold text-sesm-deep tracking-wider">PILIHAN JENJANG</h1>
+            <h1 className="text-5xl font-bold text-sesm-deep tracking-wider">PILIH JENJANG</h1>
         </div>
         <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-xs">
             <motion.button 
