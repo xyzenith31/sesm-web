@@ -4,23 +4,20 @@ import {
   FiVideo,
   FiBookOpen,
   FiFileText,
-  FiStar,
   FiSearch,
   FiTag,
   FiLayout,
-  FiX,
   FiRefreshCw
 } from 'react-icons/fi';
 import MaterialDetailModal from '../components/MaterialDetailModal';
 
-// Data dummy yang diperbarui dengan properti 'subject'
+// Data dummy yang diperbarui tanpa properti 'pinned'
 const dummyMaterials = [
     {
         id: 1, type: 'video', title: 'Video Tutorial Perkalian Dasar',
         description: 'Konsep perkalian dengan animasi seru.',
         imageUrl: 'https://images.pexels.com/photos/54632/calc-calculator-math-study-54632.jpeg?auto=compress&cs=tinysrgb&w=600',
         url: 'https://www.youtube.com/watch?v=5_fO_q1i_sA',
-        pinned: true,
         subject: 'Matematika',
         tasks: [
             '1. Berapa hasil dari 7 x 6?',
@@ -35,7 +32,6 @@ const dummyMaterials = [
         id: 2, type: 'buku', title: 'Buku Cerita: Si Kancil',
         description: 'Buku digital interaktif untuk melatih membaca.',
         imageUrl: 'https://images.unsplash.com/photo-1593340523736-2a663953f9e4?w=500&auto=format&fit=crop&q=60',
-        pinned: false,
         subject: 'B.Indo',
         tasks: [
             '1. Sebutkan sifat baik dari tokoh Si Kancil!',
@@ -47,7 +43,6 @@ const dummyMaterials = [
         id: 3, type: 'modul', title: 'Modul Latihan Puisi',
         description: 'Kumpulan latihan membuat puisi dan majas.',
         imageUrl: 'https://images.unsplash.com/photo-1524995767962-b1f09defa2a3?w=500&auto=format&fit=crop&q=60',
-        pinned: true,
         subject: 'B.Indo',
         tasks: [
             '1. Buatlah satu bait puisi tentang alam.',
@@ -60,7 +55,6 @@ const dummyMaterials = [
         description: 'Film pendek tentang perjuangan pahlawan.',
         imageUrl: 'https://images.unsplash.com/photo-1557471885-d9124343e578?w=500&auto=format&fit=crop&q=60',
         url: 'https://www.youtube.com/watch?v=O5fW3a-1RNE',
-        pinned: false,
         subject: 'IPS',
         tasks: [
             '1. Sebutkan satu pahlawan yang kamu kagumi dari video ini!',
@@ -72,7 +66,6 @@ const dummyMaterials = [
         id: 5, type: 'buku', title: 'Atlas Dunia untuk Anak',
         description: 'Mengenal benua dan negara-negara di dunia.',
         imageUrl: 'https://images.unsplash.com/photo-1588421323985-781335136894?w=500&auto=format&fit=crop&q=60',
-        pinned: false,
         subject: 'IPS',
         tasks: [
             '1. Tuliskan nama ibukota dari negara Australia!',
@@ -84,7 +77,6 @@ const dummyMaterials = [
         id: 6, type: 'modul', title: 'Panduan Menggambar Hewan',
         description: 'Langkah-langkah mudah menggambar hewan.',
         imageUrl: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&auto=format&fit=crop&q=60',
-        pinned: false,
         subject: 'Seni Budaya',
         tasks: [
             '1. Coba gambar seekor kucing berdasarkan panduan!',
@@ -96,15 +88,14 @@ const dummyMaterials = [
 
 const subjects = ['Semua', 'Matematika', 'B.Indo', 'IPS', 'IPA', 'Seni Budaya'];
 
-// Komponen Kartu Materi yang Diperbarui
-const MaterialCard = ({ material, onPinToggle, onSelect }) => {
+// Komponen Kartu Materi yang Diperbarui (tanpa tombol pin)
+const MaterialCard = ({ material, onSelect }) => {
     const typeInfo = {
         video: { icon: FiVideo, label: 'Video', color: 'bg-red-500' },
         buku: { icon: FiBookOpen, label: 'Buku', color: 'bg-blue-500' },
         modul: { icon: FiFileText, label: 'Modul', color: 'bg-green-500' },
     };
     const { icon: Icon, label, color } = typeInfo[material.type];
-    const handlePinClick = (e) => { e.stopPropagation(); onPinToggle(material.id); };
     const progress = material.tasks.length > 0 ? (material.completedTasks / material.tasks.length) * 100 : 0;
 
     return (
@@ -118,16 +109,12 @@ const MaterialCard = ({ material, onPinToggle, onSelect }) => {
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
-            {/* BUG FIX: Wrapper gambar diberi tinggi tetap */}
             <div className="relative h-40 overflow-hidden">
                 <img src={material.imageUrl} alt={material.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
                 <div className={`absolute top-2 right-2 flex items-center space-x-1.5 text-white text-xs font-bold py-1 px-2 rounded-full ${color}`}>
                     <Icon size={14} />
                     <span>{label}</span>
                 </div>
-                <button onClick={handlePinClick} className="absolute top-2 left-2 bg-black/30 p-1.5 rounded-full text-white hover:bg-black/50 transition-colors">
-                    <FiStar size={16} className={`transition-all ${material.pinned ? 'fill-yellow-400 text-yellow-400' : 'text-white'}`} />
-                </button>
             </div>
             <div className="p-4">
                 <span className="text-xs font-semibold text-sesm-teal bg-sesm-teal/10 px-2 py-1 rounded-full">{material.subject}</span>
@@ -186,16 +173,19 @@ const SectionHeader = ({ title, count }) => (
       <span className="bg-sesm-sky/20 text-sesm-deep text-xs font-bold px-2 py-0.5 rounded-full">{count}</span>
     </div>
 );
+
 const BookmarkPage = () => {
-    const [materials, setMaterials] = useState(dummyMaterials);
+    // Inisialisasi materials tanpa properti pinned
+    const [materials, setMaterials] = useState(dummyMaterials.map(({ pinned, ...rest }) => rest)); // Remove pinned property
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTypeFilter, setActiveTypeFilter] = useState('semua');
     const [activeSubjectFilter, setActiveSubjectFilter] = useState('Semua');
     const [selectedMaterial, setSelectedMaterial] = useState(null);
 
-    const togglePin = (id) => {
-        setMaterials(materials.map(m => m.id === id ? { ...m, pinned: !m.pinned } : m));
-    };
+    // Fungsi togglePin tidak lagi diperlukan
+    // const togglePin = (id) => {
+    //     setMaterials(materials.map(m => m.id === id ? { ...m, pinned: !m.pinned } : m));
+    // };
 
     const resetFilters = () => {
       setSearchTerm('');
@@ -212,36 +202,32 @@ const BookmarkPage = () => {
             .filter(m => m.title.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [materials, searchTerm, activeTypeFilter, activeSubjectFilter]);
 
-    const pinnedMaterials = filteredMaterials.filter(m => m.pinned);
-    const otherMaterials = filteredMaterials.filter(m => !m.pinned);
+    // Hanya ada satu daftar materi, tidak ada lagi pinnedMaterials dan otherMaterials
+    // const pinnedMaterials = filteredMaterials.filter(m => m.pinned); // Not needed
+    // const otherMaterials = filteredMaterials.filter(m => !m.pinned); // Not needed
 
     useEffect(() => {
         document.body.style.overflow = selectedMaterial ? 'hidden' : 'unset';
     }, [selectedMaterial]);
 
-    const renderContent = (pinned, others) => {
-      const hasMaterials = pinned.length > 0 || others.length > 0;
+    const renderContent = (materialsToRender) => {
+      const hasMaterials = materialsToRender.length > 0;
       return hasMaterials ? (
-        <>
-          <AnimatePresence>
-            {pinned.length > 0 && (
-              <motion.section layout className="mb-10 w-full">
-                <SectionHeader title="Materi yang Dipin" count={pinned.length} />
-                <div className="columns-1 sm:columns-2 lg:grid lg:grid-cols-2 xl:grid-cols-4 gap-6 space-y-6 lg:space-y-0">
-                  {pinned.map(material => (<MaterialCard key={material.id} material={material} onPinToggle={togglePin} onSelect={setSelectedMaterial} />))}
-                </div>
-              </motion.section>
-            )}
-          </AnimatePresence>
           <motion.section layout className="w-full">
-            <SectionHeader title="Semua Materi" count={others.length} />
+            <SectionHeader title="Materi" count={materialsToRender.length} /> {/* Mengubah judul */}
             <div className="columns-1 sm:columns-2 lg:grid lg:grid-cols-2 xl:grid-cols-4 gap-6 space-y-6 lg:space-y-0">
               <AnimatePresence>
-                {others.map(material => (<MaterialCard key={material.id} material={material} onPinToggle={togglePin} onSelect={setSelectedMaterial} />))}
+                {materialsToRender.map(material => (
+                  <MaterialCard 
+                    key={material.id} 
+                    material={material} 
+                    // onPinToggle={togglePin} // onPinToggle tidak lagi dilewatkan
+                    onSelect={setSelectedMaterial} 
+                  />
+                ))}
               </AnimatePresence>
             </div>
           </motion.section>
-        </>
       ) : <EmptyState />;
     };
 
@@ -273,7 +259,7 @@ const BookmarkPage = () => {
                       <FilterButton label="Buku" isActive={activeTypeFilter === 'buku'} onClick={() => setActiveTypeFilter('buku')} />
                       <FilterButton label="Modul" isActive={activeTypeFilter === 'modul'} onClick={() => setActiveTypeFilter('modul')} />
                   </div>
-                  {renderContent(pinnedMaterials, otherMaterials)}
+                  {renderContent(filteredMaterials)}
                 </main>
               </div>
             </div>
@@ -315,7 +301,7 @@ const BookmarkPage = () => {
                     </div>
                   </div>
                   
-                  {renderContent(pinnedMaterials, otherMaterials)}
+                  {renderContent(filteredMaterials)}
 
               </main>
             </div>
