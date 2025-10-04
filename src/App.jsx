@@ -4,23 +4,25 @@ import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LevelSelectionPage from './pages/LevelSelectionPage';
-import ChooseSelectionPage from './pages/ChooseSelectionPage'; // DITAMBAH: Impor halaman baru
+import ChooseSelectionPage from './pages/ChooseSelectionPage';
+import HomePage from './pages/HomePage'; // 1. Impor HomePage
 
 function App() {
-  // DITAMBAH: 'chooseSelection' sebagai kemungkinan view
+  // 2. Tambahkan 'home' sebagai kemungkinan view
   const [currentView, setCurrentView] = useState('welcome');
 
   // Fungsi navigasi
   const showLoginPage = () => setCurrentView('login');
   const showRegisterPage = () => setCurrentView('register');
   const showLevelSelectionPage = () => setCurrentView('levelSelection'); 
-  const showChooseSelectionPage = () => setCurrentView('chooseSelection'); // DITAMBAH: Fungsi untuk halaman baru
+  const showChooseSelectionPage = () => setCurrentView('chooseSelection');
+  const showHomePage = () => setCurrentView('home'); // 3. Buat fungsi untuk menampilkan HomePage
   
-  // Konfigurasi animasi transisi antar halaman
+  // Konfigurasi animasi transisi
   const pageVariants = {
-    initial: { opacity: 0, scale: 0.95 },
+    initial: { opacity: 0, scale: 0.98 },
     in: { opacity: 1, scale: 1 },
-    out: { opacity: 0, scale: 0.95 }
+    out: { opacity: 0, scale: 0.98 }
   };
 
   const pageTransition = {
@@ -29,58 +31,43 @@ function App() {
     duration: 0.4
   };
   
-  // Fungsi untuk merender halaman yang sesuai
   const renderView = () => {
     switch (currentView) {
       case 'login':
         return (
-          <motion.div
-            key="login"
-            initial="initial" animate="in" exit="out"
-            variants={pageVariants} transition={pageTransition}
-          >
+          <motion.div key="login" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             <LoginPage onSwitchToRegister={showRegisterPage} onLoginSuccess={showLevelSelectionPage} />
           </motion.div>
         );
       case 'register':
         return (
-          <motion.div
-            key="register"
-            initial="initial" animate="in" exit="out"
-            variants={pageVariants} transition={pageTransition}
-          >
+          <motion.div key="register" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             <RegisterPage onSwitchToLogin={showLoginPage} />
           </motion.div>
         );
       case 'levelSelection':
         return (
-          <motion.div
-            key="levelSelection"
-            initial="initial" animate="in" exit="out"
-            variants={pageVariants} transition={pageTransition}
-          >
-            {/* DIUBAH: Mengirim fungsi navigasi ke halaman pemilihan kelas */}
+          <motion.div key="levelSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             <LevelSelectionPage onSelectSD={showChooseSelectionPage} />
           </motion.div>
         );
-      // DITAMBAH: Case untuk merender halaman pemilihan kelas
       case 'chooseSelection':
         return (
-          <motion.div
-            key="chooseSelection"
-            initial="initial" animate="in" exit="out"
-            variants={pageVariants} transition={pageTransition}
-          >
-            <ChooseSelectionPage />
+          <motion.div key="chooseSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
+            {/* 4. Arahkan ke HomePage setelah pemilihan selesai */}
+            <ChooseSelectionPage onSelectionComplete={showHomePage} />
+          </motion.div>
+        );
+      // 5. Tambahkan case untuk merender HomePage
+      case 'home':
+        return (
+          <motion.div key="home" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
+            <HomePage />
           </motion.div>
         );
       default: // Halaman 'welcome'
         return (
-          <motion.div
-            key="welcome"
-            initial="initial" animate="in" exit="out"
-            variants={pageVariants} transition={pageTransition}
-          >
+          <motion.div key="welcome" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             <WelcomePage onExplore={showLoginPage} />
           </motion.div>
         );
