@@ -2,7 +2,6 @@ import React from 'react';
 import { FiHome, FiSearch, FiBookmark, FiUser, FiLogOut } from 'react-icons/fi';
 import Logo from '../assets/logo.png';
 
-// NavLink sekarang menerima onClick dan isActive
 const NavLink = ({ icon, label, isActive, onClick }) => (
   <button
     onClick={onClick}
@@ -19,7 +18,6 @@ const NavLink = ({ icon, label, isActive, onClick }) => (
   </button>
 );
 
-// Sidebar menerima activePage dan onNavigate
 const SideBar = ({ activePage, onNavigate }) => {
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen bg-white shadow-xl fixed">

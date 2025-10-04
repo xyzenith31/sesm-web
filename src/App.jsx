@@ -11,6 +11,7 @@ import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import ActivityLogPage from './pages/ActivityLogPage';
 import DiaryPage from './pages/DiaryPage';
+import BookmarkPage from './pages/BookmarkPage'; // <-- 1. Impor halaman baru
 
 // Impor layout utama
 import MainLayout from './layouts/MainLayout';
@@ -44,7 +45,7 @@ function App() {
   
   // Fungsi untuk menentukan halaman mana yang akan dirender
   const renderView = () => {
-    // Daftar halaman yang akan menggunakan MainLayout (dengan Sidebar & BottomNavBar)
+    // 2. Tambahkan 'bookmark' ke dalam daftar halaman yang menggunakan MainLayout
     const viewsInMainLayout = ['home', 'profile', 'activityLog', 'diary', 'explore', 'bookmark'];
 
     // Jika halaman saat ini ada di dalam daftar, gunakan MainLayout
@@ -56,10 +57,10 @@ function App() {
       if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
       if (currentView === 'activityLog') pageComponent = <ActivityLogPage onNavigate={navigate} />;
       if (currentView === 'diary') pageComponent = <DiaryPage onNavigate={navigate} />;
-      // Anda bisa menambahkan halaman 'explore' dan 'bookmark' di sini nanti
+      if (currentView === 'bookmark') pageComponent = <BookmarkPage />; // <-- 3. Tambahkan kondisi untuk render BookmarkPage
+      // Anda bisa menambahkan halaman 'explore' di sini nanti
       // if (currentView === 'explore') pageComponent = <ExplorePage />;
-      // if (currentView === 'bookmark') pageComponent = <BookmarkPage />;
-
+      
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
           <motion.div 

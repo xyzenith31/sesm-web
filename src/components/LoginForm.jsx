@@ -1,22 +1,17 @@
 import React, { useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 
-// Terima `onLoginSuccess` sebagai prop
 const LoginForm = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
 
-  // Fungsi untuk menangani submit form
   const handleSignIn = (event) => {
-    event.preventDefault(); // Mencegah reload halaman
-    // Di aplikasi nyata, di sini ada validasi & request ke server.
-    // Untuk sekarang, kita langsung panggil fungsi navigasi.
+    event.preventDefault();
     if (onLoginSuccess) {
       onLoginSuccess();
     }
   };
 
   return (
-    // Tambahkan `onSubmit` ke tag form
     <form className="space-y-5 w-full" onSubmit={handleSignIn}>
       <div>
         <input 
@@ -49,7 +44,6 @@ const LoginForm = ({ onLoginSuccess }) => {
       </div>
       
       <div>
-        {/* Tombol ini sekarang akan memicu `handleSignIn` */}
         <button 
           type="submit"
           className="w-full px-5 py-3 font-bold text-white transition-all duration-300 transform bg-sesm-deep rounded-full hover:bg-opacity-90 active:scale-95 hover:scale-105"

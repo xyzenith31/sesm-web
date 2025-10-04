@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiLogIn, FiUserPlus, FiBookOpen } from 'react-icons/fi';
 
-// Data contoh untuk log aktivitas
 const activityLog = [
   {
     icon: FiBookOpen,
@@ -30,7 +29,6 @@ const activityLog = [
   },
 ];
 
-// Komponen untuk setiap item log
 const ActivityItem = ({ icon: Icon, text, time, color }) => (
   <div className="flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm">
     <Icon className={`${color} text-2xl mt-1`} />
@@ -44,16 +42,14 @@ const ActivityItem = ({ icon: Icon, text, time, color }) => (
 const ActivityLogPage = ({ onNavigate }) => {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Header Halaman */}
       <header className="bg-white p-4 pt-8 flex items-center sticky top-0 z-10 shadow-sm">
         <button onClick={() => onNavigate('profile')} className="p-2 rounded-full hover:bg-gray-100">
           <FiArrowLeft size={24} className="text-gray-700" />
         </button>
         <h1 className="text-xl font-bold text-center flex-grow text-sesm-deep">Log Aktivitas</h1>
-        <div className="w-10"></div> {/* Spacer for centering title */}
+        <div className="w-10"></div>
       </header>
 
-      {/* Konten Utama */}
       <main className="flex-grow overflow-y-auto p-6 space-y-4">
         {activityLog.map((activity, index) => (
           <motion.div

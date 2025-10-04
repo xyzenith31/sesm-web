@@ -8,7 +8,7 @@ const RegisterForm = () => {
   const inputStyles = "w-full px-5 py-3 text-gray-700 bg-white rounded-full focus:outline-none focus:ring-4 focus:ring-sesm-sky/50 transition-shadow duration-300";
 
   return (
-    <form className="space-y-4 w-full"> {/* Hapus max-w-sm mx-auto di sini */}
+    <form className="space-y-4 w-full">
       <input type="text" placeholder="Username" className={inputStyles}/>
       <input type="email" placeholder="Email" className={inputStyles}/>
       <input type="text" placeholder="Nama" className={inputStyles}/>

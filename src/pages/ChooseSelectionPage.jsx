@@ -57,9 +57,6 @@ const ChooseSelectionPage = ({ onSelectionComplete }) => {
         </div>
       </div>
 
-      {/* ====================================================== */}
-      {/* ============= TAMPILAN KHUSUS DESKTOP ================ */}
-      {/* ====================================================== */}
       <div className="hidden md:flex flex-col items-center justify-center p-8 h-screen">
         <div className="text-center mb-12">
             <p className="text-2xl font-light text-gray-500 tracking-wider">Let's</p>
@@ -72,7 +69,7 @@ const ChooseSelectionPage = ({ onSelectionComplete }) => {
                     className="py-4 text-xl font-bold text-sesm-deep bg-white border-2 border-sesm-deep rounded-2xl transition-all duration-300 hover:bg-sesm-deep hover:text-white active:scale-95 shadow-lg"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={handleClassSelect} // 3. Tambahkan onClick di sini juga
+                    onClick={handleClassSelect}
                 >
                     {className}
                 </motion.button>
