@@ -21,11 +21,12 @@ const stationeryIcons = [
 
 const FallingIcon = ({ icon: Icon, color, size }) => {
   const duration = Math.random() * 8 + 8; // Durasi 8-16 detik
-  const delay = Math.random() * 12;      // Delay hingga 12 detik
+  // FIX: Mengatur delay menjadi nilai negatif acak.
+  // Ini akan membuat animasi dimulai seolah-olah sudah berjalan,
+  // sehingga ikon langsung muncul tersebar di layar.
+  const delay = Math.random() * -duration;
   const xStart = Math.random() * 100;    // Posisi awal horizontal
   
-  // FIX: Menambahkan pergerakan horizontal (drift) saat ikon jatuh
-  // Ini akan membuat ikon jatuh secara diagonal dan menyebar lebih merata
   const xEnd = xStart + (Math.random() * 40 - 20); // Bergeser ke kiri/kanan maks 20%
 
   const initialRotate = Math.random() * 360;
@@ -35,17 +36,17 @@ const FallingIcon = ({ icon: Icon, color, size }) => {
     <motion.div
       className="absolute cursor-pointer"
       style={{
-        top: '-10vh', // Mulai dari atas
-        left: `${xStart}%`, // Posisi awal horizontal
+        top: '-10vh', // Tetap mulai dari atas untuk loop yang mulus
+        left: `${xStart}%`,
       }}
       initial={{
         y: '-10vh',
-        x: '0%', // Posisi x relatif awal
+        x: '0%',
         rotate: initialRotate,
       }}
       animate={{
-        y: '110vh', // Jatuh ke bawah layar
-        x: `${xEnd - xStart}%`, // Bergerak secara horizontal saat jatuh
+        y: '110vh',
+        x: `${xEnd - xStart}%`,
         rotate: animateRotate,
       }}
       transition={{
@@ -54,7 +55,6 @@ const FallingIcon = ({ icon: Icon, color, size }) => {
         ease: 'linear',
         repeat: Infinity,
       }}
-      // Interaksi sentuh/hover (sudah dioptimalkan)
       whileHover={{ scale: 1.3, zIndex: 50 }}
       whileTap={{ scale: 1.8, rotate: 0, opacity: 1, zIndex: 50, transition: { duration: 0.2 } }}
     >
