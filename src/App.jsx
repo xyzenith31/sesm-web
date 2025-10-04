@@ -54,7 +54,7 @@ function App() {
       case 'chooseSelection':
         return (
           <motion.div key="chooseSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-            {/* 4. Arahkan ke HomePage setelah pemilihan selesai */}
+            {/* 4. Kirim fungsi `showHomePage` sebagai prop `onSelectionComplete` */}
             <ChooseSelectionPage onSelectionComplete={showHomePage} />
           </motion.div>
         );
