@@ -1,24 +1,35 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+
+// Impor semua halaman
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LevelSelectionPage from './pages/LevelSelectionPage';
 import ChooseSelectionPage from './pages/ChooseSelectionPage';
-import HomePage from './pages/HomePage'; // 1. Impor HomePage
+import HomePage from './pages/HomePage';
+import ProfilePage from './pages/ProfilePage';
+import ActivityLogPage from './pages/ActivityLogPage';
+import DiaryPage from './pages/DiaryPage';
+
+// Impor layout utama
+import MainLayout from './layouts/MainLayout';
 
 function App() {
-  // 2. Tambahkan 'home' sebagai kemungkinan view
+  // State untuk mengontrol halaman mana yang sedang aktif
   const [currentView, setCurrentView] = useState('welcome');
 
-  // Fungsi navigasi
+  // Fungsi navigasi utama yang akan digunakan di dalam MainLayout
+  const navigate = (view) => setCurrentView(view);
+
+  // Fungsi navigasi untuk alur sebelum masuk ke layout utama
   const showLoginPage = () => setCurrentView('login');
   const showRegisterPage = () => setCurrentView('register');
   const showLevelSelectionPage = () => setCurrentView('levelSelection'); 
   const showChooseSelectionPage = () => setCurrentView('chooseSelection');
-  const showHomePage = () => setCurrentView('home'); // 3. Buat fungsi untuk menampilkan HomePage
+  const showHomePage = () => setCurrentView('home');
   
-  // Konfigurasi animasi transisi
+  // Konfigurasi animasi transisi antar halaman
   const pageVariants = {
     initial: { opacity: 0, scale: 0.98 },
     in: { opacity: 1, scale: 1 },
@@ -31,7 +42,41 @@ function App() {
     duration: 0.4
   };
   
+  // Fungsi untuk menentukan halaman mana yang akan dirender
   const renderView = () => {
+    // Daftar halaman yang akan menggunakan MainLayout (dengan Sidebar & BottomNavBar)
+    const viewsInMainLayout = ['home', 'profile', 'activityLog', 'diary', 'explore', 'bookmark'];
+
+    // Jika halaman saat ini ada di dalam daftar, gunakan MainLayout
+    if (viewsInMainLayout.includes(currentView)) {
+      let pageComponent;
+      
+      // Tentukan komponen halaman berdasarkan 'currentView'
+      if (currentView === 'home') pageComponent = <HomePage />;
+      if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
+      if (currentView === 'activityLog') pageComponent = <ActivityLogPage onNavigate={navigate} />;
+      if (currentView === 'diary') pageComponent = <DiaryPage onNavigate={navigate} />;
+      // Anda bisa menambahkan halaman 'explore' dan 'bookmark' di sini nanti
+      // if (currentView === 'explore') pageComponent = <ExplorePage />;
+      // if (currentView === 'bookmark') pageComponent = <BookmarkPage />;
+
+      return (
+        <MainLayout activePage={currentView} onNavigate={navigate}>
+          <motion.div 
+            key={currentView} 
+            variants={pageVariants} 
+            initial="initial" 
+            animate="in" 
+            exit="out" 
+            transition={pageTransition}
+          >
+            {pageComponent}
+          </motion.div>
+        </MainLayout>
+      );
+    }
+    
+    // Jika halaman tidak ada di daftar, render secara individual (untuk alur login/register)
     switch (currentView) {
       case 'login':
         return (
@@ -54,18 +99,10 @@ function App() {
       case 'chooseSelection':
         return (
           <motion.div key="chooseSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-            {/* 4. Kirim fungsi `showHomePage` sebagai prop `onSelectionComplete` */}
             <ChooseSelectionPage onSelectionComplete={showHomePage} />
           </motion.div>
         );
-      // 5. Tambahkan case untuk merender HomePage
-      case 'home':
-        return (
-          <motion.div key="home" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-            <HomePage />
-          </motion.div>
-        );
-      default: // Halaman 'welcome'
+      default: // Halaman default adalah 'welcome'
         return (
           <motion.div key="welcome" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             <WelcomePage onExplore={showLoginPage} />

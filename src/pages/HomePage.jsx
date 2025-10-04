@@ -6,7 +6,6 @@ import {
   FiChevronRight,
   FiStar
 } from 'react-icons/fi';
-// DIGANTI: Menggunakan ikon dari Font Awesome (Fa) untuk memastikan ikon tersedia
 import { 
   FaFlask, 
   FaGlobeAmericas, 
@@ -16,11 +15,8 @@ import {
   FaLanguage, 
   FaMosque 
 } from 'react-icons/fa';
-import UserLayout from '../layouts/UserLayout';
-import BottomNavBar from '../components/BottomNavBar';
 import logoSesm from '../assets/logo.png'; 
 
-// DIGANTI: Menggunakan referensi ikon Fa yang baru diimpor
 const subjects = [
   { icon: FaFlask, label: 'IPA' },
   { icon: FaGlobeAmericas, label: 'IPS' },
@@ -88,7 +84,7 @@ const TestimonialCard = ({ avatar, quote, name }) => (
 
 const HomePage = () => {
   return (
-    <UserLayout>
+    <>
       {/* ====================================================== */}
       {/* ============ TAMPILAN KHUSUS MOBILE & TABLET =========== */}
       {/* ====================================================== */}
@@ -149,8 +145,6 @@ const HomePage = () => {
               </div>
             </div>
           </main>
-
-          <BottomNavBar />
         </div>
       </div>
 
@@ -218,7 +212,7 @@ const HomePage = () => {
           </main>
         </div>
       </div>
-    </UserLayout>
+    </>
   );
 };
 
