@@ -3,45 +3,64 @@ import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import LoginForm from '../components/LoginForm';
 import Logo from '../assets/logo.png';
+import Card from '../components/Card';
 
-// Terima `onLoginSuccess` sebagai prop
 const LoginPage = ({ onSwitchToRegister, onLoginSuccess }) => {
+  // Animasi untuk item di dalam kartu
+  const itemContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 }
+    }
+  };
+
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.4 } },
+    visible: { y: 0, opacity: 1 }
   };
 
   return (
     <AuthLayout>
-      <motion.div 
-        className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 w-full max-w-sm flex flex-col items-center"
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.1 }}}}
-      >
-        <motion.div variants={itemVariants} className="mb-6">
-          <img src={Logo} alt="SESM Logo" className="w-40 h-auto mx-auto" />
-        </motion.div>
+      <Card>
+        <motion.div
+          className="flex flex-col items-center"
+          variants={itemContainerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.img
+            src={Logo}
+            alt="SESM Logo"
+            className="w-36 h-auto mb-4"
+            variants={itemVariants}
+          />
 
-        <motion.h1 variants={itemVariants} className="text-3xl font-bold text-center mb-6">
-          Sign In
-        </motion.h1>
-        
-        <motion.div variants={itemVariants} className="w-full">
-          {/* Teruskan `onLoginSuccess` ke LoginForm */}
-          <LoginForm onLoginSuccess={onLoginSuccess} />
-        </motion.div>
-        
-        <motion.p variants={itemVariants} className="mt-8 text-sm text-center text-white">
-          Don't have an account?{' '}
-          <button
-            onClick={onSwitchToRegister}
-            className="font-bold underline transition hover:text-gray-200"
+          <motion.h1
+            variants={itemVariants}
+            className="text-3xl font-bold text-white text-center mb-6"
           >
-            Create Account
-          </button>
-        </motion.p>
-      </motion.div>
+            Sign In
+          </motion.h1>
+
+          <motion.div variants={itemVariants} className="w-full">
+            <LoginForm onLoginSuccess={onLoginSuccess} />
+          </motion.div>
+
+          <motion.p
+            variants={itemVariants}
+            className="mt-8 text-sm text-center text-white/80"
+          >
+            Don't have an account?{' '}
+            <button
+              onClick={onSwitchToRegister}
+              className="font-bold underline transition hover:text-white"
+            >
+              Create Account
+            </button>
+          </motion.p>
+        </motion.div>
+      </Card>
     </AuthLayout>
   );
 };
