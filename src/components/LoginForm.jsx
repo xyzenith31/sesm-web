@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiEye, FiEyeOff } from 'framer-motion';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const LoginForm = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
