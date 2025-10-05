@@ -2,24 +2,25 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // Impor semua halaman yang ada
-import WelcomePage from './pages/WelcomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import LevelSelectionPage from './pages/LevelSelectionPage';
-import ChooseSelectionPage from './pages/ChooseSelectionPage';
-import HomePageTK from './pages/HomePageTK';
-import HomePageSD1 from './pages/HomePageSD1';
-import HomePageSD2 from './pages/HomePageSD2';
-import HomePageSD3_4 from './pages/HomePageSD3-4';
-import HomePageSD5 from './pages/HomePageSD5';
-import HomePageSD6 from './pages/HomePageSD6';
-import ProfilePage from './pages/ProfilePage';
-import ActivityLogPage from './pages/ActivityLogPage';
-import DiaryPage from './pages/DiaryPage';
-import BookmarkPage from './pages/BookmarkPage'; 
+import WelcomePage from './pages/WelcomePage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
+import LevelSelectionPage from './pages/LevelSelectionPage.jsx';
+import ChooseSelectionPage from './pages/ChooseSelectionPage.jsx';
+import HomePageTK from './pages/HomePageTK.jsx';
+import HomePageSD1 from './pages/HomePageSD1.jsx';
+import HomePageSD2 from './pages/HomePageSD2.jsx';
+import HomePageSD3_4 from './pages/HomePageSD3-4.jsx';
+import HomePageSD5 from './pages/HomePageSD5.jsx';
+import HomePageSD6 from './pages/HomePageSD6.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
+import ActivityLogPage from './pages/ActivityLogPage.jsx';
+import DiaryPage from './pages/DiaryPage.jsx';
+import BookmarkPage from './pages/BookmarkPage.jsx';
+import MatematikaPage from './pages/MatematikaPage.jsx';
 
 // Impor layout utama
-import MainLayout from './layouts/MainLayout';
+import MainLayout from './layouts/MainLayout.jsx';
 
 function App() {
   const [currentView, setCurrentView] = useState('welcome');
@@ -30,7 +31,7 @@ function App() {
   // Kumpulan fungsi untuk berpindah antar halaman
   const showLoginPage = () => setCurrentView('login');
   const showRegisterPage = () => setCurrentView('register');
-  const showLevelSelectionPage = () => setCurrentView('levelSelection'); 
+  const showLevelSelectionPage = () => setCurrentView('levelSelection');
   const showChooseSelectionPage = () => setCurrentView('chooseSelection');
   const showHomePageTK = () => setCurrentView('homeTK');
   const showHomePageSD1 = () => setCurrentView('homeSD1');
@@ -51,21 +52,22 @@ function App() {
     ease: 'easeInOut',
     duration: 0.4
   };
-  
+
   // Fungsi utama untuk merender halaman yang aktif
   const renderView = () => {
-    // Daftar semua view yang akan ditampilkan di dalam MainLayout (layout dengan sidebar/navbar)
+    // Daftar semua view yang akan ditampilkan di dalam MainLayout
     const viewsInMainLayout = [
-      'homeTK', 'homeSD1', 'homeSD2', 'homeSD3_4', 'homeSD5', 'homeSD6', 
-      'profile', 'activityLog', 'diary', 'explore', 'bookmark'
+      'homeTK', 'homeSD1', 'homeSD2', 'homeSD3_4', 'homeSD5', 'homeSD6',
+      'profile', 'activityLog', 'diary', 'explore', 'bookmark',
+      'matematika1' 
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
-      
+
       // Logika untuk menentukan komponen mana yang akan dirender
       if (currentView === 'homeTK') pageComponent = <HomePageTK />;
-      if (currentView === 'homeSD1') pageComponent = <HomePageSD1 />;
+      if (currentView === 'homeSD1') pageComponent = <HomePageSD1 onNavigate={navigate} />;
       if (currentView === 'homeSD2') pageComponent = <HomePageSD2 />;
       if (currentView === 'homeSD3_4') pageComponent = <HomePageSD3_4 />;
       if (currentView === 'homeSD5') pageComponent = <HomePageSD5 />;
@@ -74,19 +76,19 @@ function App() {
       if (currentView === 'activityLog') pageComponent = <ActivityLogPage onNavigate={navigate} />;
       if (currentView === 'diary') pageComponent = <DiaryPage onNavigate={navigate} />;
       if (currentView === 'bookmark') pageComponent = <BookmarkPage />;
-      
+      if (currentView === 'matematika1') pageComponent = <MatematikaPage />;
+
       return (
-        <MainLayout 
-          // Membuat ikon 'Home' di navbar tetap aktif untuk semua halaman utama
-          activePage={currentView.startsWith('home') ? 'home' : currentView} 
+        <MainLayout
+          activePage={currentView.startsWith('home') ? 'home' : currentView}
           onNavigate={navigate}
         >
-          <motion.div 
-            key={currentView} 
-            variants={pageVariants} 
-            initial="initial" 
-            animate="in" 
-            exit="out" 
+          <motion.div
+            key={currentView}
+            variants={pageVariants}
+            initial="initial"
+            animate="in"
+            exit="out"
             transition={pageTransition}
           >
             {pageComponent}
@@ -94,8 +96,8 @@ function App() {
         </MainLayout>
       );
     }
-    
-    // Render individual untuk halaman di luar MainLayout (seperti login, register, dll.)
+
+    // Render individual untuk halaman di luar MainLayout
     switch (currentView) {
       case 'login':
         return (
@@ -118,7 +120,7 @@ function App() {
       case 'chooseSelection':
         return (
           <motion.div key="chooseSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-            <ChooseSelectionPage 
+            <ChooseSelectionPage
               onSelectClass1={showHomePageSD1}
               onSelectClass2={showHomePageSD2}
               onSelectClass3_4={showHomePageSD3_4}
@@ -127,7 +129,7 @@ function App() {
             />
           </motion.div>
         );
-      default: // Halaman default adalah 'welcome'
+      default:
         return (
           <motion.div key="welcome" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             <WelcomePage onExplore={showLoginPage} />
