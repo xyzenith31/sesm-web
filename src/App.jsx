@@ -25,10 +25,9 @@ import MainLayout from './layouts/MainLayout.jsx';
 function App() {
   const [currentView, setCurrentView] = useState('welcome');
 
-  // Fungsi navigasi utama
   const navigate = (view) => setCurrentView(view);
 
-  // Kumpulan fungsi untuk berpindah antar halaman
+  // Fungsi lainnya tetap sama
   const showLoginPage = () => setCurrentView('login');
   const showRegisterPage = () => setCurrentView('register');
   const showLevelSelectionPage = () => setCurrentView('levelSelection');
@@ -40,7 +39,6 @@ function App() {
   const showHomePageSD5 = () => setCurrentView('homeSD5');
   const showHomePageSD6 = () => setCurrentView('homeSD6');
   
-  // Konfigurasi animasi transisi antar halaman
   const pageVariants = {
     initial: { opacity: 0, scale: 0.98 },
     in: { opacity: 1, scale: 1 },
@@ -53,51 +51,45 @@ function App() {
     duration: 0.4
   };
 
-  // Fungsi utama untuk merender halaman yang aktif
   const renderView = () => {
-    // Daftar semua view yang akan ditampilkan di dalam MainLayout
+    // Daftar view di dalam MainLayout (MatematikaPage DIHAPUS dari sini)
     const viewsInMainLayout = [
       'homeTK', 'homeSD1', 'homeSD2', 'homeSD3_4', 'homeSD5', 'homeSD6',
       'profile', 'activityLog', 'diary', 'explore', 'bookmark',
-      'matematika1' 
     ];
+    
+    const getActivePage = () => {
+      const homeViews = ['homeTK', 'homeSD1', 'homeSD2', 'homeSD3_4', 'homeSD5', 'homeSD6'];
+      if (homeViews.includes(currentView)) {
+        return 'home';
+      }
+      return currentView;
+    };
 
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
 
-      // Logika untuk menentukan komponen mana yang akan dirender
-      if (currentView === 'homeTK') pageComponent = <HomePageTK />;
+      if (currentView === 'homeTK') pageComponent = <HomePageTK onNavigate={navigate} />;
       if (currentView === 'homeSD1') pageComponent = <HomePageSD1 onNavigate={navigate} />;
-      if (currentView === 'homeSD2') pageComponent = <HomePageSD2 />;
-      if (currentView === 'homeSD3_4') pageComponent = <HomePageSD3_4 />;
-      if (currentView === 'homeSD5') pageComponent = <HomePageSD5 />;
-      if (currentView === 'homeSD6') pageComponent = <HomePageSD6 />;
+      if (currentView === 'homeSD2') pageComponent = <HomePageSD2 onNavigate={navigate} />;
+      if (currentView === 'homeSD3_4') pageComponent = <HomePageSD3_4 onNavigate={navigate} />;
+      if (currentView === 'homeSD5') pageComponent = <HomePageSD5 onNavigate={navigate} />;
+      if (currentView === 'homeSD6') pageComponent = <HomePageSD6 onNavigate={navigate} />;
       if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
       if (currentView === 'activityLog') pageComponent = <ActivityLogPage onNavigate={navigate} />;
       if (currentView === 'diary') pageComponent = <DiaryPage onNavigate={navigate} />;
       if (currentView === 'bookmark') pageComponent = <BookmarkPage />;
-      if (currentView === 'matematika1') pageComponent = <MatematikaPage />;
-
+      
       return (
-        <MainLayout
-          activePage={currentView.startsWith('home') ? 'home' : currentView}
-          onNavigate={navigate}
-        >
-          <motion.div
-            key={currentView}
-            variants={pageVariants}
-            initial="initial"
-            animate="in"
-            exit="out"
-            transition={pageTransition}
-          >
+        <MainLayout activePage={getActivePage()} onNavigate={navigate}>
+          <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             {pageComponent}
           </motion.div>
         </MainLayout>
       );
     }
 
-    // Render individual untuk halaman di luar MainLayout
+    // Render halaman individual di luar MainLayout
     switch (currentView) {
       case 'login':
         return (
@@ -127,6 +119,13 @@ function App() {
               onSelectClass5={showHomePageSD5}
               onSelectClass6={showHomePageSD6}
             />
+          </motion.div>
+        );
+      // Case baru untuk MatematikaPage
+      case 'matematika1':
+        return (
+          <motion.div key="matematika1" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
+            <MatematikaPage onNavigate={navigate} />
           </motion.div>
         );
       default:

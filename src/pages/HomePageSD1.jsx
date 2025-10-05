@@ -36,11 +36,12 @@ const testimonials = [
   },
 ];
 
-const SubjectButton = ({ icon: Icon, label }) => (
+const SubjectButton = ({ icon: Icon, label, onClick }) => (
   <motion.div 
     className="flex flex-col items-center justify-center space-y-2"
     whileHover={{ scale: 1.1 }}
     whileTap={{ scale: 0.95 }}
+    onClick={onClick}
   >
     <div className="w-full h-16 bg-sesm-deep rounded-2xl flex items-center justify-center text-white text-3xl shadow-md">
       <Icon />
@@ -65,7 +66,7 @@ const TestimonialCard = ({ avatar, quote, name }) => (
   </div>
 );
 
-const HomePageSD1 = () => {
+const HomePageSD1 = ({ onNavigate }) => {
   return (
     <>
       {/* Tampilan Mobile */}
@@ -92,7 +93,11 @@ const HomePageSD1 = () => {
           <main className="px-6 mt-4">
             <div className="grid grid-cols-5 gap-x-3 gap-y-5">
               {subjectsSD1.map(subject => (
-                <SubjectButton key={subject.label} {...subject} />
+                <SubjectButton 
+                  key={subject.label} 
+                  {...subject} 
+                  onClick={subject.label === 'Matematika' ? () => onNavigate('matematika1') : null}
+                />
               ))}
             </div>
 
@@ -153,7 +158,11 @@ const HomePageSD1 = () => {
             <div className="bg-white p-6 rounded-2xl shadow-sm">
                 <div className="grid grid-cols-8 gap-6">
                 {subjectsSD1.map(subject => (
-                    <SubjectButton key={subject.label} {...subject} />
+                    <SubjectButton 
+                      key={subject.label} 
+                      {...subject} 
+                      onClick={subject.label === 'Matematika' ? () => onNavigate('matematika1') : null}
+                    />
                 ))}
                 </div>
             </div>
