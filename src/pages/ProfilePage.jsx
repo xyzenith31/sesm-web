@@ -14,7 +14,7 @@ import {
   FiClock
 } from 'react-icons/fi';
 
-// Komponen Menu Item yang sama, tidak perlu diubah
+// Komponen Menu Item
 const ProfileMenuItem = ({ icon: Icon, label, hasChevron = true, isLogout = false, onClick }) => (
   <motion.button 
     onClick={onClick}
@@ -29,7 +29,7 @@ const ProfileMenuItem = ({ icon: Icon, label, hasChevron = true, isLogout = fals
   </motion.button>
 );
 
-// Komponen baru untuk kartu statistik
+// Komponen kartu statistik
 const StatCard = ({ icon: Icon, value, label, color }) => (
   <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl flex items-center space-x-3">
     <Icon className={`${color} text-3xl`} />
@@ -40,10 +40,10 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
   </div>
 );
 
-// Komponen baru untuk Lencana/Badge
+// Komponen Lencana/Badge
 const Badge = ({ icon: Icon, label, color }) => (
   <div className="flex flex-col items-center text-center space-y-2">
-    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${color} bg-opacity-10 text-white`}>
+    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${color} bg-gray-100`}>
       <Icon />
     </div>
     <p className="text-xs font-semibold text-gray-600">{label}</p>
@@ -52,7 +52,6 @@ const Badge = ({ icon: Icon, label, color }) => (
 
 
 const ProfilePage = ({ onNavigate }) => {
-  // Data user diperkaya dengan statistik dan lencana
   const user = {
     name: 'Siswa Cerdas',
     level: 'SD - Kelas 4',
@@ -71,10 +70,10 @@ const ProfilePage = ({ onNavigate }) => {
   return (
     <>
       {/* ====================================================== */}
-      {/* ============ TAMPILAN KHUSUS MOBILE (DI-ROMBAK) ======== */}
+      {/* ============ TAMPILAN KHUSUS MOBILE ==================== */}
       {/* ====================================================== */}
       <div className="md:hidden">
-        <div className="min-h-screen bg-gray-100">
+        <div className="bg-gray-100">
           {/* Bagian Hero (Header + Info Profil + Statistik) */}
           <div className="bg-gradient-to-br from-sesm-teal to-sesm-deep text-white p-6 pb-8 rounded-b-3xl shadow-lg">
             <h1 className="text-xl font-bold text-center mt-4 mb-6">Profil Saya</h1>
@@ -128,7 +127,7 @@ const ProfilePage = ({ onNavigate }) => {
       </div>
 
       {/* ====================================================== */}
-      {/* ============= TAMPILAN KHUSUS DESKTOP (DI-ROMBAK) ====== */}
+      {/* ============= TAMPILAN KHUSUS DESKTOP ================ */}
       {/* ====================================================== */}
       <div className="hidden md:flex justify-center py-12 px-8 min-h-screen bg-gray-100">
         <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

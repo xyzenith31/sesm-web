@@ -6,8 +6,7 @@ const MainLayout = ({ children, activePage, onNavigate }) => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       <SideBar activePage={activePage} onNavigate={onNavigate} />
-
-      <main className="md:ml-64">
+      <main className="md:ml-64 pb-28 md:pb-0">
         {children}
       </main>
 
