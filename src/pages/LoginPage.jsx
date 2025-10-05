@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import LoginForm from '../components/LoginForm';
-import Logo from '../components/Logo'; // Import komponen Logo SVG
+import Logo from '../assets/logo.png'; // Path ini sudah benar
 import Card from '../components/Card';
 
 const LoginPage = ({ onSwitchToRegister, onLoginSuccess }) => {
@@ -29,9 +29,14 @@ const LoginPage = ({ onSwitchToRegister, onLoginSuccess }) => {
           initial="hidden"
           animate="visible"
         >
-          {/* Logo SVG digunakan di sini */}
+          {/* Logo ditampilkan menggunakan tag <img> */}
           <motion.div variants={itemVariants}>
-            <Logo className="w-36 h-auto mb-4" />
+            {/* INI BAGIAN YANG DIPERBAIKI */}
+            <img 
+              src={Logo} 
+              alt="Sesm Logo" 
+              className="w-36 h-auto mb-4" 
+            />
           </motion.div>
 
           <motion.h1
