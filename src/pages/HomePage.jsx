@@ -1,21 +1,21 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  FiSearch, 
-  FiMoreHorizontal, 
+import {
+  FiSearch,
+  FiMoreHorizontal,
   FiChevronRight,
   FiStar
 } from 'react-icons/fi';
-import { 
-  FaFlask, 
-  FaGlobeAmericas, 
-  FaCalculator, 
-  FaBook, 
-  FaBalanceScale, 
-  FaLanguage, 
-  FaMosque 
+import {
+  FaFlask,
+  FaGlobeAmericas,
+  FaCalculator,
+  FaBook,
+  FaBalanceScale,
+  FaLanguage,
+  FaMosque
 } from 'react-icons/fa';
-import logoSesm from '../assets/logo.png'; 
+import logoSesm from '../assets/logo.png';
 
 const subjects = [
   { icon: FaFlask, label: 'IPA' },
@@ -40,9 +40,11 @@ const testimonials = [
   },
 ];
 
-const SubjectButton = ({ icon: Icon, label }) => (
-  <motion.div 
-    className="flex flex-col items-center justify-center space-y-2"
+// Komponen SubjectButton diubah untuk menerima 'onClick'
+const SubjectButton = ({ icon: Icon, label, onClick }) => (
+  <motion.div
+    onClick={onClick}
+    className="flex flex-col items-center justify-center space-y-2 cursor-pointer"
     whileHover={{ scale: 1.1 }}
     whileTap={{ scale: 0.95 }}
   >
@@ -54,7 +56,7 @@ const SubjectButton = ({ icon: Icon, label }) => (
 );
 
 const SeeMoreButton = () => (
-    <motion.div 
+    <motion.div
         className="flex flex-col items-center justify-center space-y-2"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
@@ -82,7 +84,19 @@ const TestimonialCard = ({ avatar, quote, name }) => (
   </div>
 );
 
-const HomePage = () => {
+// Komponen HomePage sekarang menerima prop 'onNavigate'
+const HomePage = ({ onNavigate }) => {
+
+  // Fungsi untuk menangani klik pada mata pelajaran
+  const handleSubjectClick = (subjectLabel) => {
+    // Jika mata pelajarannya adalah Matematika dan fungsi onNavigate ada, panggil navigasi
+    if (subjectLabel === 'Matematika' && onNavigate) {
+      onNavigate('matematika1');
+    }
+    // Anda bisa menambahkan logika untuk mapel lain di sini di kemudian hari
+    // else if (subjectLabel === 'IPA') { onNavigate('ipa1'); }
+  };
+
   return (
     <>
       {/* ====================================================== */}
@@ -100,18 +114,22 @@ const HomePage = () => {
             </div>
             <div className="relative mt-4">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input 
-                type="text" 
-                placeholder="Coba Cari Materimu di sini" 
+              <input
+                type="text"
+                placeholder="Coba Cari Materimu di sini"
                 className="w-full bg-white text-gray-800 rounded-full py-3 pl-12 pr-4 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-sesm-teal"
               />
             </div>
           </header>
-          
+
           <main className="px-6 mt-4">
             <div className="grid grid-cols-4 gap-x-4 gap-y-5">
               {subjects.map(subject => (
-                <SubjectButton key={subject.label} {...subject} />
+                <SubjectButton
+                  key={subject.label}
+                  {...subject}
+                  onClick={() => handleSubjectClick(subject.label)}
+                />
               ))}
               <SeeMoreButton />
             </div>
@@ -119,7 +137,7 @@ const HomePage = () => {
             <div className="mt-8">
               <h2 className="text-lg font-bold text-gray-800">Fitur Unggulan SESM</h2>
               <div className="mt-3 bg-sesm-deep rounded-2xl p-4 shadow-lg">
-                <motion.button 
+                <motion.button
                   className="w-full bg-gray-100/90 text-sesm-deep font-bold rounded-full flex items-center justify-between p-3 text-sm"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -163,9 +181,9 @@ const HomePage = () => {
             </div>
             <div className="relative w-1/3">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input 
-                type="text" 
-                placeholder="Cari Materi..." 
+              <input
+                type="text"
+                placeholder="Cari Materi..."
                 className="w-full bg-white border border-gray-300 rounded-full py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-sesm-deep"
               />
             </div>
@@ -175,16 +193,20 @@ const HomePage = () => {
             <div className="bg-white p-6 rounded-2xl shadow-sm">
                 <div className="grid grid-cols-8 gap-6">
                 {subjects.map(subject => (
-                    <SubjectButton key={subject.label} {...subject} />
+                    <SubjectButton
+                      key={subject.label}
+                      {...subject}
+                      onClick={() => handleSubjectClick(subject.label)}
+                    />
                 ))}
                 <SeeMoreButton />
                 </div>
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-sesm-deep rounded-2xl p-6 text-white shadow-lg">
                     <h2 className="text-xl font-bold">Fitur Unggulan SESM</h2>
-                    <motion.button 
+                    <motion.button
                       className="mt-4 w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.98 }}
