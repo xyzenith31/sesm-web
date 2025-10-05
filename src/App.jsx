@@ -1,34 +1,43 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-// Impor semua halaman
+// Impor semua halaman yang ada
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LevelSelectionPage from './pages/LevelSelectionPage';
 import ChooseSelectionPage from './pages/ChooseSelectionPage';
-import HomePage from './pages/HomePage';
+import HomePageTK from './pages/HomePageTK';
+import HomePageSD1 from './pages/HomePageSD1';
+import HomePageSD2 from './pages/HomePageSD2';
+import HomePageSD3_4 from './pages/HomePageSD3-4';
+import HomePageSD5 from './pages/HomePageSD5';
+import HomePageSD6 from './pages/HomePageSD6';
 import ProfilePage from './pages/ProfilePage';
 import ActivityLogPage from './pages/ActivityLogPage';
 import DiaryPage from './pages/DiaryPage';
-import BookmarkPage from './pages/BookmarkPage'; // <-- 1. Impor halaman baru
+import BookmarkPage from './pages/BookmarkPage'; 
 
 // Impor layout utama
 import MainLayout from './layouts/MainLayout';
 
 function App() {
-  // State untuk mengontrol halaman mana yang sedang aktif
   const [currentView, setCurrentView] = useState('welcome');
 
-  // Fungsi navigasi utama yang akan digunakan di dalam MainLayout
+  // Fungsi navigasi utama
   const navigate = (view) => setCurrentView(view);
 
-  // Fungsi navigasi untuk alur sebelum masuk ke layout utama
+  // Kumpulan fungsi untuk berpindah antar halaman
   const showLoginPage = () => setCurrentView('login');
   const showRegisterPage = () => setCurrentView('register');
   const showLevelSelectionPage = () => setCurrentView('levelSelection'); 
   const showChooseSelectionPage = () => setCurrentView('chooseSelection');
-  const showHomePage = () => setCurrentView('home');
+  const showHomePageTK = () => setCurrentView('homeTK');
+  const showHomePageSD1 = () => setCurrentView('homeSD1');
+  const showHomePageSD2 = () => setCurrentView('homeSD2');
+  const showHomePageSD3_4 = () => setCurrentView('homeSD3_4');
+  const showHomePageSD5 = () => setCurrentView('homeSD5');
+  const showHomePageSD6 = () => setCurrentView('homeSD6');
   
   // Konfigurasi animasi transisi antar halaman
   const pageVariants = {
@@ -43,26 +52,35 @@ function App() {
     duration: 0.4
   };
   
-  // Fungsi untuk menentukan halaman mana yang akan dirender
+  // Fungsi utama untuk merender halaman yang aktif
   const renderView = () => {
-    // 2. Tambahkan 'bookmark' ke dalam daftar halaman yang menggunakan MainLayout
-    const viewsInMainLayout = ['home', 'profile', 'activityLog', 'diary', 'explore', 'bookmark'];
+    // Daftar semua view yang akan ditampilkan di dalam MainLayout (layout dengan sidebar/navbar)
+    const viewsInMainLayout = [
+      'homeTK', 'homeSD1', 'homeSD2', 'homeSD3_4', 'homeSD5', 'homeSD6', 
+      'profile', 'activityLog', 'diary', 'explore', 'bookmark'
+    ];
 
-    // Jika halaman saat ini ada di dalam daftar, gunakan MainLayout
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
       
-      // Tentukan komponen halaman berdasarkan 'currentView'
-      if (currentView === 'home') pageComponent = <HomePage />;
+      // Logika untuk menentukan komponen mana yang akan dirender
+      if (currentView === 'homeTK') pageComponent = <HomePageTK />;
+      if (currentView === 'homeSD1') pageComponent = <HomePageSD1 />;
+      if (currentView === 'homeSD2') pageComponent = <HomePageSD2 />;
+      if (currentView === 'homeSD3_4') pageComponent = <HomePageSD3_4 />;
+      if (currentView === 'homeSD5') pageComponent = <HomePageSD5 />;
+      if (currentView === 'homeSD6') pageComponent = <HomePageSD6 />;
       if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
       if (currentView === 'activityLog') pageComponent = <ActivityLogPage onNavigate={navigate} />;
       if (currentView === 'diary') pageComponent = <DiaryPage onNavigate={navigate} />;
-      if (currentView === 'bookmark') pageComponent = <BookmarkPage />; // <-- 3. Tambahkan kondisi untuk render BookmarkPage
-      // Anda bisa menambahkan halaman 'explore' di sini nanti
-      // if (currentView === 'explore') pageComponent = <ExplorePage />;
+      if (currentView === 'bookmark') pageComponent = <BookmarkPage />;
       
       return (
-        <MainLayout activePage={currentView} onNavigate={navigate}>
+        <MainLayout 
+          // Membuat ikon 'Home' di navbar tetap aktif untuk semua halaman utama
+          activePage={currentView.startsWith('home') ? 'home' : currentView} 
+          onNavigate={navigate}
+        >
           <motion.div 
             key={currentView} 
             variants={pageVariants} 
@@ -77,7 +95,7 @@ function App() {
       );
     }
     
-    // Jika halaman tidak ada di daftar, render secara individual (untuk alur login/register)
+    // Render individual untuk halaman di luar MainLayout (seperti login, register, dll.)
     switch (currentView) {
       case 'login':
         return (
@@ -94,13 +112,19 @@ function App() {
       case 'levelSelection':
         return (
           <motion.div key="levelSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-            <LevelSelectionPage onSelectSD={showChooseSelectionPage} />
+            <LevelSelectionPage onSelectSD={showChooseSelectionPage} onSelectTK={showHomePageTK} />
           </motion.div>
         );
       case 'chooseSelection':
         return (
           <motion.div key="chooseSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-            <ChooseSelectionPage onSelectionComplete={showHomePage} />
+            <ChooseSelectionPage 
+              onSelectClass1={showHomePageSD1}
+              onSelectClass2={showHomePageSD2}
+              onSelectClass3_4={showHomePageSD3_4}
+              onSelectClass5={showHomePageSD5}
+              onSelectClass6={showHomePageSD6}
+            />
           </motion.div>
         );
       default: // Halaman default adalah 'welcome'

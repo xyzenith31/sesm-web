@@ -4,11 +4,19 @@ import { FiMoreHorizontal, FiX } from 'react-icons/fi';
 import BottomNavBar from '../components/BottomNavBar';
 import UserLayout from '../layouts/UserLayout';
 
-const LevelSelectionPage = ({ onSelectSD }) => {
+// 1. Terima prop onSelectTK
+const LevelSelectionPage = ({ onSelectSD, onSelectTK }) => {
 
   const handleSDClick = () => {
     if (onSelectSD) {
       onSelectSD();
+    }
+  };
+
+  // 2. Buat handler untuk tombol TK
+  const handleTKClick = () => {
+    if (onSelectTK) {
+        onSelectTK();
     }
   };
 
@@ -33,13 +41,15 @@ const LevelSelectionPage = ({ onSelectSD }) => {
           
           <main className="absolute top-[38%] left-0 right-0 bottom-0 flex flex-col items-center justify-center space-y-6 px-8 pb-32">
             <motion.button 
+              // 3. Tambahkan onClick pada tombol TK
+              onClick={handleTKClick}
               className="w-full max-w-xs py-4 text-xl font-bold text-white bg-sesm-deep border-2 border-sesm-deep rounded-full shadow-lg"
             >
               TK
             </motion.button>
             <motion.button 
               className="w-full max-w-xs py-4 text-xl font-bold text-sesm-deep bg-white border-2 border-sesm-deep rounded-full shadow-lg"
-              onClick={handleSDClick} // onClick tetap memanggil fungsi handle
+              onClick={handleSDClick}
             >
               SD
             </motion.button>
@@ -59,6 +69,8 @@ const LevelSelectionPage = ({ onSelectSD }) => {
         </div>
         <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-xs">
             <motion.button 
+                // 3. Tambahkan onClick pada tombol TK
+                onClick={handleTKClick}
                 className="w-full py-4 text-xl font-bold text-white bg-sesm-deep border-2 border-sesm-deep rounded-full transition-all duration-300 hover:opacity-90 active:scale-95 shadow-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -69,7 +81,7 @@ const LevelSelectionPage = ({ onSelectSD }) => {
                 className="w-full py-4 text-xl font-bold text-sesm-deep bg-white border-2 border-sesm-deep rounded-full transition-all duration-300 hover:bg-sesm-deep hover:text-white active:scale-95 shadow-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={handleSDClick} // onClick tetap memanggil fungsi handle
+                onClick={handleSDClick}
             >
                 SD
             </motion.button>

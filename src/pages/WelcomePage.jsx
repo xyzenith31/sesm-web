@@ -1,49 +1,51 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import AuthLayout from '../layouts/AuthLayout'; // Kita gunakan AuthLayout lagi
+import WelcomeLayout from '../layouts/WelcomeLayout'; // 1. Impor layout baru
 import Logo from '../assets/logo.png';
 
 const WelcomePage = ({ onExplore }) => {
-  // Animasi untuk elemen-elemen di dalam card
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: "easeOut" } },
-  };
-
   return (
-    <AuthLayout>
-      {/* Container untuk konten yang akan di-stagger */}
-      <motion.div
-        className="flex flex-col items-center text-center"
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.2 }}}}
-      >
-        {/* Lingkaran Kaca di belakang Logo */}
-        <motion.div 
-          className="relative w-64 h-64 bg-white/10 backdrop-blur-lg rounded-full flex items-center justify-center shadow-2xl mb-8"
-          variants={itemVariants}
+    <WelcomeLayout>
+      <div className="flex flex-col min-h-screen">
+        {/* === Area Konten Atas (Gradien) === */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          className="flex-grow flex flex-col items-center justify-center text-white text-center px-4 pt-16"
         >
-          <img src={Logo} alt="SESM Logo" className="w-48 h-auto" />
+          {/* Logo dengan Efek Kaca (Glassmorphism) */}
+          <div className="relative w-64 h-64 flex items-center justify-center">
+            {/* Lingkaran blur di belakang */}
+            <div className="absolute w-full h-full bg-white/10 rounded-full backdrop-blur-md shadow-lg"></div>
+            {/* Gambar logo di atas */}
+            <img src={Logo} alt="SESM Logo" className="w-48 h-auto z-10" />
+          </div>
+
+          {/* Slogan */}
+          <div className="mt-8">
+            <h1 className="font-lora text-3xl font-bold tracking-wide leading-tight">SMART EDUCATION</h1>
+            <h1 className="font-lora text-3xl font-bold tracking-wide">SMART MORALITY</h1>
+          </div>
         </motion.div>
 
-        {/* Slogan */}
-        <motion.div className="mb-10" variants={itemVariants}>
-          <h1 className="text-2xl font-bold tracking-wider text-white">SMART EDUCATION</h1>
-          <h1 className="text-2xl font-bold tracking-wider text-white">SMART MORALITY</h1>
-        </motion.div>
-
-        {/* Tombol Mulai Sekarang */}
-        <motion.div variants={itemVariants} className="w-full">
-          <button 
+        {/* === Area Kartu Putih Bawah === */}
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: "0%" }}
+          transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.3 }}
+          className="bg-white w-full rounded-t-[2.5rem] shadow-2xl p-8 flex flex-col items-center"
+        >
+          <button
             onClick={onExplore}
-            className="w-full max-w-xs py-4 text-lg font-bold text-sesm-deep bg-gray-200 rounded-full transition-all duration-300 hover:bg-gray-300 active:scale-95 shadow-lg"
+            // Menggunakan warna tombol dari tailwind.config.js
+            className="w-full max-w-xs py-4 text-lg font-bold text-sesm-button-text bg-sesm-button-bg rounded-full transition-all duration-300 hover:bg-gray-300 active:scale-95 shadow-lg"
           >
             Explore Now
           </button>
         </motion.div>
-      </motion.div>
-    </AuthLayout>
+      </div>
+    </WelcomeLayout>
   );
 };
 
