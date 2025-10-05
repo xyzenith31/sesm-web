@@ -7,12 +7,13 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import LevelSelectionPage from './pages/LevelSelectionPage.jsx';
 import ChooseSelectionPage from './pages/ChooseSelectionPage.jsx';
-import HomePage from './pages/HomePage.jsx'; // Hanya HomePage generik yang digunakan
+import HomePage from './pages/HomePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ActivityLogPage from './pages/ActivityLogPage.jsx';
 import DiaryPage from './pages/DiaryPage.jsx';
 import BookmarkPage from './pages/BookmarkPage.jsx';
 import MatematikaPage from './pages/MatematikaPage.jsx';
+import ExplorePage from './pages/ExplorePage.jsx'; // 1. Impor ExplorePage yang baru
 
 // Impor layout utama
 import MainLayout from './layouts/MainLayout.jsx';
@@ -27,7 +28,7 @@ function App() {
   const showRegisterPage = () => setCurrentView('register');
   const showLevelSelectionPage = () => setCurrentView('levelSelection');
   const showChooseSelectionPage = () => setCurrentView('chooseSelection');
-  const showHomePage = () => setCurrentView('home'); // Satu fungsi untuk semua home page
+  const showHomePage = () => setCurrentView('home');
 
   const pageVariants = {
     initial: { opacity: 0, scale: 0.98 },
@@ -42,32 +43,29 @@ function App() {
   };
 
   const renderView = () => {
-    // Daftar view di dalam MainLayout disederhanakan
+    // Daftar view yang menggunakan MainLayout
     const viewsInMainLayout = [
       'home',
-      'profile', 'activityLog', 'diary', 'explore', 'bookmark',
+      'explore', // 'explore' sudah ada di sini
+      'bookmark',
+      'profile',
+      'activityLog',
+      'diary'
     ];
-
-    const getActivePage = () => {
-      // Jika view adalah 'home', maka item navigasi 'Home' aktif
-      if (currentView === 'home') {
-        return 'home';
-      }
-      return currentView;
-    };
 
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
 
-      // Logika render disederhanakan
+      // Logika render untuk setiap halaman di dalam MainLayout
       if (currentView === 'home') pageComponent = <HomePage onNavigate={navigate} />;
+      if (currentView === 'explore') pageComponent = <ExplorePage />; // 2. Tambahkan kondisi untuk merender ExplorePage
+      if (currentView === 'bookmark') pageComponent = <BookmarkPage />;
       if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
       if (currentView === 'activityLog') pageComponent = <ActivityLogPage onNavigate={navigate} />;
       if (currentView === 'diary') pageComponent = <DiaryPage onNavigate={navigate} />;
-      if (currentView === 'bookmark') pageComponent = <BookmarkPage />;
 
       return (
-        <MainLayout activePage={getActivePage()} onNavigate={navigate}>
+        <MainLayout activePage={currentView} onNavigate={navigate}>
           <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             {pageComponent}
           </motion.div>
@@ -92,7 +90,6 @@ function App() {
       case 'levelSelection':
         return (
           <motion.div key="levelSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-            {/* onSelectTK sekarang juga mengarah ke showHomePage */}
             <LevelSelectionPage onSelectSD={showChooseSelectionPage} onSelectTK={showHomePage} />
           </motion.div>
         );
