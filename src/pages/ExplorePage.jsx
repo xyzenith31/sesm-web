@@ -6,9 +6,9 @@ import {
 import { FaFlask, FaPalette, FaTrophy } from 'react-icons/fa';
 import logoImage from '../assets/logo.png';
 
-// Data untuk kartu fitur diperbarui dengan 'points'
 const features = [
   {
+    id: 'dailyChallenge', // Tambahkan id unik untuk navigasi
     icon: FiAward,
     title: "Tantangan Harian",
     description: "Selesaikan misi seru setiap hari dan dapatkan hadiah!",
@@ -16,6 +16,7 @@ const features = [
     points: 150,
   },
   {
+    id: 'worldExplore',
     icon: FiMap,
     title: "Jelajah Dunia",
     description: "Kunjungi tempat baru di seluruh dunia lewat peta interaktif.",
@@ -23,6 +24,7 @@ const features = [
     points: 100,
   },
   {
+    id: 'experimentLab',
     icon: FaFlask,
     title: "Lab Eksperimen",
     description: "Coba berbagai macam percobaan sains virtual yang aman.",
@@ -30,6 +32,7 @@ const features = [
     points: 120,
   },
   {
+    id: 'creativeZone',
     icon: FaPalette,
     title: "Zona Kreatif",
     description: "Asah imajinasimu dengan menggambar, menulis, atau membuat musik.",
@@ -37,6 +40,7 @@ const features = [
     points: 110,
   },
   {
+    id: 'interactiveStory',
     icon: FiBookOpen,
     title: "Cerita Interaktif",
     description: "Pilih alur ceritamu sendiri dan tentukan akhir kisahnya.",
@@ -44,6 +48,7 @@ const features = [
     points: 100,
   },
   {
+    id: 'eduGames',
     icon: FiPlay,
     title: "Game Edukasi",
     description: "Bermain sambil belajar? Tentu bisa! Coba game seru kami.",
@@ -52,17 +57,18 @@ const features = [
   }
 ];
 
-// Komponen Kartu Fitur yang Ditingkatkan
-const FeatureCard = ({ icon: Icon, title, description, color, index, points }) => {
+// Terima prop 'onClick'
+const FeatureCard = ({ icon: Icon, title, description, color, index, points, onClick }) => {
   return (
+    // Tambahkan onClick di sini
     <motion.div
+      onClick={onClick} 
       className={`relative rounded-2xl shadow-xl overflow-hidden cursor-pointer group bg-gradient-to-br ${color}`}
       initial={{ opacity: 0, y: 50, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: index * 0.1, type: 'spring', stiffness: 100, damping: 15 }}
       whileHover={{ scale: 1.05, y: -10, boxShadow: "0px 25px 40px -15px rgba(0,0,0,0.3)" }}
     >
-      {/* Elemen Poin */}
       <motion.div 
         className="absolute top-4 right-4 bg-white/30 backdrop-blur-sm px-3 py-1 rounded-full flex items-center space-x-1 font-bold text-white text-sm"
         initial={{scale: 0, opacity: 0}}
@@ -87,8 +93,19 @@ const FeatureCard = ({ icon: Icon, title, description, color, index, points }) =
   );
 };
 
-const ExplorePage = () => {
-  const totalPoints = 2500; // Contoh total poin pengguna
+// Terima prop 'onNavigate'
+const ExplorePage = ({ onNavigate }) => {
+  const totalPoints = 2500;
+
+  const handleCardClick = (featureId) => {
+    // Jika ID-nya adalah 'dailyChallenge', navigasikan ke sana
+    if (featureId === 'dailyChallenge') {
+      onNavigate('dailyChallenge');
+    } else {
+      // Untuk kartu lain, bisa ditambahkan logikanya nanti
+      alert('Fitur ini akan segera hadir!');
+    }
+  };
 
   return (
     <>
@@ -119,7 +136,6 @@ const ExplorePage = () => {
                     <p className="text-xs opacity-80">Temukan petualangan baru yang seru!</p>
                 </div>
             </div>
-            {/* Total Poin Pengguna */}
             <motion.div 
               className="mt-6 bg-white/20 backdrop-blur-sm p-3 rounded-xl flex items-center justify-between"
               initial={{opacity:0, y: 20}}
@@ -137,7 +153,12 @@ const ExplorePage = () => {
           <main className="px-6 mt-6">
             <div className="grid grid-cols-1 gap-6">
               {features.map((feature, index) => (
-                <FeatureCard key={index} {...feature} index={index} />
+                <FeatureCard 
+                  key={index} 
+                  {...feature} 
+                  index={index} 
+                  onClick={() => handleCardClick(feature.id)} // Teruskan event klik
+                />
               ))}
             </div>
           </main>
@@ -161,7 +182,6 @@ const ExplorePage = () => {
                 <p className="text-lg text-gray-500 mt-1">Temukan petualangan baru di setiap sudutnya.</p>
               </div>
             </div>
-            {/* Total Poin Pengguna */}
             <motion.div 
               className="bg-white p-4 rounded-2xl shadow-md flex items-center space-x-4"
               initial={{opacity:0, y: -20}}
@@ -179,7 +199,12 @@ const ExplorePage = () => {
           <main>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
                 {features.map((feature, index) => (
-                  <FeatureCard key={index} {...feature} index={index} />
+                  <FeatureCard 
+                    key={index} 
+                    {...feature} 
+                    index={index} 
+                    onClick={() => handleCardClick(feature.id)} // Teruskan event klik
+                  />
                 ))}
             </div>
           </main>
