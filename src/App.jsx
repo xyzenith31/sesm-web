@@ -21,7 +21,8 @@ import WritingPage from './pages/WritingPage.jsx';
 import InteractiveStoryPage from './pages/InteractiveStoryPage.jsx';
 import QuizPage from './pages/QuizPage.jsx';
 import StudyReportPage from './pages/StudyReportPage.jsx';
-import AccountSettingsPage from './pages/AccountSettingsPage.jsx'; // <-- IMPOR HALAMAN BARU
+import AccountSettingsPage from './pages/AccountSettingsPage.jsx';
+import RankPage from './pages/RankPage.jsx'; // <-- IMPOR HALAMAN BARU
 
 // Impor layout utama
 import MainLayout from './layouts/MainLayout.jsx';
@@ -61,7 +62,8 @@ function App() {
       'dailyChallenge',
       'creativeZone',
       'studyReport',
-      'accountSettings'
+      'accountSettings',
+      'rank' // <-- TAMBAHKAN VIEW BARU
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
@@ -76,7 +78,8 @@ function App() {
       if (currentView === 'dailyChallenge') pageComponent = <DailyChallengePage onNavigate={navigate} />;
       if (currentView === 'creativeZone') pageComponent = <CreativeZonePage onNavigate={navigate} />;
       if (currentView === 'studyReport') pageComponent = <StudyReportPage onNavigate={navigate} />;
-      if (currentView === 'accountSettings') pageComponent = <AccountSettingsPage onNavigate={navigate} />; // <-- TAMBAHKAN KONDISI INI
+      if (currentView === 'accountSettings') pageComponent = <AccountSettingsPage onNavigate={navigate} />;
+      if (currentView === 'rank') pageComponent = <RankPage onNavigate={navigate} />; // <-- TAMBAHKAN KONDISI INI
 
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
