@@ -4,7 +4,8 @@ import {
   FiSearch,
   FiMoreHorizontal,
   FiChevronRight,
-  FiStar
+  FiStar,
+  FiHelpCircle // <-- Icon baru ditambahkan
 } from 'react-icons/fi';
 import {
   FaFlask,
@@ -137,7 +138,9 @@ const HomePage = ({ onNavigate }) => {
             <div className="mt-8">
               <h2 className="text-lg font-bold text-gray-800">Fitur Unggulan SESM</h2>
               <div className="mt-3 bg-sesm-deep rounded-2xl p-4 shadow-lg">
+                {/* --- TOMBOL BANK BUKU (DIPERBAIKI) --- */}
                 <motion.button
+                  onClick={() => onNavigate('bookmark')}
                   className="w-full bg-gray-100/90 text-sesm-deep font-bold rounded-full flex items-center justify-between p-3 text-sm"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -145,6 +148,20 @@ const HomePage = ({ onNavigate }) => {
                   <div className="flex items-center space-x-3">
                     <FiSearch className="text-yellow-500 text-xl" />
                     <span className='text-left'>LATIHAN SOAL DI BANK BUKU</span>
+                  </div>
+                  <FiChevronRight size={24} />
+                </motion.button>
+                
+                {/* --- TOMBOL KUIS PENGETAHUAN (BARU) --- */}
+                <motion.button
+                  onClick={() => onNavigate('quiz')}
+                  className="mt-3 w-full bg-gray-100/90 text-sesm-deep font-bold rounded-full flex items-center justify-between p-3 text-sm"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="flex items-center space-x-3">
+                    <FiHelpCircle className="text-teal-500 text-xl" />
+                    <span className='text-left'>KUIS PENGETAHUAN</span>
                   </div>
                   <FiChevronRight size={24} />
                 </motion.button>
@@ -205,18 +222,36 @@ const HomePage = ({ onNavigate }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-sesm-deep rounded-2xl p-6 text-white shadow-lg">
-                    <h2 className="text-xl font-bold">Fitur Unggulan SESM</h2>
-                    <motion.button
-                      className="mt-4 w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                    <div className="flex items-center space-x-3">
-                        <FiSearch className="text-yellow-600" size={22} />
-                        <span>LATIHAN SOAL DI BANK BUKU</span>
+                    <h2 className="text-xl font-bold mb-4">Fitur Unggulan SESM</h2>
+                    <div className='space-y-3'>
+                      {/* --- TOMBOL BANK BUKU DESKTOP (DIPERBAIKI) --- */}
+                      <motion.button
+                        onClick={() => onNavigate('bookmark')}
+                        className="w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                      <div className="flex items-center space-x-3">
+                          <FiSearch className="text-yellow-600" size={22} />
+                          <span>LATIHAN SOAL DI BANK BUKU</span>
+                      </div>
+                      <FiChevronRight size={24} />
+                      </motion.button>
+                      
+                      {/* --- TOMBOL KUIS PENGETAHUAN DESKTOP (BARU) --- */}
+                      <motion.button
+                        onClick={() => onNavigate('quiz')}
+                        className="w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                      <div className="flex items-center space-x-3">
+                          <FiHelpCircle className="text-teal-600" size={22} />
+                          <span>KUIS PENGETAHUAN</span>
+                      </div>
+                      <FiChevronRight size={24} />
+                      </motion.button>
                     </div>
-                    <FiChevronRight size={24} />
-                    </motion.button>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm">
