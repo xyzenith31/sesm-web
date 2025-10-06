@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiClock, FiAward, FiCheck, FiX } from 'react-icons/fi';
 import AnswerFeedback from '../components/AnswerFeedback';
+import thankYouMeme from '../assets/meme/terima-kasih.jpeg';
 
 // --- Impor Semua Meme Secara Dinamis ---
 const correctMemeModules = import.meta.glob('/src/assets/meme/meme-benar/*.jpeg', { eager: true });
 const incorrectMemeModules = import.meta.glob('/src/assets/meme/meme-salah/*.jpeg', { eager: true });
-// Dibuat lebih fleksibel, akan mengambil file .jpeg APAPUN di dalam folder terima-kasih
-const thankYouMemeModule = import.meta.glob('/src/assets/meme/terima-kasih/*.jpeg', { eager: true });
 
 const correctMemes = Object.values(correctMemeModules).map(module => module.default);
 const incorrectMemes = Object.values(incorrectMemeModules).map(module => module.default);
-const thankYouMeme = Object.values(thankYouMemeModule)[0]?.default;
 
 // --- Data Kuis & Konfigurasi ---
 const QUIZ_DURATION = 20;
@@ -97,26 +95,33 @@ const QuizPage = ({ onNavigate }) => {
     
     const [results, setResults] = useState([]);
     const [feedback, setFeedback] = useState({ show: false, isCorrect: false });
-
+    
     const currentQuestion = useMemo(() => quizData.questions[currentQuestionIndex], [currentQuestionIndex]);
 
-    useEffect(() => {
-        if (gameState !== 'playing') return;
+    const handleFinishQuiz = () => {
+        setActiveMeme({ src: null, title: '' });
+    };
 
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    handleAnswerSubmit(null);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [gameState, currentQuestionIndex]);
+    // ++ PINDAHKAN FUNGSI goToNextStep KE ATAS ++
+    const goToNextStep = useCallback(() => {
+        setActiveMeme({ src: null, title: '' });
+        const nextIndex = currentQuestionIndex + 1;
 
-    const handleAnswerSubmit = (answer) => {
+        if (nextIndex >= quizData.questions.length) {
+            setGameState('finished');
+            if (thankYouMeme) {
+                setActiveMeme({ src: thankYouMeme, title: "Terima Kasih Telah Bermain!" });
+            }
+        } else {
+            setCurrentQuestionIndex(nextIndex);
+            setSelectedAnswer(null);
+            setTimeLeft(QUIZ_DURATION);
+            setGameState('playing');
+        }
+    }, [currentQuestionIndex]);
+
+    // ++ PINDAHKAN FUNGSI handleAnswerSubmit KE ATAS dan BUNGKUS DENGAN useCallback ++
+    const handleAnswerSubmit = useCallback((answer) => {
         if (gameState !== 'playing') return;
 
         setGameState('feedback'); // Kunci jawaban, tampilkan notifikasi
@@ -153,25 +158,24 @@ const QuizPage = ({ onNavigate }) => {
             } else {
                 goToNextStep();
             }
-        }, 1200); // Durasi notifikasi Benar/Salah
-    };
+        }, 1200);
+    }, [gameState, currentQuestion, timeLeft, correctStreak, incorrectCount, goToNextStep]);
 
-    const goToNextStep = () => {
-        setActiveMeme({ src: null, title: '' });
-        const nextIndex = currentQuestionIndex + 1;
+    useEffect(() => {
+        if (gameState !== 'playing') return;
 
-        if (nextIndex >= quizData.questions.length) {
-            setGameState('finished');
-            if (thankYouMeme) {
-                setActiveMeme({ src: thankYouMeme, title: "Terima Kasih Telah Bermain!" });
-            }
-        } else {
-            setCurrentQuestionIndex(nextIndex);
-            setSelectedAnswer(null);
-            setTimeLeft(QUIZ_DURATION);
-            setGameState('playing');
-        }
-    };
+        const timer = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    handleAnswerSubmit(null);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [gameState, currentQuestionIndex, handleAnswerSubmit]);
     
     const getButtonClass = (option) => {
         const isSubmitted = gameState !== 'playing';
@@ -188,7 +192,13 @@ const QuizPage = ({ onNavigate }) => {
     return (
         <>
             <AnimatePresence>
-                {activeMeme.src && <MemeOverlay meme={activeMeme.src} title={activeMeme.title} onClose={goToNextStep} />}
+                {activeMeme.src && (
+                     <MemeOverlay
+                        meme={activeMeme.src}
+                        title={activeMeme.title}
+                        onClose={gameState === 'finished' ? handleFinishQuiz : goToNextStep}
+                    />
+                )}
                 {feedback.show && <AnswerFeedback isCorrect={feedback.isCorrect} />}
             </AnimatePresence>
 
