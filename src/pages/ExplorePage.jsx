@@ -20,7 +20,7 @@ const features = [
     points: 150,
   },
   {
-    id: 'creativeZone', // ID ini akan digunakan untuk navigasi
+    id: 'creativeZone',
     icon: FaPalette,
     title: "Zona Kreatif",
     description: "Asah imajinasimu dengan menggambar, menulis, atau membuat musik.",
@@ -87,7 +87,9 @@ const ExplorePage = ({ onNavigate }) => {
     if (featureId === 'dailyChallenge') {
       onNavigate('dailyChallenge');
     } else if (featureId === 'creativeZone') {
-      onNavigate('creativeZone'); // <-- Navigasi ke halaman baru
+      onNavigate('creativeZone');
+    } else if (featureId === 'interactiveStory') { // <-- INI BAGIAN YANG DIPERBARUI
+      onNavigate('interactiveStory');
     } else {
       alert('Fitur ini akan segera hadir!');
     }
