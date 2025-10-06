@@ -45,7 +45,9 @@ const FeatureSelectionCard = ({ icon: Icon, title, description, color, index }) 
 const CreativeZonePage = ({ onNavigate }) => {
   const handleFeatureClick = (featureId, featureTitle) => {
     if (featureId === 'drawing') {
-      onNavigate('drawing'); // Langsung navigasi ke halaman menggambar
+      onNavigate('drawing');
+    } else if (featureId === 'writing') {
+      onNavigate('writing'); // Navigasi ke halaman menulis
     } else {
       alert(`Fitur '${featureTitle}' akan segera hadir!`);
     }

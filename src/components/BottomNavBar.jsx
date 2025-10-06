@@ -9,32 +9,40 @@ const NavItem = ({ icon, label, isActive, onClick }) => (
 );
 
 const BottomNavBar = ({ activePage, onNavigate }) => {
+  // Fungsi ini akan memeriksa apakah onNavigate adalah fungsi sebelum memanggilnya.
+  // Jika tidak, tidak akan terjadi apa-apa (dan tidak ada error).
+  const handleNavigation = (view) => {
+    if (typeof onNavigate === 'function') {
+      onNavigate(view);
+    }
+  };
+
   return (
     <div className="fixed md:hidden inset-x-0 bottom-4 mx-auto w-[calc(100%-2rem)] max-w-sm h-20 bg-sesm-deep rounded-full shadow-lg z-20">
       <div className="flex justify-around items-center h-full">
-        <NavItem 
-            icon={<FiHome size={24} />} 
-            label="Home" 
+        <NavItem
+            icon={<FiHome size={24} />}
+            label="Home"
             isActive={activePage === 'home'}
-            onClick={() => onNavigate('home')}
+            onClick={() => handleNavigation('home')}
         />
-        <NavItem 
-            icon={<FiSearch size={24} />} 
-            label="Explore" 
+        <NavItem
+            icon={<FiSearch size={24} />}
+            label="Explore"
             isActive={activePage === 'explore'}
-            onClick={() => onNavigate('explore')}
+            onClick={() => handleNavigation('explore')}
         />
-        <NavItem 
-            icon={<FiBookmark size={24} />} 
-            label="Bookmark" 
+        <NavItem
+            icon={<FiBookmark size={24} />}
+            label="Bookmark"
             isActive={activePage === 'bookmark'}
-            onClick={() => onNavigate('bookmark')}
+            onClick={() => handleNavigation('bookmark')}
         />
-        <NavItem 
-            icon={<FiUser size={24} />} 
-            label="Profile" 
+        <NavItem
+            icon={<FiUser size={24} />}
+            label="Profile"
             isActive={activePage === 'profile'}
-            onClick={() => onNavigate('profile')}
+            onClick={() => handleNavigation('profile')}
         />
       </div>
     </div>

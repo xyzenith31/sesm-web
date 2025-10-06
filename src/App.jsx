@@ -16,7 +16,8 @@ import MatematikaPage from './pages/MatematikaPage.jsx';
 import ExplorePage from './pages/ExplorePage.jsx';
 import DailyChallengePage from './pages/DailyChallengePage.jsx';
 import CreativeZonePage from './pages/CreativeZonePage.jsx';
-import DrawingPage from './pages/DrawingPage.jsx'; // 1. Impor halaman baru
+import DrawingPage from './pages/DrawingPage.jsx'; // Halaman Menggambar
+import WritingPage from './pages/WritingPage.jsx';   // Halaman Menulis (BARU)
 
 // Impor layout utama
 import MainLayout from './layouts/MainLayout.jsx';
@@ -60,7 +61,6 @@ function App() {
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
 
-      // Logika render untuk setiap halaman di dalam MainLayout
       if (currentView === 'home') pageComponent = <HomePage onNavigate={navigate} />;
       if (currentView === 'explore') pageComponent = <ExplorePage onNavigate={navigate} />;
       if (currentView === 'bookmark') pageComponent = <BookmarkPage />;
@@ -117,11 +117,16 @@ function App() {
             <MatematikaPage onNavigate={navigate} />
           </motion.div>
         );
-      // 2. Tambahkan case baru untuk 'drawing'
       case 'drawing':
         return (
           <motion.div key="drawing" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             <DrawingPage onNavigate={navigate} />
+          </motion.div>
+        );
+      case 'writing': // <-- INI BAGIAN YANG DITAMBAHKAN
+        return (
+          <motion.div key="writing" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
+            <WritingPage onNavigate={navigate} />
           </motion.div>
         );
       default:
