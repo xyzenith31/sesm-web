@@ -4,7 +4,8 @@ import { FiArrowLeft, FiBook, FiClock, FiStar, FiCheckCircle } from 'react-icons
 import { FaTrophy } from 'react-icons/fa';
 import StoryReaderModal from '../components/StoryReaderModal';
 import PointsNotification from '../components/PointsNotification';
-import { kancilStory } from '../data/storyData';
+// --- INI BAGIAN YANG DIPERBAIKI: Menambahkan ekstensi .js ---
+import { kancilStory } from '../data/storyData.js';
 
 // DATA CERITA TETAP ADA, TIDAK DIHAPUS
 const stories = [

@@ -18,7 +18,8 @@ import DailyChallengePage from './pages/DailyChallengePage.jsx';
 import CreativeZonePage from './pages/CreativeZonePage.jsx';
 import DrawingPage from './pages/DrawingPage.jsx';
 import WritingPage from './pages/WritingPage.jsx';
-import InteractiveStoryPage from './pages/InteractiveStoryPage.jsx'; // <-- IMPOR HALAMAN BARU
+import InteractiveStoryPage from './pages/InteractiveStoryPage.jsx';
+import QuizPage from './pages/QuizPage.jsx'; // <-- IMPOR HALAMAN KUIS
 
 // Impor layout utama
 import MainLayout from './layouts/MainLayout.jsx';
@@ -130,10 +131,16 @@ function App() {
             <WritingPage onNavigate={navigate} />
           </motion.div>
         );
-      case 'interactiveStory': // <-- TAMBAHKAN CASE BARU
+      case 'interactiveStory':
         return (
           <motion.div key="interactiveStory" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             <InteractiveStoryPage onNavigate={navigate} />
+          </motion.div>
+        );
+      case 'quiz': // <-- TAMBAHKAN CASE BARU UNTUK KUIS
+        return (
+          <motion.div key="quiz" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
+            <QuizPage onNavigate={navigate} />
           </motion.div>
         );
       default:

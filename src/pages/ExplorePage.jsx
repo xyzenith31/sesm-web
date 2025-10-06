@@ -36,7 +36,7 @@ const features = [
     points: 100,
   },
   {
-    id: 'quiz',
+    id: 'quiz', // ID ini akan kita gunakan
     icon: FiHelpCircle,
     title: "Kuis Pengetahuan",
     description: "Uji wawasanmu dengan berbagai kuis menarik.",
@@ -88,8 +88,10 @@ const ExplorePage = ({ onNavigate }) => {
       onNavigate('dailyChallenge');
     } else if (featureId === 'creativeZone') {
       onNavigate('creativeZone');
-    } else if (featureId === 'interactiveStory') { // <-- INI BAGIAN YANG DIPERBARUI
+    } else if (featureId === 'interactiveStory') {
       onNavigate('interactiveStory');
+    } else if (featureId === 'quiz') { // <-- INI BAGIAN YANG DIPERBARUI
+      onNavigate('quiz');
     } else {
       alert('Fitur ini akan segera hadir!');
     }
