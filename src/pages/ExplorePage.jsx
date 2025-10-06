@@ -1,14 +1,18 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  FiAward, FiMap, FiBookOpen, FiPlay, FiChevronRight, FiStar
+  FiAward,
+  FiBookOpen,
+  FiChevronRight,
+  FiStar,
+  FiHelpCircle,
 } from 'react-icons/fi';
-import { FaFlask, FaPalette, FaTrophy } from 'react-icons/fa';
+import { FaPalette, FaTrophy } from 'react-icons/fa';
 import logoImage from '../assets/logo.png';
 
 const features = [
   {
-    id: 'dailyChallenge', // Tambahkan id unik untuk navigasi
+    id: 'dailyChallenge',
     icon: FiAward,
     title: "Tantangan Harian",
     description: "Selesaikan misi seru setiap hari dan dapatkan hadiah!",
@@ -16,23 +20,7 @@ const features = [
     points: 150,
   },
   {
-    id: 'worldExplore',
-    icon: FiMap,
-    title: "Jelajah Dunia",
-    description: "Kunjungi tempat baru di seluruh dunia lewat peta interaktif.",
-    color: "from-sky-500 to-cyan-400",
-    points: 100,
-  },
-  {
-    id: 'experimentLab',
-    icon: FaFlask,
-    title: "Lab Eksperimen",
-    description: "Coba berbagai macam percobaan sains virtual yang aman.",
-    color: "from-lime-500 to-green-400",
-    points: 120,
-  },
-  {
-    id: 'creativeZone',
+    id: 'creativeZone', // ID ini akan digunakan untuk navigasi
     icon: FaPalette,
     title: "Zona Kreatif",
     description: "Asah imajinasimu dengan menggambar, menulis, atau membuat musik.",
@@ -48,28 +36,26 @@ const features = [
     points: 100,
   },
   {
-    id: 'eduGames',
-    icon: FiPlay,
-    title: "Game Edukasi",
-    description: "Bermain sambil belajar? Tentu bisa! Coba game seru kami.",
-    color: "from-orange-500 to-amber-400",
-    points: 130,
-  }
+    id: 'quiz',
+    icon: FiHelpCircle,
+    title: "Kuis Pengetahuan",
+    description: "Uji wawasanmu dengan berbagai kuis menarik.",
+    color: "from-teal-500 to-cyan-400",
+    points: 90,
+  },
 ];
 
-// Terima prop 'onClick'
 const FeatureCard = ({ icon: Icon, title, description, color, index, points, onClick }) => {
   return (
-    // Tambahkan onClick di sini
     <motion.div
-      onClick={onClick} 
+      onClick={onClick}
       className={`relative rounded-2xl shadow-xl overflow-hidden cursor-pointer group bg-gradient-to-br ${color}`}
       initial={{ opacity: 0, y: 50, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: index * 0.1, type: 'spring', stiffness: 100, damping: 15 }}
       whileHover={{ scale: 1.05, y: -10, boxShadow: "0px 25px 40px -15px rgba(0,0,0,0.3)" }}
     >
-      <motion.div 
+      <motion.div
         className="absolute top-4 right-4 bg-white/30 backdrop-blur-sm px-3 py-1 rounded-full flex items-center space-x-1 font-bold text-white text-sm"
         initial={{scale: 0, opacity: 0}}
         animate={{scale: 1, opacity: 1}}
@@ -93,16 +79,16 @@ const FeatureCard = ({ icon: Icon, title, description, color, index, points, onC
   );
 };
 
-// Terima prop 'onNavigate'
 const ExplorePage = ({ onNavigate }) => {
   const totalPoints = 2500;
 
   const handleCardClick = (featureId) => {
-    // Jika ID-nya adalah 'dailyChallenge', navigasikan ke sana
+    // Navigasi berdasarkan ID fitur
     if (featureId === 'dailyChallenge') {
       onNavigate('dailyChallenge');
+    } else if (featureId === 'creativeZone') {
+      onNavigate('creativeZone'); // <-- Navigasi ke halaman baru
     } else {
-      // Untuk kartu lain, bisa ditambahkan logikanya nanti
       alert('Fitur ini akan segera hadir!');
     }
   };
@@ -113,21 +99,21 @@ const ExplorePage = ({ onNavigate }) => {
       <div className="md:hidden">
         <div className="min-h-screen bg-gray-50 pb-28">
           <header className="px-6 pt-10 pb-8 bg-gradient-to-b from-sesm-teal to-sesm-deep rounded-b-[3rem] shadow-lg relative overflow-hidden">
-            <motion.div 
+            <motion.div
               className="absolute -top-4 -left-4 w-24 h-24 bg-white/10 rounded-full"
               animate={{scale: [1, 1.1, 1]}}
               transition={{duration: 3, repeat: Infinity}}
             />
-            <motion.div 
+            <motion.div
               className="absolute -bottom-5 -right-2 w-16 h-16 bg-white/10 rounded-full"
               animate={{scale: [1, 1.1, 1]}}
               transition={{duration: 4, repeat: Infinity, delay: 0.5}}
             />
             <div className="flex items-center space-x-3 text-white relative z-10">
-                <motion.img 
-                  src={logoImage} 
-                  alt="SESM Logo" 
-                  className="w-16 h-16" 
+                <motion.img
+                  src={logoImage}
+                  alt="SESM Logo"
+                  className="w-16 h-16"
                   animate={{rotate: [0, 5, -5, 0]}}
                   transition={{duration: 4, repeat: Infinity, ease: "easeInOut"}}
                 />
@@ -136,7 +122,7 @@ const ExplorePage = ({ onNavigate }) => {
                     <p className="text-xs opacity-80">Temukan petualangan baru yang seru!</p>
                 </div>
             </div>
-            <motion.div 
+            <motion.div
               className="mt-6 bg-white/20 backdrop-blur-sm p-3 rounded-xl flex items-center justify-between"
               initial={{opacity:0, y: 20}}
               animate={{opacity:1, y: 0}}
@@ -153,11 +139,11 @@ const ExplorePage = ({ onNavigate }) => {
           <main className="px-6 mt-6">
             <div className="grid grid-cols-1 gap-6">
               {features.map((feature, index) => (
-                <FeatureCard 
-                  key={index} 
-                  {...feature} 
-                  index={index} 
-                  onClick={() => handleCardClick(feature.id)} // Teruskan event klik
+                <FeatureCard
+                  key={index}
+                  {...feature}
+                  index={index}
+                  onClick={() => handleCardClick(feature.id)}
                 />
               ))}
             </div>
@@ -170,9 +156,9 @@ const ExplorePage = ({ onNavigate }) => {
         <div className="w-full max-w-6xl mx-auto">
           <header className="flex items-center justify-between w-full mb-10">
             <div className='flex items-center space-x-4'>
-              <motion.img 
-                src={logoImage} 
-                alt="SESM Logo" 
+              <motion.img
+                src={logoImage}
+                alt="SESM Logo"
                 className="w-24 h-24 object-contain"
                 whileHover={{rotate: 360}}
                 transition={{duration: 1, ease: 'linear'}}
@@ -182,7 +168,7 @@ const ExplorePage = ({ onNavigate }) => {
                 <p className="text-lg text-gray-500 mt-1">Temukan petualangan baru di setiap sudutnya.</p>
               </div>
             </div>
-            <motion.div 
+            <motion.div
               className="bg-white p-4 rounded-2xl shadow-md flex items-center space-x-4"
               initial={{opacity:0, y: -20}}
               animate={{opacity:1, y: 0}}
@@ -199,11 +185,11 @@ const ExplorePage = ({ onNavigate }) => {
           <main>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
                 {features.map((feature, index) => (
-                  <FeatureCard 
-                    key={index} 
-                    {...feature} 
-                    index={index} 
-                    onClick={() => handleCardClick(feature.id)} // Teruskan event klik
+                  <FeatureCard
+                    key={index}
+                    {...feature}
+                    index={index}
+                    onClick={() => handleCardClick(feature.id)}
                   />
                 ))}
             </div>

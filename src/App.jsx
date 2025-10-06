@@ -14,7 +14,8 @@ import DiaryPage from './pages/DiaryPage.jsx';
 import BookmarkPage from './pages/BookmarkPage.jsx';
 import MatematikaPage from './pages/MatematikaPage.jsx';
 import ExplorePage from './pages/ExplorePage.jsx';
-import DailyChallengePage from './pages/DailyChallengePage.jsx'; // 1. Impor halaman baru
+import DailyChallengePage from './pages/DailyChallengePage.jsx';
+import CreativeZonePage from './pages/CreativeZonePage.jsx'; // 1. Impor halaman baru
 
 // Impor layout utama
 import MainLayout from './layouts/MainLayout.jsx';
@@ -44,7 +45,7 @@ function App() {
   };
 
   const renderView = () => {
-    // 2. Daftarkan 'dailyChallenge' agar menggunakan MainLayout
+    // 2. Daftarkan 'creativeZone' agar menggunakan MainLayout
     const viewsInMainLayout = [
       'home',
       'explore',
@@ -52,7 +53,8 @@ function App() {
       'profile',
       'activityLog',
       'diary',
-      'dailyChallenge' 
+      'dailyChallenge',
+      'creativeZone' // Tambahkan di sini
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
@@ -65,8 +67,9 @@ function App() {
       if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
       if (currentView === 'activityLog') pageComponent = <ActivityLogPage onNavigate={navigate} />;
       if (currentView === 'diary') pageComponent = <DiaryPage onNavigate={navigate} />;
-      // 3. Tambahkan kondisi untuk merender DailyChallengePage
       if (currentView === 'dailyChallenge') pageComponent = <DailyChallengePage onNavigate={navigate} />;
+      // 3. Tambahkan kondisi untuk merender CreativeZonePage
+      if (currentView === 'creativeZone') pageComponent = <CreativeZonePage onNavigate={navigate} />;
 
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
