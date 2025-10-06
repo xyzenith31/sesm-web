@@ -3,15 +3,14 @@ import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import RegisterForm from '../components/RegisterForm';
 import Logo from '../assets/logo.png';
-import Card from '../components/Card'; // <-- Impor komponen Card
+import Card from '../components/Card';
 
 const RegisterPage = ({ onSwitchToLogin }) => {
-  // Animasi yang konsisten dengan halaman login
   const itemContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 } // Jeda sedikit lebih cepat untuk form yang lebih panjang
+      transition: { staggerChildren: 0.1 }
     }
   };
 
@@ -44,7 +43,8 @@ const RegisterPage = ({ onSwitchToLogin }) => {
           </motion.h1>
 
           <motion.div variants={itemVariants} className="w-full">
-            <RegisterForm />
+            {/* Teruskan prop onSwitchToLogin ke RegisterForm */}
+            <RegisterForm onSwitchToLogin={onSwitchToLogin} />
           </motion.div>
 
           <motion.p
