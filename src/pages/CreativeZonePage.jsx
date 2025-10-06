@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiEdit } from 'react-icons/fi';
-import { FaPalette } from 'react-icons/fa'; // DIPERBAIKI: Impor FaPalette dari react-icons/fa
+import { FaPalette } from 'react-icons/fa';
 
 const creativeFeatures = [
   {
     id: 'drawing',
-    icon: FaPalette, // DIPERBAIKI: Menggunakan FaPalette
+    icon: FaPalette,
     title: "Menggambar & Mewarnai",
     description: "Tuangkan idemu di atas kanvas digital atau warnai gambar seru.",
     color: "from-sky-400 to-blue-500",
@@ -43,9 +43,12 @@ const FeatureSelectionCard = ({ icon: Icon, title, description, color, index }) 
 };
 
 const CreativeZonePage = ({ onNavigate }) => {
-  const handleFeatureClick = (featureTitle) => {
-    // Logika untuk navigasi ke fitur spesifik bisa ditambahkan di sini nanti
-    alert(`Fitur '${featureTitle}' akan segera hadir!`);
+  const handleFeatureClick = (featureId, featureTitle) => {
+    if (featureId === 'drawing') {
+      onNavigate('drawing'); // Langsung navigasi ke halaman menggambar
+    } else {
+      alert(`Fitur '${featureTitle}' akan segera hadir!`);
+    }
   };
 
   return (
@@ -65,7 +68,7 @@ const CreativeZonePage = ({ onNavigate }) => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {creativeFeatures.map((feature, index) => (
-            <div key={feature.id} onClick={() => handleFeatureClick(feature.title)}>
+            <div key={feature.id} onClick={() => handleFeatureClick(feature.id, feature.title)}>
               <FeatureSelectionCard {...feature} index={index} />
             </div>
           ))}

@@ -15,7 +15,8 @@ import BookmarkPage from './pages/BookmarkPage.jsx';
 import MatematikaPage from './pages/MatematikaPage.jsx';
 import ExplorePage from './pages/ExplorePage.jsx';
 import DailyChallengePage from './pages/DailyChallengePage.jsx';
-import CreativeZonePage from './pages/CreativeZonePage.jsx'; // 1. Impor halaman baru
+import CreativeZonePage from './pages/CreativeZonePage.jsx';
+import DrawingPage from './pages/DrawingPage.jsx'; // 1. Impor halaman baru
 
 // Impor layout utama
 import MainLayout from './layouts/MainLayout.jsx';
@@ -45,7 +46,6 @@ function App() {
   };
 
   const renderView = () => {
-    // 2. Daftarkan 'creativeZone' agar menggunakan MainLayout
     const viewsInMainLayout = [
       'home',
       'explore',
@@ -54,7 +54,7 @@ function App() {
       'activityLog',
       'diary',
       'dailyChallenge',
-      'creativeZone' // Tambahkan di sini
+      'creativeZone'
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
@@ -68,7 +68,6 @@ function App() {
       if (currentView === 'activityLog') pageComponent = <ActivityLogPage onNavigate={navigate} />;
       if (currentView === 'diary') pageComponent = <DiaryPage onNavigate={navigate} />;
       if (currentView === 'dailyChallenge') pageComponent = <DailyChallengePage onNavigate={navigate} />;
-      // 3. Tambahkan kondisi untuk merender CreativeZonePage
       if (currentView === 'creativeZone') pageComponent = <CreativeZonePage onNavigate={navigate} />;
 
       return (
@@ -116,6 +115,13 @@ function App() {
         return (
           <motion.div key="matematika1" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             <MatematikaPage onNavigate={navigate} />
+          </motion.div>
+        );
+      // 2. Tambahkan case baru untuk 'drawing'
+      case 'drawing':
+        return (
+          <motion.div key="drawing" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
+            <DrawingPage onNavigate={navigate} />
           </motion.div>
         );
       default:
