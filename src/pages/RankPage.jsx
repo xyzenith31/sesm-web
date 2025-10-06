@@ -15,11 +15,11 @@ const ranks = [
 
 // --- DATA DUMMY UNTUK LEADERBOARD ---
 const leaderboardData = [
-    { id: 1, name: 'Budi Jenius', points: 125500, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Budi' },
-    { id: 2, name: 'Citra Hebat', points: 95200, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Citra' },
-    { id: 3, name: 'Adi Cerdas', points: 78900, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Adi' },
-    { id: 4, name: 'Dian Pintar', points: 45100, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Dian' },
-    { id: 5, name: 'Eka Rajin', points: 22500, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Eka' },
+    { id: 1, name: 'Yanto Kopling', points: 125500, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Budi' },
+    { id: 2, name: 'Citra Aselole', points: 95200, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Citra' },
+    { id: 3, name: 'Pahmi Stang', points: 78900, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Adi' },
+    { id: 4, name: 'Dian Carkecor', points: 45100, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Dian' },
+    { id: 5, name: 'Ekarso', points: 22500, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Eka' },
 ];
 
 
