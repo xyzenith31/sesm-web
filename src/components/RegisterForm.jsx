@@ -7,7 +7,7 @@ const RegisterForm = ({ onNavigate }) => {
     username: '',
     email: '',
     fullName: '',
-    phone: '',
+    age: '', // ubah dari phone menjadi age
     password: '',
     confirmPassword: '',
   });
@@ -16,7 +16,6 @@ const RegisterForm = ({ onNavigate }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Style input yang konsisten
   const inputStyles = "w-full px-5 py-3 text-sesm-deep bg-white rounded-xl focus:outline-none focus:ring-4 focus:ring-sesm-sky/50 transition-shadow duration-300 placeholder:text-gray-500";
 
   const handleChange = (e) => {
@@ -43,10 +42,9 @@ const RegisterForm = ({ onNavigate }) => {
         formData.username,
         formData.email,
         formData.fullName,
-        formData.phone,
+        formData.age, // ubah dari phone ke age
         formData.password
       );
-      // Jika berhasil, navigasi ke halaman login
       onNavigate('login');
     } catch (err) {
       const resMessage =
@@ -67,7 +65,18 @@ const RegisterForm = ({ onNavigate }) => {
       <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} className={inputStyles} required />
       <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className={inputStyles} required />
       <input type="text" name="fullName" placeholder="Nama Lengkap" value={formData.fullName} onChange={handleChange} className={inputStyles} required />
-      <input type="tel" name="phone" placeholder="No. HP" value={formData.phone} onChange={handleChange} className={inputStyles} required />
+      
+      {/* Ubah field No HP menjadi Umur */}
+      <input 
+        type="number" 
+        name="age" 
+        placeholder="Umur" 
+        value={formData.age} 
+        onChange={handleChange} 
+        className={inputStyles} 
+        required 
+        min="1"
+      />
 
       <div className="relative">
         <input
