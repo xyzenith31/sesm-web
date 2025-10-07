@@ -8,8 +8,9 @@ const NavItem = ({ icon, label, isActive, onClick }) => (
   </button>
 );
 
-// Menggunakan 'currentPage' sebagai prop
-const BottomNavBar = ({ currentPage, onNavigate }) => {
+const BottomNavBar = ({ activePage, onNavigate }) => {
+  // Fungsi ini akan memeriksa apakah onNavigate adalah fungsi sebelum memanggilnya.
+  // Jika tidak, tidak akan terjadi apa-apa (dan tidak ada error).
   const handleNavigation = (view) => {
     if (typeof onNavigate === 'function') {
       onNavigate(view);
@@ -22,29 +23,25 @@ const BottomNavBar = ({ currentPage, onNavigate }) => {
         <NavItem
             icon={<FiHome size={24} />}
             label="Home"
-            // Memeriksa dengan 'currentPage'
-            isActive={currentPage === 'home'}
+            isActive={activePage === 'home'}
             onClick={() => handleNavigation('home')}
         />
         <NavItem
             icon={<FiSearch size={24} />}
             label="Explore"
-            // Memeriksa dengan 'currentPage'
-            isActive={currentPage === 'explore'}
+            isActive={activePage === 'explore'}
             onClick={() => handleNavigation('explore')}
         />
         <NavItem
             icon={<FiBookmark size={24} />}
             label="Bookmark"
-            // Memeriksa dengan 'currentPage'
-            isActive={currentPage === 'bookmark'}
+            isActive={activePage === 'bookmark'}
             onClick={() => handleNavigation('bookmark')}
         />
         <NavItem
             icon={<FiUser size={24} />}
             label="Profile"
-            // Memeriksa dengan 'currentPage'
-            isActive={currentPage === 'profile'}
+            isActive={activePage === 'profile'}
             onClick={() => handleNavigation('profile')}
         />
       </div>

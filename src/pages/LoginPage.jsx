@@ -2,10 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import LoginForm from '../components/LoginForm';
-import Logo from '../assets/logo.png';
+import Logo from '../assets/logo.png'; // Path ini sudah benar
 import Card from '../components/Card';
 
-const LoginPage = ({ onNavigate }) => {
+const LoginPage = ({ onSwitchToRegister, onLoginSuccess }) => {
+  // Animasi untuk item di dalam kartu
   const itemContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -28,7 +29,9 @@ const LoginPage = ({ onNavigate }) => {
           initial="hidden"
           animate="visible"
         >
+          {/* Logo ditampilkan menggunakan tag <img> */}
           <motion.div variants={itemVariants}>
+            {/* INI BAGIAN YANG DIPERBAIKI */}
             <img 
               src={Logo} 
               alt="Sesm Logo" 
@@ -44,7 +47,7 @@ const LoginPage = ({ onNavigate }) => {
           </motion.h1>
 
           <motion.div variants={itemVariants} className="w-full">
-            <LoginForm onNavigate={onNavigate} />
+            <LoginForm onLoginSuccess={onLoginSuccess} />
           </motion.div>
 
           <motion.p
@@ -53,7 +56,7 @@ const LoginPage = ({ onNavigate }) => {
           >
             Don't have an account?{' '}
             <button
-              onClick={() => onNavigate('register')}
+              onClick={onSwitchToRegister}
               className="font-bold underline transition hover:text-white"
             >
               Create Account

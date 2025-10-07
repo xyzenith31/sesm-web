@@ -2,18 +2,15 @@ import React from 'react';
 import SideBar from '../components/SideBar';
 import BottomNavBar from '../components/BottomNavBar';
 
-const MainLayout = ({ children, currentPage, onNavigate }) => {
+const MainLayout = ({ children, activePage, onNavigate }) => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Meneruskan prop 'currentPage' yang benar */}
-      <SideBar currentPage={currentPage} onNavigate={onNavigate} />
-      
+      <SideBar activePage={activePage} onNavigate={onNavigate} />
       <main className="md:ml-64 pb-28 md:pb-0">
         {children}
       </main>
 
-      {/* Meneruskan prop 'currentPage' yang benar */}
-      <BottomNavBar currentPage={currentPage} onNavigate={onNavigate} />
+      <BottomNavBar activePage={activePage} onNavigate={onNavigate} />
     </div>
   );
 };

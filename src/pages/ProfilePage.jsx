@@ -164,27 +164,28 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
 );
 
 
-const ProfilePage = ({ onNavigate, user, setUser }) => {
+const ProfilePage = ({ onNavigate }) => {
   
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const handleLogout = () => {
     console.log("Pengguna logout...");
     setIsLogoutModalOpen(false);
-    // Logika logout Anda di sini
-    onNavigate('login');
-  };
-  
-  const handleNavigateToSettings = () => {
-    onNavigate('accountSettings', { user, setUser });
+    // --- INI BAGIAN YANG DIUBAH ---
+    onNavigate('login'); // Arahkan ke halaman login
   };
 
   const currentUserPoints = 15500;
-  
-  if (!user) {
-    return <div>Loading...</div>; // Tampilkan loading saat data user belum siap
-  }
-
+  const user = {
+    name: 'Siswa Cerdas',
+    level: 'SD - Kelas 4',
+    avatar: 'https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=SiswaCerdas',
+    stats: [
+      { icon: FiTrendingUp, value: '15', label: 'Materi dilihat', color: 'text-yellow-300' },
+      { icon: FiCheckSquare, value: '8', label: 'Tugas Selesai', color: 'text-green-300' },
+      { icon: FiClock, value: '5 Jam', label: 'Waktu Belajar', color: 'text-sky-300' },
+    ],
+  };
 
   return (
     <>
@@ -229,7 +230,7 @@ const ProfilePage = ({ onNavigate, user, setUser }) => {
               <div>
                 <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-2">Pengaturan</h3>
                 <div className="space-y-3">
-                  <ProfileMenuItem icon={FiUser} label="Pengaturan Akun" onClick={handleNavigateToSettings} />
+                  <ProfileMenuItem icon={FiUser} label="Pengaturan Akun" onClick={() => onNavigate('accountSettings')} />
                   <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" />
                 </div>
               </div>
@@ -280,7 +281,7 @@ const ProfilePage = ({ onNavigate, user, setUser }) => {
               <div>
                   <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-3">PENGATURAN</h3>
                   <div className="space-y-3">
-                    <ProfileMenuItem icon={FiUser} label="Pengaturan Akun" onClick={handleNavigateToSettings} />
+                    <ProfileMenuItem icon={FiUser} label="Pengaturan Akun" onClick={() => onNavigate('accountSettings')} />
                     <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" />
                   </div>
               </div>

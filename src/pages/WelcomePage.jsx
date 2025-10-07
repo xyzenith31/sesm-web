@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import WelcomeLayout from '../layouts/WelcomeLayout';
+import WelcomeLayout from '../layouts/WelcomeLayout'; // 1. Impor layout baru
 import Logo from '../assets/logo.png';
 
-const WelcomePage = ({ onNavigate }) => {
+const WelcomePage = ({ onExplore }) => {
   return (
     <WelcomeLayout>
       <div className="flex flex-col min-h-screen">
@@ -29,6 +29,7 @@ const WelcomePage = ({ onNavigate }) => {
           </div>
         </motion.div>
 
+        {/* === Area Kartu Putih Bawah === */}
         <motion.div
           initial={{ y: "100%" }}
           animate={{ y: "0%" }}
@@ -36,7 +37,8 @@ const WelcomePage = ({ onNavigate }) => {
           className="bg-white w-full rounded-t-[2.5rem] shadow-2xl p-8 flex flex-col items-center"
         >
           <button
-            onClick={() => onNavigate('login')}
+            onClick={onExplore}
+            // Menggunakan warna tombol dari tailwind.config.js
             className="w-full max-w-xs py-4 text-lg font-bold text-sesm-button-text bg-sesm-button-bg rounded-full transition-all duration-300 hover:bg-gray-300 active:scale-95 shadow-lg"
           >
             Explore Now
