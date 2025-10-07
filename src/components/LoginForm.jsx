@@ -1,17 +1,34 @@
 import React, { useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import AuthService from '../api/auth.js'; // <-- Impor service baru
 
 const LoginForm = ({ onLoginSuccess }) => {
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
   const handleSignIn = (event) => {
     event.preventDefault();
-    if (onLoginSuccess) {
-      onLoginSuccess();
-    }
+    setMessage('');
+    setLoading(true);
+
+    AuthService.login(identifier, password)
+      .then(() => {
+        onLoginSuccess(); // Panggil fungsi ini jika login berhasil
+      })
+      .catch((error) => {
+        const resMessage =
+          (error.response && error.response.data && error.response.data.message) ||
+          error.message ||
+          error.toString();
+        
+        setMessage(resMessage);
+        setLoading(false);
+      });
   };
 
-  // Input field kembali menggunakan background putih agar kontras dengan kartu
   const inputStyles = "w-full px-5 py-3 text-sesm-deep bg-white rounded-xl focus:outline-none focus:ring-4 focus:ring-sesm-sky/50 transition-shadow duration-300 placeholder:text-gray-500";
 
   return (
@@ -19,15 +36,21 @@ const LoginForm = ({ onLoginSuccess }) => {
       <div>
         <input
           type="text"
-          placeholder="Username or No. HP"
+          placeholder="Username atau Email"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
           className={inputStyles}
+          required
         />
       </div>
       <div className="relative">
         <input
           type={showPassword ? "text" : "password"}
           placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           className={inputStyles}
+          required
         />
         <button
           type="button"
@@ -47,14 +70,20 @@ const LoginForm = ({ onLoginSuccess }) => {
       </div>
 
       <div className="pt-2">
-        {/* Tombol diubah menjadi putih untuk kontras maksimal */}
         <button
           type="submit"
-          className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95"
+          className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95 disabled:bg-gray-400"
+          disabled={loading}
         >
-          SIGN IN
+          {loading ? 'Loading...' : 'SIGN IN'}
         </button>
       </div>
+      
+      {message && (
+         <div className="p-3 mt-4 rounded-lg text-center font-bold bg-red-500/80 text-white">
+          {message}
+        </div>
+      )}
     </form>
   );
 };

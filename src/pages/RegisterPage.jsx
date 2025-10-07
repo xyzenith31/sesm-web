@@ -11,13 +11,13 @@ const RegisterPage = ({ onSwitchToLogin }) => {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 } // Jeda sedikit lebih cepat untuk form yang lebih panjang
-    }
+      transition: { staggerChildren: 0.1 }, // Jeda sedikit lebih cepat untuk form yang lebih panjang
+    },
   };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
+    visible: { y: 0, opacity: 1 },
   };
 
   return (
@@ -43,8 +43,9 @@ const RegisterPage = ({ onSwitchToLogin }) => {
             Create Account
           </motion.h1>
 
+          {/* Perbaikan utama: meneruskan onSwitchToLogin ke RegisterForm */}
           <motion.div variants={itemVariants} className="w-full">
-            <RegisterForm />
+            <RegisterForm onSwitchToLogin={onSwitchToLogin} />
           </motion.div>
 
           <motion.p
