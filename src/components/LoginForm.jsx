@@ -1,50 +1,48 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // 1. GANTI PROPS DENGAN useNavigate
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import axios from 'axios';
+import AuthService from '../services/auth.service'; // 2. PAKAI AuthService BIAR KONSISTEN
 
-const LoginForm = ({ onLoginSuccess }) => {
+// 3. Hapus props 'onLoginSuccess'
+const LoginForm = () => {
   const [formData, setFormData] = useState({
     login: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // Tambahkan state loading
+  const navigate = useNavigate(); // 4. Panggil hook navigasi
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSignIn = async (event) => {
+  const handleSignIn = (event) => {
     event.preventDefault();
     setError('');
+    setLoading(true);
 
-    try {
-      // Pastikan URL ini sudah benar
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
-        login: formData.login,
-        password: formData.password
-      });
-
-      if (response.data.accessToken) {
-        if (onLoginSuccess) {
-          onLoginSuccess(response.data);
-        }
+    // 5. Gunakan AuthService untuk login
+    AuthService.login(formData.login, formData.password).then(
+      () => {
+        // Jika berhasil, AuthService sudah menyimpan data user
+        // Langsung pindah ke homepage
+        navigate('/home');
+      },
+      (err) => {
+        // Logika untuk menampilkan error
+        const resMessage =
+          (err.response &&
+            err.response.data &&
+            err.response.data.message) ||
+          err.message ||
+          'Tidak bisa terhubung ke server. Pastikan server sudah jalan.';
+        
+        setError(resMessage);
+        setLoading(false);
       }
-
-    } catch (err) {
-      // --- PENAMBAHAN UNTUK DEBUGGING ---
-      console.error("Terjadi error saat mencoba login:", err);
-
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
-      } else if (err.request) {
-        // Ini terjadi jika request dikirim tapi tidak ada response (backend mati/CORS)
-        setError('Tidak bisa terhubung ke server. Pastikan server backend sudah berjalan.');
-      } else {
-        // Error lainnya
-        setError('Login gagal. Periksa kembali username/email dan password Anda.');
-      }
-    }
+    );
   };
 
   const inputStyles = "w-full px-5 py-3 text-sesm-deep bg-white rounded-xl focus:outline-none focus:ring-4 focus:ring-sesm-sky/50 transition-shadow duration-300 placeholder:text-gray-500";
@@ -93,9 +91,10 @@ const LoginForm = ({ onLoginSuccess }) => {
       <div className="pt-2">
         <button
           type="submit"
-          className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95"
+          className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95 disabled:opacity-70"
+          disabled={loading} // Tambahkan disabled saat loading
         >
-          SIGN IN
+          {loading ? 'LOADING...' : 'SIGN IN'}
         </button>
       </div>
     </form>

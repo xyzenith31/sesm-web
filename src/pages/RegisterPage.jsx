@@ -1,11 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom'; // <-- 1. IMPORT Link
 import AuthLayout from '../layouts/AuthLayout';
 import RegisterForm from '../components/RegisterForm';
 import Logo from '../assets/logo.png';
 import Card from '../components/Card';
 
-const RegisterPage = ({ onSwitchToLogin }) => {
+// 2. Hapus prop onSwitchToLogin
+const RegisterPage = () => {
   const itemContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -43,8 +45,8 @@ const RegisterPage = ({ onSwitchToLogin }) => {
           </motion.h1>
 
           <motion.div variants={itemVariants} className="w-full">
-            {/* Teruskan prop onSwitchToLogin ke RegisterForm */}
-            <RegisterForm onSwitchToLogin={onSwitchToLogin} />
+            {/* 3. Hapus prop onSwitchToLogin. RegisterForm akan handle navigasi sendiri */}
+            <RegisterForm />
           </motion.div>
 
           <motion.p
@@ -52,12 +54,13 @@ const RegisterPage = ({ onSwitchToLogin }) => {
             className="mt-6 text-sm text-center text-white/80"
           >
             Already have an account?{' '}
-            <button
-              onClick={onSwitchToLogin}
+            {/* 4. GANTI <button> DENGAN <Link> */}
+            <Link
+              to="/login"
               className="font-bold underline transition hover:text-white"
             >
               Sign In
-            </button>
+            </Link>
           </motion.p>
         </motion.div>
       </Card>
