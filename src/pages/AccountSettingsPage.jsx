@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiCamera, FiEye, FiEyeOff, FiUpload, FiTrash2 } from 'react-icons/fi';
 
@@ -11,12 +11,12 @@ const defaultAvatars = [
     'https://api.dicebear.com/7.x/notionists/svg?seed=Kreatif'
 ];
 
-const AccountSettingsPage = ({ onNavigate }) => {
+const AccountSettingsPage = ({ onNavigate, user, setUser }) => {
     const [formData, setFormData] = useState({
-        username: 'siswacerdas',
-        email: 'siswa.cerdas@email.com',
-        nama: 'Siswa Cerdas',
-        umur: '10',
+        username: '',
+        email: '',
+        nama: '',
+        umur: '',
         password: '',
         confirmPassword: '',
     });
@@ -24,6 +24,20 @@ const AccountSettingsPage = ({ onNavigate }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                username: user.name.toLowerCase().replace(' ', ''),
+                email: `${user.name.toLowerCase().replace(' ', '.')}@email.com`,
+                nama: user.name,
+                umur: user.level.split(' - ')[1].split(' ')[1],
+                password: '',
+                confirmPassword: '',
+            });
+            setAvatar(user.avatar);
+        }
+    }, [user]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -36,6 +50,14 @@ const AccountSettingsPage = ({ onNavigate }) => {
             alert('Konfirmasi password tidak cocok!');
             return;
         }
+
+        const updatedUser = {
+            ...user,
+            name: formData.nama,
+            level: `SD - Kelas ${formData.umur}`,
+            avatar: avatar,
+        };
+        setUser(updatedUser);
         alert('Perubahan berhasil disimpan!');
         onNavigate('profile');
     };
@@ -69,7 +91,7 @@ const AccountSettingsPage = ({ onNavigate }) => {
             </header>
 
             <main className="flex-grow overflow-y-auto p-6">
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="max-w-xl mx-auto"
@@ -78,20 +100,19 @@ const AccountSettingsPage = ({ onNavigate }) => {
                         <div className="flex flex-col items-center mb-6">
                             <div className="relative mb-4">
                                 <img src={avatar} alt="User Avatar" className="w-32 h-32 rounded-full border-4 border-sesm-sky object-cover" />
-                                <button 
+                                <button
                                     onClick={handleUploadClick}
                                     className="absolute -right-2 bottom-0 bg-sesm-teal text-white p-2 rounded-full border-2 border-white shadow-md hover:bg-sesm-deep transition-colors"
                                     title="Unggah foto profil"
                                 >
                                     <FiCamera size={18} />
                                 </button>
-                                {/* === BAGIAN YANG DIPERBAIKI === */}
-                                <button 
+                                <button
                                     onClick={handleDeleteAvatar}
                                     disabled={isDefaultAvatar}
                                     className={`absolute -left-2 bottom-0 p-2 rounded-full border-2 border-white shadow-md transition-colors ${
-                                        isDefaultAvatar 
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                        isDefaultAvatar
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                         : 'bg-red-500 text-white hover:bg-red-700'
                                     }`}
                                     title="Hapus foto profil"
@@ -103,20 +124,20 @@ const AccountSettingsPage = ({ onNavigate }) => {
                             <h3 className="font-bold text-gray-700 mb-3">Pilih Avatar Bawaan</h3>
                             <div className="flex justify-center items-center flex-wrap gap-3">
                                 {defaultAvatars.map((avatarUrl, index) => (
-                                    <motion.img 
+                                    <motion.img
                                         key={index}
-                                        src={avatarUrl} 
-                                        alt={`Avatar ${index + 1}`} 
+                                        src={avatarUrl}
+                                        alt={`Avatar ${index + 1}`}
                                         className={`w-12 h-12 rounded-full cursor-pointer border-2 transition-all ${avatar === avatarUrl ? 'border-sesm-teal scale-110' : 'border-gray-200'}`}
                                         onClick={() => setAvatar(avatarUrl)}
                                         whileHover={{ scale: 1.1 }}
                                     />
                                 ))}
                             </div>
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                className="hidden" 
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
                                 onChange={handleFileChange}
                                 accept="image/png, image/jpeg"
                             />

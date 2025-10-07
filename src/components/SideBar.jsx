@@ -18,7 +18,14 @@ const NavLink = ({ icon, label, isActive, onClick }) => (
   </button>
 );
 
-const SideBar = ({ activePage, onNavigate }) => {
+// Menggunakan 'currentPage' sebagai prop
+const SideBar = ({ currentPage, onNavigate }) => {
+  const handleLogout = () => {
+    if (typeof onNavigate === 'function') {
+      onNavigate('login');
+    }
+  };
+
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen bg-white shadow-xl fixed">
       <div className="flex items-center justify-center p-6 border-b">
@@ -28,30 +35,38 @@ const SideBar = ({ activePage, onNavigate }) => {
         <NavLink 
           icon={<FiHome size={20} />} 
           label="Home" 
-          isActive={activePage === 'home'} 
+          // Memeriksa dengan 'currentPage'
+          isActive={currentPage === 'home'} 
           onClick={() => onNavigate('home')} 
         />
         <NavLink 
           icon={<FiSearch size={20} />} 
           label="Explore" 
-          isActive={activePage === 'explore'} 
+          // Memeriksa dengan 'currentPage'
+          isActive={currentPage === 'explore'} 
           onClick={() => onNavigate('explore')} 
         />
         <NavLink 
           icon={<FiBookmark size={20} />} 
           label="Bookmark" 
-          isActive={activePage === 'bookmark'} 
+          // Memeriksa dengan 'currentPage'
+          isActive={currentPage === 'bookmark'} 
           onClick={() => onNavigate('bookmark')} 
         />
         <NavLink 
           icon={<FiUser size={20} />} 
           label="Profile" 
-          isActive={activePage === 'profile'} 
+          // Memeriksa dengan 'currentPage'
+          isActive={currentPage === 'profile'} 
           onClick={() => onNavigate('profile')} 
         />
       </nav>
       <div className="p-4 border-t">
-        <NavLink icon={<FiLogOut size={20} />} label="Logout" />
+        <NavLink 
+          icon={<FiLogOut size={20} />} 
+          label="Logout" 
+          onClick={handleLogout} 
+        />
       </div>
     </aside>
   );
