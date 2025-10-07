@@ -1,10 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import WelcomeLayout from '../layouts/WelcomeLayout';
 import Logo from '../assets/logo.png';
 
-const WelcomePage = () => {
+const WelcomePage = ({ onNavigate }) => {
   return (
     <WelcomeLayout>
       <div className="flex flex-col min-h-screen">
@@ -36,13 +35,12 @@ const WelcomePage = () => {
           transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.3 }}
           className="bg-white w-full rounded-t-[2.5rem] shadow-2xl p-8 flex flex-col items-center"
         >
-          <Link to="/login" className="w-full max-w-xs">
-            <button
-              className="w-full py-4 text-lg font-bold text-sesm-button-text bg-sesm-button-bg rounded-full transition-all duration-300 hover:bg-gray-300 active:scale-95 shadow-lg"
-            >
-              Explore Now
-            </button>
-          </Link>
+          <button
+            onClick={() => onNavigate('login')}
+            className="w-full max-w-xs py-4 text-lg font-bold text-sesm-button-text bg-sesm-button-bg rounded-full transition-all duration-300 hover:bg-gray-300 active:scale-95 shadow-lg"
+          >
+            Explore Now
+          </button>
         </motion.div>
       </div>
     </WelcomeLayout>

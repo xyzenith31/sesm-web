@@ -28,7 +28,7 @@ import AuthService from './services/auth.service';
 
 const App = () => {
   // State utama untuk mengontrol halaman yang ditampilkan
-  const [currentPage, setCurrentPage] = useState(AuthService.getCurrentUser() ? 'home' : 'login');
+  const [currentPage, setCurrentPage] = useState(AuthService.getCurrentUser() ? 'home' : 'welcome');
   const [pageProps, setPageProps] = useState({});
   
   // State untuk data pengguna

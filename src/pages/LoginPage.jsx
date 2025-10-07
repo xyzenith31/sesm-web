@@ -1,13 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom'; // <-- 1. IMPORT Link
 import AuthLayout from '../layouts/AuthLayout';
 import LoginForm from '../components/LoginForm';
 import Logo from '../assets/logo.png';
 import Card from '../components/Card';
 
-// 2. Hapus semua props (onSwitchToRegister, onLoginSuccess) karena tidak dipakai lagi
-const LoginPage = () => {
+const LoginPage = ({ onNavigate }) => {
   const itemContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -46,8 +44,7 @@ const LoginPage = () => {
           </motion.h1>
 
           <motion.div variants={itemVariants} className="w-full">
-            {/* 3. Hapus prop onLoginSuccess. LoginForm akan handle navigasi sendiri */}
-            <LoginForm />
+            <LoginForm onNavigate={onNavigate} />
           </motion.div>
 
           <motion.p
@@ -55,13 +52,12 @@ const LoginPage = () => {
             className="mt-8 text-sm text-center text-white/80"
           >
             Don't have an account?{' '}
-            {/* 4. GANTI <button> DENGAN <Link> */}
-            <Link
-              to="/register"
+            <button
+              onClick={() => onNavigate('register')}
               className="font-bold underline transition hover:text-white"
             >
               Create Account
-            </Link>
+            </button>
           </motion.p>
         </motion.div>
       </Card>
