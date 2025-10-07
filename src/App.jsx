@@ -19,18 +19,21 @@ import CreativeZonePage from './pages/CreativeZonePage.jsx';
 import DrawingPage from './pages/DrawingPage.jsx';
 import WritingPage from './pages/WritingPage.jsx';
 import InteractiveStoryPage from './pages/InteractiveStoryPage.jsx';
-import QuizPage from './pages/QuizPage.jsx'; // Halaman menu kuis yang baru
+import QuizPage from './pages/QuizPage.jsx';
 import StudyReportPage from './pages/StudyReportPage.jsx';
 import AccountSettingsPage from './pages/AccountSettingsPage.jsx';
 import RankPage from './pages/RankPage.jsx';
 
 // Impor komponen dan layout
 import MainLayout from './layouts/MainLayout.jsx';
-import QuizForm from './components/QuizForm.jsx'; // Komponen form kuis yang baru
+import QuizForm from './components/QuizForm.jsx';
+
+// 1. Impor AuthService untuk mengecek data user dari localStorage
+import AuthService from './api/auth.js';
 
 function App() {
   const [currentView, setCurrentView] = useState('welcome');
-  const [selectedQuiz, setSelectedQuiz] = useState(null); // State untuk menyimpan data kuis yang dipilih
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
 
   const navigate = (view) => setCurrentView(view);
 
@@ -41,14 +44,26 @@ function App() {
 
   const handleCompleteQuiz = () => {
     setSelectedQuiz(null);
-    navigate('quiz'); // Kembali ke menu kuis
+    navigate('quiz');
   };
 
   const showLoginPage = () => setCurrentView('login');
   const showRegisterPage = () => setCurrentView('register');
-  const showLevelSelectionPage = () => setCurrentView('levelSelection');
-  const showChooseSelectionPage = () => setCurrentView('chooseSelection');
   const showHomePage = () => setCurrentView('home');
+
+  // 2. Buat fungsi onLoginSuccess yang lebih pintar
+  const onLoginSuccess = () => {
+    const user = AuthService.getCurrentUser(); // Ambil data user yang baru login
+
+    // Cek jika user sudah punya data 'jenjang' (bukan null atau undefined)
+    if (user && user.jenjang) {
+      // Jika sudah ada, langsung ke halaman utama
+      setCurrentView('home');
+    } else {
+      // Jika belum ada (user baru), arahkan ke halaman pemilihan jenjang
+      setCurrentView('levelSelection');
+    }
+  };
 
   const pageVariants = {
     initial: { opacity: 0, scale: 0.98 },
@@ -65,7 +80,7 @@ function App() {
   const renderView = () => {
     const viewsInMainLayout = [
       'home', 'explore', 'bookmark', 'profile', 'activityLog', 'diary', 'dailyChallenge', 
-      'creativeZone', 'studyReport', 'accountSettings', 'rank', 'quiz' // 'quiz' sekarang merujuk ke menu
+      'creativeZone', 'studyReport', 'accountSettings', 'rank', 'quiz'
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
@@ -81,7 +96,7 @@ function App() {
       if (currentView === 'diary') pageComponent = <DiaryPage onNavigate={navigate} />;
       if (currentView === 'creativeZone') pageComponent = <CreativeZonePage onNavigate={navigate} />;
       if (currentView === 'dailyChallenge') pageComponent = <DailyChallengePage onNavigate={navigate} />;
-      if (currentView === 'quiz') pageComponent = <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />; // <-- Diperbarui
+      if (currentView === 'quiz') pageComponent = <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />;
 
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
@@ -93,17 +108,21 @@ function App() {
     }
 
     switch (currentView) {
-      // ... (case lain tetap sama)
-      case 'login': return <motion.div key="login" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><LoginPage onSwitchToRegister={showRegisterPage} onLoginSuccess={showLevelSelectionPage} /></motion.div>;
+      // 3. Ganti 'onLoginSuccess' di sini dengan fungsi yang baru
+      case 'login': return <motion.div key="login" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><LoginPage onSwitchToRegister={showRegisterPage} onLoginSuccess={onLoginSuccess} /></motion.div>;
+      
       case 'register': return <motion.div key="register" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><RegisterPage onSwitchToLogin={showLoginPage} /></motion.div>;
-      case 'levelSelection': return <motion.div key="levelSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><LevelSelectionPage onSelectSD={showChooseSelectionPage} onSelectTK={showHomePage} onExit={showLoginPage} /></motion.div>;
+      
+      // Navigasi dari halaman level selection tetap sama
+      case 'levelSelection': return <motion.div key="levelSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><LevelSelectionPage onSelectSD={() => navigate('chooseSelection')} onSelectTK={showHomePage} onExit={showLoginPage} /></motion.div>;
       case 'chooseSelection': return <motion.div key="chooseSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><ChooseSelectionPage onExit={showLoginPage} onSelectClass1={showHomePage} onSelectClass2={showHomePage} onSelectClass3_4={showHomePage} onSelectClass5={showHomePage} onSelectClass6={showHomePage} /></motion.div>;
+
+      // Case lainnya tidak berubah
       case 'matematika1': return <motion.div key="matematika1" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><MatematikaPage onNavigate={navigate} /></motion.div>;
       case 'drawing': return <motion.div key="drawing" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><DrawingPage onNavigate={navigate} /></motion.div>;
       case 'writing': return <motion.div key="writing" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><WritingPage onNavigate={navigate} /></motion.div>;
       case 'interactiveStory': return <motion.div key="interactiveStory" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><InteractiveStoryPage onNavigate={navigate} /></motion.div>;
       
-      // <-- CASE BARU UNTUK FORM KUIS -->
       case 'quizForm':
         return (
           <motion.div key="quizForm" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
