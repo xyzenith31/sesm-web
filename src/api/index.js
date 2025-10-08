@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Membuat instance axios dengan konfigurasi dasar
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api', // URL dasar backend Anda
+  baseURL: 'http://localhost:8080/api',
   headers: {
     'Content-Type': 'application/json',
   },

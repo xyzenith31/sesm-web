@@ -25,9 +25,9 @@ const FallingIcon = ({ icon: Icon, color, size }) => {
   // Ini akan membuat animasi dimulai seolah-olah sudah berjalan,
   // sehingga ikon langsung muncul tersebar di layar.
   const delay = Math.random() * -duration;
-  const xStart = Math.random() * 100;    // Posisi awal horizontal
+  const xStart = Math.random() * 100; 
   
-  const xEnd = xStart + (Math.random() * 40 - 20); // Bergeser ke kiri/kanan maks 20%
+  const xEnd = xStart + (Math.random() * 40 - 20);
 
   const initialRotate = Math.random() * 360;
   const animateRotate = initialRotate + (Math.random() > 0.5 ? 180 : -180);
@@ -36,7 +36,7 @@ const FallingIcon = ({ icon: Icon, color, size }) => {
     <motion.div
       className="absolute cursor-pointer"
       style={{
-        top: '-10vh', // Tetap mulai dari atas untuk loop yang mulus
+        top: '-10vh',
         left: `${xStart}%`,
       }}
       initial={{

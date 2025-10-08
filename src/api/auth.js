@@ -3,7 +3,6 @@ import apiClient from './index.js';
 const AuthService = {
   // --- Fungsi untuk Registrasi ---
   register: (userData) => {
-    // Parameter 'userData' adalah objek yang berisi semua data dari form registrasi
     return apiClient.post('/auth/register', userData);
   },
 
@@ -11,11 +10,10 @@ const AuthService = {
   login: (identifier, password) => {
     return apiClient
       .post('/auth/login', {
-        identifier, // Backend mengharapkan 'identifier', bukan 'username'
+        identifier,
         password,
       })
       .then(response => {
-        // Jika login berhasil dan ada accessToken, simpan data user ke localStorage
         if (response.data.accessToken) {
           localStorage.setItem('user', JSON.stringify(response.data));
         }

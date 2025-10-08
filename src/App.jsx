@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // Impor semua halaman yang ada
@@ -28,12 +28,29 @@ import RankPage from './pages/RankPage.jsx';
 import MainLayout from './layouts/MainLayout.jsx';
 import QuizForm from './components/QuizForm.jsx';
 
-// 1. Impor AuthService untuk mengecek data user dari localStorage
+// Impor AuthService untuk mengecek data user dari localStorage
 import AuthService from './api/auth.js';
 
 function App() {
   const [currentView, setCurrentView] = useState('welcome');
   const [selectedQuiz, setSelectedQuiz] = useState(null);
+  
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loggedInUser = AuthService.getCurrentUser();
+    if (loggedInUser) {
+      setUser(loggedInUser);
+
+      if (loggedInUser.jenjang) {
+        setCurrentView('home');
+      } else {
+        setCurrentView('levelSelection');
+      }
+    } else {
+      setCurrentView('welcome');
+    }
+  }, []);
 
   const navigate = (view) => setCurrentView(view);
 
@@ -51,16 +68,13 @@ function App() {
   const showRegisterPage = () => setCurrentView('register');
   const showHomePage = () => setCurrentView('home');
 
-  // 2. Buat fungsi onLoginSuccess yang lebih pintar
   const onLoginSuccess = () => {
-    const user = AuthService.getCurrentUser(); // Ambil data user yang baru login
+    const loggedInUser = AuthService.getCurrentUser();
+    setUser(loggedInUser);
 
-    // Cek jika user sudah punya data 'jenjang' (bukan null atau undefined)
-    if (user && user.jenjang) {
-      // Jika sudah ada, langsung ke halaman utama
+    if (loggedInUser && loggedInUser.jenjang) {
       setCurrentView('home');
     } else {
-      // Jika belum ada (user baru), arahkan ke halaman pemilihan jenjang
       setCurrentView('levelSelection');
     }
   };
@@ -86,10 +100,10 @@ function App() {
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
 
-      if (currentView === 'home') pageComponent = <HomePage onNavigate={navigate} />;
+      if (currentView === 'home') pageComponent = <HomePage onNavigate={navigate} user={user} />;
       if (currentView === 'explore') pageComponent = <ExplorePage onNavigate={navigate} />;
       if (currentView === 'bookmark') pageComponent = <BookmarkPage />;
-      if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
+      if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} user={user} />; // Kirim juga ke Profile jika perlu
       if (currentView === 'rank') pageComponent = <RankPage onNavigate={navigate} />;
       if (currentView === 'studyReport') pageComponent = <StudyReportPage onNavigate={navigate} />;
       if (currentView === 'accountSettings') pageComponent = <AccountSettingsPage onNavigate={navigate} />;
@@ -99,7 +113,7 @@ function App() {
       if (currentView === 'quiz') pageComponent = <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />;
 
       return (
-        <MainLayout activePage={currentView} onNavigate={navigate}>
+        <MainLayout activePage={currentView} onNavigate={navigate} user={user}> {/* Kirim user ke MainLayout juga */}
           <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             {pageComponent}
           </motion.div>
@@ -108,16 +122,13 @@ function App() {
     }
 
     switch (currentView) {
-      // 3. Ganti 'onLoginSuccess' di sini dengan fungsi yang baru
       case 'login': return <motion.div key="login" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><LoginPage onSwitchToRegister={showRegisterPage} onLoginSuccess={onLoginSuccess} /></motion.div>;
       
       case 'register': return <motion.div key="register" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><RegisterPage onSwitchToLogin={showLoginPage} /></motion.div>;
       
-      // Navigasi dari halaman level selection tetap sama
       case 'levelSelection': return <motion.div key="levelSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><LevelSelectionPage onSelectSD={() => navigate('chooseSelection')} onSelectTK={showHomePage} onExit={showLoginPage} /></motion.div>;
       case 'chooseSelection': return <motion.div key="chooseSelection" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><ChooseSelectionPage onExit={showLoginPage} onSelectClass1={showHomePage} onSelectClass2={showHomePage} onSelectClass3_4={showHomePage} onSelectClass5={showHomePage} onSelectClass6={showHomePage} /></motion.div>;
 
-      // Case lainnya tidak berubah
       case 'matematika1': return <motion.div key="matematika1" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><MatematikaPage onNavigate={navigate} /></motion.div>;
       case 'drawing': return <motion.div key="drawing" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><DrawingPage onNavigate={navigate} /></motion.div>;
       case 'writing': return <motion.div key="writing" variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}><WritingPage onNavigate={navigate} /></motion.div>;

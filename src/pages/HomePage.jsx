@@ -1,32 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   FiSearch,
   FiMoreHorizontal,
   FiChevronRight,
   FiStar,
-  FiHelpCircle // <-- Icon baru ditambahkan
+  FiHelpCircle,
+  FiAlertCircle // Icon untuk pesan error
 } from 'react-icons/fi';
 import {
-  FaFlask,
-  FaGlobeAmericas,
-  FaCalculator,
-  FaBook,
-  FaBalanceScale,
-  FaLanguage,
-  FaMosque
+  FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale,
+  FaLanguage, FaMosque, FaBookReader, FaPencilAlt, FaBullseye, FaQuestionCircle
 } from 'react-icons/fa';
 import logoSesm from '../assets/logo.png';
+import SubjectService from '../services/subject.service';
 
-const subjects = [
-  { icon: FaFlask, label: 'IPA' },
-  { icon: FaGlobeAmericas, label: 'IPS' },
-  { icon: FaCalculator, label: 'Matematika' },
-  { icon: FaBook, label: 'B.Indo' },
-  { icon: FaBalanceScale, label: 'PKN' },
-  { icon: FaLanguage, label: 'B.Inggris' },
-  { icon: FaMosque, label: 'Agama Islam' },
-];
+// Peta untuk mengubah string nama ikon dari API menjadi komponen ikon yang sebenarnya
+const iconMap = {
+  FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale,
+  FaLanguage, FaMosque, FaBookReader, FaPencilAlt, FaBullseye, FaQuestionCircle
+};
 
 const testimonials = [
   {
@@ -41,7 +34,6 @@ const testimonials = [
   },
 ];
 
-// Komponen SubjectButton diubah untuk menerima 'onClick'
 const SubjectButton = ({ icon: Icon, label, onClick }) => (
   <motion.div
     onClick={onClick}
@@ -50,9 +42,9 @@ const SubjectButton = ({ icon: Icon, label, onClick }) => (
     whileTap={{ scale: 0.95 }}
   >
     <div className="w-full h-16 bg-sesm-deep rounded-2xl flex items-center justify-center text-white text-3xl shadow-md">
-      <Icon />
+      {Icon ? <Icon /> : null}
     </div>
-    <p className="text-xs text-gray-700 font-semibold">{label}</p>
+    <p className="text-xs text-gray-700 font-semibold text-center">{label}</p>
   </motion.div>
 );
 
@@ -85,18 +77,69 @@ const TestimonialCard = ({ avatar, quote, name }) => (
   </div>
 );
 
-// Komponen HomePage sekarang menerima prop 'onNavigate'
-const HomePage = ({ onNavigate }) => {
+const HomePage = ({ onNavigate, user }) => {
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Fungsi untuk menangani klik pada mata pelajaran
+  useEffect(() => {
+    // =================================================================
+    // LANGKAH DEBUGGING: Lihat apa isi dari prop 'user'
+    // =================================================================
+    console.log("Data user yang diterima HomePage:", user);
+
+    if (user && user.jenjang) {
+      setLoading(true);
+      setError(null);
+      
+      SubjectService.getSubjects(user.jenjang, user.kelas)
+        .then(response => {
+          const subjectsWithIcons = response.data.map(subject => ({
+            ...subject,
+            icon: iconMap[subject.icon] || FaBook,
+          }));
+          setSubjects(subjectsWithIcons);
+        })
+        .catch(err => {
+          const errorMessage = err.response?.data?.message || 'Gagal memuat mata pelajaran. Coba lagi nanti.';
+          setError(errorMessage);
+          console.error("Error fetching subjects:", err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+        setLoading(false);
+        setError("Gagal mendapatkan data jenjang pengguna. Silakan login ulang.");
+    }
+  }, [user]);
+
   const handleSubjectClick = (subjectLabel) => {
-    // Jika mata pelajarannya adalah Matematika dan fungsi onNavigate ada, panggil navigasi
     if (subjectLabel === 'Matematika' && onNavigate) {
       onNavigate('matematika1');
     }
-    // Anda bisa menambahkan logika untuk mapel lain di sini di kemudian hari
-    // else if (subjectLabel === 'IPA') { onNavigate('ipa1'); }
   };
+
+  const SubjectLoader = () => (
+    [...Array(8)].map((_, i) => (
+        <div key={i} className="flex flex-col items-center justify-center space-y-2">
+            <div className="w-full h-16 bg-gray-200 rounded-2xl animate-pulse"></div>
+            <div className="h-2 w-10 bg-gray-200 rounded animate-pulse mt-2"></div>
+        </div>
+    ))
+  );
+
+  const ErrorDisplay = ({ message }) => (
+    <div className="col-span-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+      <div className="flex items-center">
+        <FiAlertCircle className="text-2xl mr-3"/>
+        <div>
+          <p className="font-bold">Terjadi Kesalahan</p>
+          <p className="text-sm">{message}</p>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -125,20 +168,27 @@ const HomePage = ({ onNavigate }) => {
 
           <main className="px-6 mt-4">
             <div className="grid grid-cols-4 gap-x-4 gap-y-5">
-              {subjects.map(subject => (
-                <SubjectButton
-                  key={subject.label}
-                  {...subject}
-                  onClick={() => handleSubjectClick(subject.label)}
-                />
-              ))}
-              <SeeMoreButton />
+              {loading ? (
+                <SubjectLoader />
+              ) : error ? (
+                <ErrorDisplay message={error} />
+              ) : (
+                <>
+                  {subjects.map(subject => (
+                    <SubjectButton
+                      key={subject.label}
+                      {...subject}
+                      onClick={() => handleSubjectClick(subject.label)}
+                    />
+                  ))}
+                  <SeeMoreButton />
+                </>
+              )}
             </div>
 
             <div className="mt-8">
               <h2 className="text-lg font-bold text-gray-800">Fitur Unggulan SESM</h2>
               <div className="mt-3 bg-sesm-deep rounded-2xl p-4 shadow-lg">
-                {/* --- TOMBOL BANK BUKU (DIPERBAIKI) --- */}
                 <motion.button
                   onClick={() => onNavigate('bookmark')}
                   className="w-full bg-gray-100/90 text-sesm-deep font-bold rounded-full flex items-center justify-between p-3 text-sm"
@@ -152,7 +202,6 @@ const HomePage = ({ onNavigate }) => {
                   <FiChevronRight size={24} />
                 </motion.button>
                 
-                {/* --- TOMBOL KUIS PENGETAHUAN (BARU) --- */}
                 <motion.button
                   onClick={() => onNavigate('quiz')}
                   className="mt-3 w-full bg-gray-100/90 text-sesm-deep font-bold rounded-full flex items-center justify-between p-3 text-sm"
@@ -209,14 +258,22 @@ const HomePage = ({ onNavigate }) => {
           <main className="space-y-10">
             <div className="bg-white p-6 rounded-2xl shadow-sm">
                 <div className="grid grid-cols-8 gap-6">
-                {subjects.map(subject => (
-                    <SubjectButton
-                      key={subject.label}
-                      {...subject}
-                      onClick={() => handleSubjectClick(subject.label)}
-                    />
-                ))}
-                <SeeMoreButton />
+                {loading ? (
+                    <SubjectLoader />
+                ) : error ? (
+                    <div className="col-span-8"><ErrorDisplay message={error} /></div>
+                ) : (
+                    <>
+                        {subjects.map(subject => (
+                            <SubjectButton
+                            key={subject.label}
+                            {...subject}
+                            onClick={() => handleSubjectClick(subject.label)}
+                            />
+                        ))}
+                        <SeeMoreButton />
+                    </>
+                )}
                 </div>
             </div>
 
@@ -224,7 +281,6 @@ const HomePage = ({ onNavigate }) => {
                 <div className="bg-sesm-deep rounded-2xl p-6 text-white shadow-lg">
                     <h2 className="text-xl font-bold mb-4">Fitur Unggulan SESM</h2>
                     <div className='space-y-3'>
-                      {/* --- TOMBOL BANK BUKU DESKTOP (DIPERBAIKI) --- */}
                       <motion.button
                         onClick={() => onNavigate('bookmark')}
                         className="w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
@@ -238,7 +294,6 @@ const HomePage = ({ onNavigate }) => {
                       <FiChevronRight size={24} />
                       </motion.button>
                       
-                      {/* --- TOMBOL KUIS PENGETAHUAN DESKTOP (BARU) --- */}
                       <motion.button
                         onClick={() => onNavigate('quiz')}
                         className="w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
