@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   FiSearch,
-  FiMoreHorizontal,
   FiChevronRight,
   FiStar,
   FiHelpCircle,
-  FiAlertCircle // Icon untuk pesan error
+  FiAlertCircle
 } from 'react-icons/fi';
 import {
   FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale,
@@ -15,7 +14,6 @@ import {
 import logoSesm from '../assets/logo.png';
 import SubjectService from '../services/subject.service';
 
-// Peta untuk mengubah string nama ikon dari API menjadi komponen ikon yang sebenarnya
 const iconMap = {
   FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale,
   FaLanguage, FaMosque, FaBookReader, FaPencilAlt, FaBullseye, FaQuestionCircle
@@ -24,12 +22,12 @@ const iconMap = {
 const testimonials = [
   {
     avatar: 'https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Juliana',
-    quote: 'Sejak ada sesm kak elsa mandiri dalam belajar',
-    name: 'juliana lisvina',
+    quote: 'Sejak ada SESM, kak Elsa jadi lebih mandiri dalam belajar.',
+    name: 'Juliana Lisvina',
   },
   {
     avatar: 'https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Johanca',
-    quote: 'Sesm sangat membantu sekali dalam belajar, mantap sekali!',
+    quote: 'SESM sangat membantu sekali dalam belajar, mantap!',
     name: 'Johanca',
   },
 ];
@@ -48,19 +46,6 @@ const SubjectButton = ({ icon: Icon, label, onClick }) => (
   </motion.div>
 );
 
-const SeeMoreButton = () => (
-    <motion.div
-        className="flex flex-col items-center justify-center space-y-2"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-    >
-        <div className="w-full h-16 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 text-3xl shadow-md">
-            <FiMoreHorizontal />
-        </div>
-        <p className="text-xs text-gray-700 font-semibold">See More</p>
-    </motion.div>
-);
-
 const TestimonialCard = ({ avatar, quote, name }) => (
   <div className="bg-gray-200/80 rounded-2xl p-4 flex items-center space-x-3 shadow-sm">
     <img src={avatar} alt={name} className="w-12 h-12 rounded-full border-2 border-white flex-shrink-0" />
@@ -70,7 +55,7 @@ const TestimonialCard = ({ avatar, quote, name }) => (
       <div className="flex items-center mt-1.5">
         <span className="text-xs text-gray-600 font-bold mr-2">5.0</span>
         <div className="flex text-yellow-500">
-            {[...Array(5)].map((_, i) => <FiStar key={i} fill="currentColor" size={14} />)}
+          {[...Array(5)].map((_, i) => <FiStar key={i} fill="currentColor" size={14} />)}
         </div>
       </div>
     </div>
@@ -83,15 +68,9 @@ const HomePage = ({ onNavigate, user }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // =================================================================
-    // LANGKAH DEBUGGING: Lihat apa isi dari prop 'user'
-    // =================================================================
-    console.log("Data user yang diterima HomePage:", user);
-
+    console.log("Data user:", user);
     if (user && user.jenjang) {
       setLoading(true);
-      setError(null);
-      
       SubjectService.getSubjects(user.jenjang, user.kelas)
         .then(response => {
           const subjectsWithIcons = response.data.map(subject => ({
@@ -101,16 +80,14 @@ const HomePage = ({ onNavigate, user }) => {
           setSubjects(subjectsWithIcons);
         })
         .catch(err => {
-          const errorMessage = err.response?.data?.message || 'Gagal memuat mata pelajaran. Coba lagi nanti.';
-          setError(errorMessage);
+          const msg = err.response?.data?.message || 'Gagal memuat mata pelajaran.';
+          setError(msg);
           console.error("Error fetching subjects:", err);
         })
-        .finally(() => {
-          setLoading(false);
-        });
+        .finally(() => setLoading(false));
     } else {
-        setLoading(false);
-        setError("Gagal mendapatkan data jenjang pengguna. Silakan login ulang.");
+      setLoading(false);
+      setError("Data jenjang pengguna tidak ditemukan. Silakan login ulang.");
     }
   }, [user]);
 
@@ -122,17 +99,17 @@ const HomePage = ({ onNavigate, user }) => {
 
   const SubjectLoader = () => (
     [...Array(8)].map((_, i) => (
-        <div key={i} className="flex flex-col items-center justify-center space-y-2">
-            <div className="w-full h-16 bg-gray-200 rounded-2xl animate-pulse"></div>
-            <div className="h-2 w-10 bg-gray-200 rounded animate-pulse mt-2"></div>
-        </div>
+      <div key={i} className="flex flex-col items-center justify-center space-y-2">
+        <div className="w-full h-16 bg-gray-200 rounded-2xl animate-pulse"></div>
+        <div className="h-2 w-10 bg-gray-200 rounded animate-pulse mt-2"></div>
+      </div>
     ))
   );
 
   const ErrorDisplay = ({ message }) => (
-    <div className="col-span-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+    <div className="col-span-full bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
       <div className="flex items-center">
-        <FiAlertCircle className="text-2xl mr-3"/>
+        <FiAlertCircle className="text-2xl mr-3" />
         <div>
           <p className="font-bold">Terjadi Kesalahan</p>
           <p className="text-sm">{message}</p>
@@ -143,24 +120,22 @@ const HomePage = ({ onNavigate, user }) => {
 
   return (
     <>
-      {/* ====================================================== */}
-      {/* ============ TAMPILAN KHUSUS MOBILE & TABLET =========== */}
-      {/* ====================================================== */}
+      {/* ========== MOBILE & TABLET ========== */}
       <div className="md:hidden">
         <div className="min-h-screen bg-gray-50 pb-28">
           <header className="px-6 pt-8 pb-4">
             <div className="flex items-center space-x-3">
-                <img src={logoSesm} alt="Sesm Logo" className="w-12 h-12"/>
-                <div>
-                    <h1 className="text-xl font-bold text-sesm-deep tracking-wide">Welcome</h1>
-                    <p className="text-xs text-gray-500">SMART EDUCATION SMART MORALITY</p>
-                </div>
+              <img src={logoSesm} alt="Sesm Logo" className="w-12 h-12" />
+              <div>
+                <h1 className="text-xl font-bold text-sesm-deep">Welcome</h1>
+                <p className="text-xs text-gray-500">SMART EDUCATION SMART MORALITY</p>
+              </div>
             </div>
             <div className="relative mt-4">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Coba Cari Materimu di sini"
+                placeholder="Coba cari materimu di sini"
                 className="w-full bg-white text-gray-800 rounded-full py-3 pl-12 pr-4 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-sesm-teal"
               />
             </div>
@@ -168,27 +143,16 @@ const HomePage = ({ onNavigate, user }) => {
 
           <main className="px-6 mt-4">
             <div className="grid grid-cols-4 gap-x-4 gap-y-5">
-              {loading ? (
-                <SubjectLoader />
-              ) : error ? (
-                <ErrorDisplay message={error} />
-              ) : (
-                <>
-                  {subjects.map(subject => (
-                    <SubjectButton
-                      key={subject.label}
-                      {...subject}
-                      onClick={() => handleSubjectClick(subject.label)}
-                    />
-                  ))}
-                  <SeeMoreButton />
-                </>
+              {loading ? <SubjectLoader /> : error ? <ErrorDisplay message={error} /> : (
+                subjects.map(subject => (
+                  <SubjectButton key={subject.label} {...subject} onClick={() => handleSubjectClick(subject.label)} />
+                ))
               )}
             </div>
 
             <div className="mt-8">
               <h2 className="text-lg font-bold text-gray-800">Fitur Unggulan SESM</h2>
-              <div className="mt-3 bg-sesm-deep rounded-2xl p-4 shadow-lg">
+              <div className="mt-3 bg-sesm-deep rounded-2xl p-4 shadow-lg space-y-3">
                 <motion.button
                   onClick={() => onNavigate('bookmark')}
                   className="w-full bg-gray-100/90 text-sesm-deep font-bold rounded-full flex items-center justify-between p-3 text-sm"
@@ -197,20 +161,20 @@ const HomePage = ({ onNavigate, user }) => {
                 >
                   <div className="flex items-center space-x-3">
                     <FiSearch className="text-yellow-500 text-xl" />
-                    <span className='text-left'>LATIHAN SOAL DI BANK BUKU</span>
+                    <span>LATIHAN SOAL DI BANK BUKU</span>
                   </div>
                   <FiChevronRight size={24} />
                 </motion.button>
-                
+
                 <motion.button
                   onClick={() => onNavigate('quiz')}
-                  className="mt-3 w-full bg-gray-100/90 text-sesm-deep font-bold rounded-full flex items-center justify-between p-3 text-sm"
+                  className="w-full bg-gray-100/90 text-sesm-deep font-bold rounded-full flex items-center justify-between p-3 text-sm"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <div className="flex items-center space-x-3">
                     <FiHelpCircle className="text-teal-500 text-xl" />
-                    <span className='text-left'>KUIS PENGETAHUAN</span>
+                    <span>KUIS PENGETAHUAN</span>
                   </div>
                   <FiChevronRight size={24} />
                 </motion.button>
@@ -232,18 +196,16 @@ const HomePage = ({ onNavigate, user }) => {
         </div>
       </div>
 
-      {/* ====================================================== */}
-      {/* ============= TAMPILAN KHUSUS DESKTOP ================ */}
-      {/* ====================================================== */}
+      {/* ========== DESKTOP ========== */}
       <div className="hidden md:flex flex-col items-center w-full min-h-screen bg-gray-100 p-8">
         <div className="w-full max-w-4xl mx-auto">
           <header className="flex justify-between items-center mb-8">
-             <div className="flex items-center space-x-3">
-                <img src={logoSesm} alt="Sesm Logo" className="w-14 h-14"/>
-                <div>
-                    <h1 className="text-3xl font-bold text-sesm-deep tracking-wide">Welcome</h1>
-                    <p className="text-sm text-gray-500">SMART EDUCATION SMART MORALITY</p>
-                </div>
+            <div className="flex items-center space-x-3">
+              <img src={logoSesm} alt="Sesm Logo" className="w-14 h-14" />
+              <div>
+                <h1 className="text-3xl font-bold text-sesm-deep">Welcome</h1>
+                <p className="text-sm text-gray-500">SMART EDUCATION SMART MORALITY</p>
+              </div>
             </div>
             <div className="relative w-1/3">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -257,69 +219,60 @@ const HomePage = ({ onNavigate, user }) => {
 
           <main className="space-y-10">
             <div className="bg-white p-6 rounded-2xl shadow-sm">
-                <div className="grid grid-cols-8 gap-6">
-                {loading ? (
-                    <SubjectLoader />
-                ) : error ? (
-                    <div className="col-span-8"><ErrorDisplay message={error} /></div>
+              <div className="grid grid-cols-8 gap-6">
+                {loading ? <SubjectLoader /> : error ? (
+                  <div className="col-span-8"><ErrorDisplay message={error} /></div>
                 ) : (
-                    <>
-                        {subjects.map(subject => (
-                            <SubjectButton
-                            key={subject.label}
-                            {...subject}
-                            onClick={() => handleSubjectClick(subject.label)}
-                            />
-                        ))}
-                        <SeeMoreButton />
-                    </>
+                  subjects.map(subject => (
+                    <SubjectButton key={subject.label} {...subject} onClick={() => handleSubjectClick(subject.label)} />
+                  ))
                 )}
-                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-sesm-deep rounded-2xl p-6 text-white shadow-lg">
-                    <h2 className="text-xl font-bold mb-4">Fitur Unggulan SESM</h2>
-                    <div className='space-y-3'>
-                      <motion.button
-                        onClick={() => onNavigate('bookmark')}
-                        className="w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                      <div className="flex items-center space-x-3">
-                          <FiSearch className="text-yellow-600" size={22} />
-                          <span>LATIHAN SOAL DI BANK BUKU</span>
-                      </div>
-                      <FiChevronRight size={24} />
-                      </motion.button>
-                      
-                      <motion.button
-                        onClick={() => onNavigate('quiz')}
-                        className="w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                      <div className="flex items-center space-x-3">
-                          <FiHelpCircle className="text-teal-600" size={22} />
-                          <span>KUIS PENGETAHUAN</span>
-                      </div>
-                      <FiChevronRight size={24} />
-                      </motion.button>
+              <div className="bg-sesm-deep rounded-2xl p-6 text-white shadow-lg">
+                <h2 className="text-xl font-bold mb-4">Fitur Unggulan SESM</h2>
+                <div className='space-y-3'>
+                  <motion.button
+                    onClick={() => onNavigate('bookmark')}
+                    className="w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <FiSearch className="text-yellow-600" size={22} />
+                      <span>LATIHAN SOAL DI BANK BUKU</span>
                     </div>
-                </div>
+                    <FiChevronRight size={24} />
+                  </motion.button>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center space-x-2 mb-4">
-                        <FiStar className="text-yellow-500" />
-                        <span>Apa Kata Mereka</span>
-                    </h2>
-                    <div className="space-y-4">
-                        {testimonials.map(testimonial => (
-                        <TestimonialCard key={testimonial.name} {...testimonial} />
-                        ))}
+                  <motion.button
+                    onClick={() => onNavigate('quiz')}
+                    className="w-full bg-white text-sesm-deep font-bold rounded-full flex items-center justify-between p-4"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <FiHelpCircle className="text-teal-600" size={22} />
+                      <span>KUIS PENGETAHUAN</span>
                     </div>
+                    <FiChevronRight size={24} />
+                  </motion.button>
                 </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl shadow-sm">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center space-x-2 mb-4">
+                  <FiStar className="text-yellow-500" />
+                  <span>Apa Kata Mereka</span>
+                </h2>
+                <div className="space-y-4">
+                  {testimonials.map(testimonial => (
+                    <TestimonialCard key={testimonial.name} {...testimonial} />
+                  ))}
+                </div>
+              </div>
             </div>
           </main>
         </div>
