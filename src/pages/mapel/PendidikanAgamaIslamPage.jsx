@@ -1,128 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiArrowLeft } from 'react-icons/fi';
+import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle } from 'react-icons/fi';
 import { FaMosque } from 'react-icons/fa';
-import BabDetailModal from '../../components/BabDetailModal';
-import { materiData } from '../../data/materiData';
+import { useAuth } from '../../hooks/useAuth';
+import DataService from '../../services/dataService';
+import ChapterDetailModal from '../../components/ChapterDetailModal';
 
-const PaiIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-12 h-12 text-green-500">
-        <rect x="10" y="10" width="44" height="44" rx="5" fill="currentColor" fillOpacity="0.1"/>
-        <path d="M50 30H14v-4l18-12 18 12v4zM18 34h28v16H18z" stroke="currentColor" strokeWidth="2" fill="none"/>
-        <circle cx="32" cy="10" r="4" fill="currentColor"/>
-    </svg>
+// --- KONFIGURASI UNTUK HALAMAN INI ---
+const SUBJECT_NAME = 'Pendidikan Agama Islam';
+const HEADER_TITLE = 'AGAMA ISLAM';
+const HEADER_SUBTITLE = 'Kurikulum SESM';
+const ICON = FaMosque;
+
+const ChapterButton = ({ chapter, onClick, Icon, iconBgColor }) => (
+    <motion.button
+        onClick={onClick}
+        className="w-full bg-white rounded-2xl p-3 flex items-center space-x-4 shadow-sm border border-gray-200/80 text-left"
+        whileTap={{ scale: 0.97, backgroundColor: '#f9fafb' }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+    >
+        <div className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-xl ${iconBgColor} flex-shrink-0`}>
+            <ICON size={32} className="text-green-500" />
+        </div>
+        <div className="flex-1">
+            <h4 className="font-bold text-sesm-deep text-md md:text-lg">{chapter.judul}</h4>
+            {/* Progress bar bisa ditambahkan lagi nanti */}
+        </div>
+    </motion.button>
 );
 
-const paiChapters = [
-  { id: 1, title: 'Rukun Iman dan Rukun Islam', progress: 75, Icon: PaiIcon, iconBgColor: 'bg-green-100', materiKey: 'pai_1' },
-  { id: 2, title: 'Kisah Nabi dan Rasul', progress: 60, Icon: PaiIcon, iconBgColor: 'bg-green-100', materiKey: 'pai_2' },
-  { id: 3, title: 'Belajar Huruf Hijaiyah', progress: 45, Icon: PaiIcon, iconBgColor: 'bg-green-100', materiKey: null },
-  { id: 4, title: 'Tata Cara Wudhu dan Sholat', progress: 20, Icon: PaiIcon, iconBgColor: 'bg-green-100', materiKey: null },
-];
-
 const PendidikanAgamaIslamPage = ({ onNavigate }) => {
-    const [selectedMateri, setSelectedMateri] = useState(null);
+    const { user } = useAuth();
+    const [chapters, setChapters] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedMateriKey, setSelectedMateriKey] = useState(null);
 
-    const handleBabClick = (bab) => {
-        if (bab.materiKey && materiData[bab.materiKey]) {
-            setSelectedMateri(materiData[bab.materiKey]);
+    useEffect(() => {
+        if (user?.jenjang) {
+            setLoading(true);
+            setError(null);
+            DataService.getChaptersForSubject(user.jenjang, user.kelas, SUBJECT_NAME)
+                .then(response => {
+                    setChapters(response.data);
+                })
+                .catch(err => {
+                    setError("Gagal memuat daftar bab untuk mata pelajaran ini.");
+                    console.error(err);
+                })
+                .finally(() => setLoading(false));
         } else {
-            alert('Latihan soal untuk bab ini belum tersedia.');
+            setError("Informasi jenjang/kelas pengguna tidak ditemukan.");
+            setLoading(false);
         }
-    };
+    }, [user]);
 
-    const closeModal = () => {
-        setSelectedMateri(null);
+    const renderContent = () => {
+        if (loading) {
+            return <div className="flex justify-center items-center h-48"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
+        }
+        if (error) {
+            return <div className="text-center text-red-500 p-4 bg-red-50 rounded-lg"><FiAlertCircle className="mx-auto text-3xl mb-2"/><p>{error}</p></div>;
+        }
+        if (chapters.length === 0) {
+            return <p className="text-center text-gray-500 mt-8">Belum ada bab untuk mata pelajaran ini.</p>;
+        }
+        return (
+            <div className="space-y-4">
+                {chapters.map((chapter) => (
+                    <ChapterButton
+                        key={chapter.id}
+                        chapter={chapter}
+                        onClick={() => setSelectedMateriKey(chapter.materiKey)}
+                        Icon={ICON}
+                        iconBgColor="bg-green-100"
+                    />
+                ))}
+            </div>
+        );
     };
 
     return (
         <>
             <AnimatePresence>
-                {selectedMateri && <BabDetailModal materi={selectedMateri} onClose={closeModal} />}
+                {selectedMateriKey && <ChapterDetailModal materiKey={selectedMateriKey} onClose={() => setSelectedMateriKey(null)} />}
             </AnimatePresence>
 
             <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
-                {/* Tampilan Mobile */}
-                <div className="md:hidden flex flex-col h-screen">
-                    <header className="bg-sesm-teal pt-8 pb-4 px-6 rounded-b-[2.5rem] shadow-lg text-white">
-                        <div className="flex items-center mb-4">
-                            <motion.button onClick={() => onNavigate('home')} className="p-2 -ml-2 mr-2 rounded-full" whileTap={{ scale: 0.9, backgroundColor: 'rgba(255,255,255,0.1)'}}>
-                                <FiArrowLeft size={24} />
-                            </motion.button>
-                        </div>
-                        <div className="relative mb-4">
-                            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-800/60" size={20} />
-                            <input type="text" placeholder="Cari materi PAI..." className="w-full bg-white text-gray-800 placeholder:text-gray-500 rounded-full py-3 pl-12 pr-4 text-sm border-none focus:outline-none focus:ring-2 focus:ring-white/50" />
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-wide">AGAMA ISLAM</h1>
-                                <p className="text-sm opacity-90">Kurikulum SESM</p>
-                            </div>
-                            <FaMosque size={40} className="opacity-80"/>
-                        </div>
-                    </header>
-                    <main className="flex-1 overflow-y-auto pt-6 pb-6 px-6">
-                        <h2 className="text-lg font-bold text-gray-800 mb-4">Semua bab</h2>
-                        <div className="space-y-4">
-                        {paiChapters.map((bab) => (
-                            <motion.button
-                                key={bab.id}
-                                onClick={() => handleBabClick(bab)}
-                                className="w-full bg-white rounded-2xl p-3 flex items-center space-x-4 shadow-sm border border-gray-200/80 text-left"
-                                whileTap={{ scale: 0.97, backgroundColor: '#f9fafb' }}
-                            >
-                                <div className={`w-16 h-16 flex items-center justify-center rounded-xl ${bab.iconBgColor} flex-shrink-0`}>
-                                    <bab.Icon />
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="font-bold text-sesm-deep text-md">{bab.title}</h4>
-                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                                    <div className="bg-sesm-sky h-2 rounded-full" style={{ width: `${bab.progress}%` }} />
-                                    </div>
-                                </div>
-                            </motion.button>
-                        ))}
-                        </div>
-                    </main>
-                </div>
-                {/* Tampilan Desktop */}
-                <div className="hidden md:flex flex-col items-center w-full min-h-screen bg-gray-100 p-8">
-                    <div className="w-full max-w-2xl mx-auto">
-                        <header className="bg-white p-6 rounded-2xl shadow-md mb-8">
+                {/* Mobile & Desktop Merged */}
+                <div className="flex flex-col h-screen md:h-auto md:items-center w-full md:min-h-screen md:bg-gray-100 md:p-8">
+                    <div className="w-full md:max-w-2xl md:mx-auto">
+                        <header className="bg-sesm-teal pt-8 pb-4 px-6 rounded-b-[2.5rem] shadow-lg text-white md:bg-white md:p-6 md:rounded-2xl md:shadow-md md:mb-8 md:text-black">
                             <div className="flex items-center mb-4">
-                                <motion.button onClick={() => onNavigate('home')} className="p-2 mr-4 rounded-full hover:bg-gray-100" whileTap={{ scale: 0.9 }}>
-                                    <FiArrowLeft size={24} className="text-gray-600" />
+                                <motion.button onClick={() => onNavigate('home')} className="p-2 -ml-2 mr-2 rounded-full md:mr-4 md:hover:bg-gray-100" whileTap={{ scale: 0.9 }}>
+                                    <FiArrowLeft size={24} className="text-white md:text-gray-600"/>
                                 </motion.button>
-                                <div className="flex-1">
-                                    <h1 className="text-3xl font-bold text-sesm-deep tracking-wide">PENDIDIKAN AGAMA ISLAM</h1>
-                                    <p className="text-md text-gray-500">Kurikulum SESM</p>
+                                <div className="hidden md:flex flex-1 items-center">
+                                    <div className="flex-1">
+                                        <h1 className="text-3xl font-bold text-sesm-deep tracking-wide">{HEADER_TITLE}</h1>
+                                        <p className="text-md text-gray-500">{HEADER_SUBTITLE}</p>
+                                    </div>
+                                    <ICON size={40} className="text-sesm-teal"/>
                                 </div>
-                                <FaMosque size={40} className="text-sesm-teal"/>
+                            </div>
+                            <div className="relative mb-4 md:hidden">
+                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-800/60" size={20} />
+                                <input type="text" placeholder={`Cari materi ${SUBJECT_NAME}...`} className="w-full bg-white text-gray-800 placeholder:text-gray-500 rounded-full py-3 pl-12 pr-4 text-sm border-none focus:outline-none focus:ring-2 focus:ring-white/50" />
+                            </div>
+                            <div className="flex justify-between items-center md:hidden">
+                                <div>
+                                    <h1 className="text-2xl font-bold tracking-wide">{HEADER_TITLE}</h1>
+                                    <p className="text-sm opacity-90">{HEADER_SUBTITLE}</p>
+                                </div>
+                                <ICON size={40} className="opacity-80"/>
                             </div>
                         </header>
-                        <main>
-                            <h2 className="text-xl font-bold text-gray-800 mb-4 px-2">Semua bab</h2>
-                            <div className="space-y-4">
-                                {paiChapters.map((bab) => (
-                                    <motion.button
-                                        key={bab.id}
-                                        onClick={() => handleBabClick(bab)}
-                                        className="w-full bg-white rounded-2xl p-4 flex items-center space-x-5 shadow-sm border border-transparent hover:border-sesm-teal transition-colors text-left"
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        <div className={`w-20 h-20 flex items-center justify-center rounded-xl ${bab.iconBgColor} flex-shrink-0`}>
-                                            <bab.Icon />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-sesm-deep text-lg">{bab.title}</h4>
-                                            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                                                <div className="bg-sesm-sky h-2.5 rounded-full" style={{ width: `${bab.progress}%` }} />
-                                            </div>
-                                        </div>
-                                    </motion.button>
-                                ))}
-                            </div>
+                        <main className="flex-1 overflow-y-auto pt-6 pb-6 px-6 md:p-0">
+                            <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:px-2">Semua bab</h2>
+                            {renderContent()}
                         </main>
                     </div>
                 </div>

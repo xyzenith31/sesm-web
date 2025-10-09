@@ -1,149 +1,130 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { FiSearch, FiArrowLeft } from 'react-icons/fi';
-import { FaDice } from 'react-icons/fa';
-import logoSesm from '../../assets/logo.png';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle } from 'react-icons/fi';
+import { FaCalculator } from 'react-icons/fa';
+import { useAuth } from '../../hooks/useAuth';
+import DataService from '../../services/dataService';
+import ChapterDetailModal from '../../components/ChapterDetailModal';
 
-// --- Komponen Ikon SVG Kustom ---
-const NumberBlocksIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-9 h-9">
-      <rect x="10" y="34" width="20" height="20" rx="3" fill="#F97316"/>
-      <text x="20" y="51" fontSize="18" fill="white" textAnchor="middle" fontWeight="bold">1</text>
-      <rect x="34" y="34" width="20" height="20" rx="3" fill="#EC4899"/>
-      <text x="44" y="51" fontSize="18" fill="white" textAnchor="middle" fontWeight="bold">2</text>
-      <rect x="22" y="10" width="20" height="20" rx="3" fill="#8B5CF6"/>
-      <text x="32" y="27" fontSize="18" fill="white" textAnchor="middle" fontWeight="bold">3</text>
-    </svg>
-);
-const ShapeBlocksIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-9 h-9">
-        <rect x="10" y="34" width="20" height="20" rx="3" fill="#3B82F6"/>
-        <circle cx="44" cy="24" r="10" fill="#EAB308"/>
-        <path d="M32 10 L20 30 L44 30 Z" fill="#14B8A6"/>
-    </svg>
-);
-const PlusMinusIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-9 h-9">
-        <rect x="10" y="10" width="44" height="44" rx="5" fill="#22C55E" />
-        <path d="M22 30 H 42 V 34 H 22 Z" fill="white"/>
-        <path d="M30 22 H 34 V 42 H 30 Z" fill="white"/>
-    </svg>
-);
+// --- KONFIGURASI UNTUK HALAMAN INI ---
+const SUBJECT_NAME = 'Matematika';
+const HEADER_TITLE = 'MATEMATIKA';
+const HEADER_SUBTITLE = 'Kurikulum SESM';
+const ICON = FaCalculator;
+const ICON_COLOR = 'text-orange-500';
+const ICON_BG_COLOR = 'bg-orange-100';
 
-// --- Data Bab Matematika ---
-const mathChapters = [
-  { id: 1, title: 'Bilangan Sampai 10', progress: 0, Icon: NumberBlocksIcon, iconBgColor: 'bg-orange-100' },
-  { id: 2, title: 'Bentuk Bentuk Bangunan', progress: 0, Icon: ShapeBlocksIcon, iconBgColor: 'bg-blue-100' },
-  { id: 3, title: 'Penjumlahan Dan Pengurangan', progress: 0, Icon: PlusMinusIcon, iconBgColor: 'bg-green-100' },
-];
+const ChapterButton = ({ chapter, onClick, Icon, iconBgColor }) => (
+    <motion.button
+        onClick={onClick}
+        className="w-full bg-white rounded-2xl p-3 flex items-center space-x-4 shadow-sm border border-gray-200/80 text-left"
+        whileTap={{ scale: 0.97, backgroundColor: '#f9fafb' }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+    >
+        <div className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-xl ${iconBgColor} flex-shrink-0`}>
+            <Icon size={32} className={ICON_COLOR} />
+        </div>
+        <div className="flex-1">
+            <h4 className="font-bold text-sesm-deep text-md md:text-lg">{chapter.judul}</h4>
+        </div>
+    </motion.button>
+);
 
 const MatematikaPage = ({ onNavigate }) => {
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
-      {/* ====================================================== */}
-      {/* ============ TAMPILAN KHUSUS MOBILE  =========== */}
-      {/* ====================================================== */}
-      <div className="md:hidden flex flex-col h-screen">
-        <header className="bg-sesm-teal pt-8 pb-4 px-6 rounded-b-[2.5rem] shadow-lg text-white">
-            <div className="flex items-center mb-4">
-                {/* Tombol Kembali / Keluar - DIPERBAIKI */}
-                <motion.button
-                  onClick={() => onNavigate('home')}
-                  className="p-2 -ml-2 mr-2 rounded-full"
-                  whileTap={{ scale: 0.9, backgroundColor: 'rgba(255,255,255,0.1)'}}
-                >
-                    <FiArrowLeft size={24} />
-                </motion.button>
-            </div>
-            <div className="relative mb-4">
-                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-800/60" size={20} />
-                <input
-                    type="text"
-                    placeholder="Coba Cari Materimu di sini"
-                    className="w-full bg-white text-gray-800 placeholder:text-gray-500 rounded-full py-3 pl-12 pr-4 text-sm border-none focus:outline-none focus:ring-2 focus:ring-white/50"
-                />
-            </div>
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-wide">MATEMATIKA</h1>
-                    <p className="text-sm opacity-90">Kelas I Kurikulum SESM</p>
-                </div>
-                <FaDice size={40} className="opacity-80"/>
-            </div>
-        </header>
+    const { user } = useAuth();
+    const [chapters, setChapters] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedMateriKey, setSelectedMateriKey] = useState(null);
 
-        <main className="flex-1 overflow-y-auto pt-6 pb-6 px-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Semua bab</h2>
+    useEffect(() => {
+        if (user?.jenjang) {
+            setLoading(true);
+            setError(null);
+            DataService.getChaptersForSubject(user.jenjang, user.kelas, SUBJECT_NAME)
+                .then(response => {
+                    setChapters(response.data);
+                })
+                .catch(err => {
+                    setError("Gagal memuat daftar bab untuk mata pelajaran ini.");
+                    console.error(err);
+                })
+                .finally(() => setLoading(false));
+        } else {
+            setError("Informasi jenjang/kelas pengguna tidak ditemukan.");
+            setLoading(false);
+        }
+    }, [user]);
+
+    const renderContent = () => {
+        if (loading) {
+            return <div className="flex justify-center items-center h-48"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
+        }
+        if (error) {
+            return <div className="text-center text-red-500 p-4 bg-red-50 rounded-lg"><FiAlertCircle className="mx-auto text-3xl mb-2"/><p>{error}</p></div>;
+        }
+        if (chapters.length === 0) {
+            return <p className="text-center text-gray-500 mt-8">Belum ada bab untuk mata pelajaran ini.</p>;
+        }
+        return (
             <div className="space-y-4">
-              {mathChapters.map(({ id, title, progress, Icon, iconBgColor }) => (
-                <motion.button
-                  key={id}
-                  className="w-full bg-white rounded-2xl p-3 flex items-center space-x-4 shadow-sm border border-gray-200/80 text-left"
-                  whileTap={{ scale: 0.97, backgroundColor: '#f9fafb' }}
-                >
-                  <div className={`w-16 h-16 flex items-center justify-center rounded-xl ${iconBgColor} flex-shrink-0`}>
-                    <Icon />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sesm-deep text-md">{title}</h4>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                      <div className="bg-sesm-sky h-2 rounded-full" style={{ width: `${progress}%` }} />
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-        </main>
-      </div>
-
-      {/* ====================================================== */}
-      {/* ============= TAMPILAN KHUSUS DESKTOP (DIPERBAIKI) ================ */}
-      {/* ====================================================== */}
-      <div className="hidden md:flex flex-col items-center w-full min-h-screen bg-gray-100 p-8">
-        <div className="w-full max-w-2xl mx-auto">
-          <header className="bg-white p-6 rounded-2xl shadow-md mb-8">
-              <div className="flex items-center mb-4">
-                  <motion.button
-                    onClick={() => onNavigate('home')}
-                    className="p-2 mr-4 rounded-full hover:bg-gray-100"
-                    whileTap={{ scale: 0.9 }}
-                  >
-                      <FiArrowLeft size={24} className="text-gray-600" />
-                  </motion.button>
-                  <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-sesm-deep tracking-wide">MATEMATIKA</h1>
-                      <p className="text-md text-gray-500">Kelas I Kurikulum SESM</p>
-                  </div>
-                  <FaDice size={40} className="text-sesm-teal"/>
-              </div>
-          </header>
-
-          <main>
-              <h2 className="text-xl font-bold text-gray-800 mb-4 px-2">Semua bab</h2>
-              <div className="space-y-4">
-                {mathChapters.map(({ id, title, progress, Icon, iconBgColor }) => (
-                  <motion.button
-                    key={id}
-                    className="w-full bg-white rounded-2xl p-4 flex items-center space-x-5 shadow-sm border border-transparent hover:border-sesm-teal transition-colors text-left"
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className={`w-20 h-20 flex items-center justify-center rounded-xl ${iconBgColor} flex-shrink-0`}>
-                      <Icon />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-sesm-deep text-lg">{title}</h4>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                        <div className="bg-sesm-sky h-2.5 rounded-full" style={{ width: `${progress}%` }} />
-                      </div>
-                    </div>
-                  </motion.button>
+                {chapters.map((chapter) => (
+                    <ChapterButton
+                        key={chapter.id}
+                        chapter={chapter}
+                        onClick={() => setSelectedMateriKey(chapter.materiKey)}
+                        Icon={ICON}
+                        iconBgColor={ICON_BG_COLOR}
+                    />
                 ))}
-              </div>
-          </main>
-        </div>
-      </div>
-    </div>
-  );
+            </div>
+        );
+    };
+
+    return (
+        <>
+            <AnimatePresence>
+                {selectedMateriKey && <ChapterDetailModal materiKey={selectedMateriKey} onClose={() => setSelectedMateriKey(null)} />}
+            </AnimatePresence>
+
+            <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
+                <div className="flex flex-col h-screen md:h-auto md:items-center w-full md:min-h-screen md:bg-gray-100 md:p-8">
+                    <div className="w-full md:max-w-2xl md:mx-auto">
+                        <header className="bg-sesm-teal pt-8 pb-4 px-6 rounded-b-[2.5rem] shadow-lg text-white md:bg-white md:p-6 md:rounded-2xl md:shadow-md md:mb-8 md:text-black">
+                            <div className="flex items-center mb-4">
+                                <motion.button onClick={() => onNavigate('home')} className="p-2 -ml-2 mr-2 rounded-full md:mr-4 md:hover:bg-gray-100" whileTap={{ scale: 0.9 }}>
+                                    <FiArrowLeft size={24} className="text-white md:text-gray-600"/>
+                                </motion.button>
+                                <div className="hidden md:flex flex-1 items-center">
+                                    <div className="flex-1">
+                                        <h1 className="text-3xl font-bold text-sesm-deep tracking-wide">{HEADER_TITLE}</h1>
+                                        <p className="text-md text-gray-500">{HEADER_SUBTITLE}</p>
+                                    </div>
+                                    <ICON size={40} className="text-sesm-teal"/>
+                                </div>
+                            </div>
+                            <div className="relative mb-4 md:hidden">
+                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-800/60" size={20} />
+                                <input type="text" placeholder={`Cari materi ${SUBJECT_NAME}...`} className="w-full bg-white text-gray-800 placeholder:text-gray-500 rounded-full py-3 pl-12 pr-4 text-sm border-none focus:outline-none focus:ring-2 focus:ring-white/50" />
+                            </div>
+                            <div className="flex justify-between items-center md:hidden">
+                                <div>
+                                    <h1 className="text-2xl font-bold tracking-wide">{HEADER_TITLE}</h1>
+                                    <p className="text-sm opacity-90">{HEADER_SUBTITLE}</p>
+                                </div>
+                                <ICON size={40} className="opacity-80"/>
+                            </div>
+                        </header>
+                        <main className="flex-1 overflow-y-auto pt-6 pb-6 px-6 md:p-0">
+                            <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:px-2">Semua bab</h2>
+                            {renderContent()}
+                        </main>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
 };
 
 export default MatematikaPage;

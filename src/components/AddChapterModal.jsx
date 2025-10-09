@@ -1,29 +1,26 @@
-// src/components/AddChapterModal.jsx
-
+// contoh-sesm-web/src/components/AddChapterModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
 
 const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
-    const [selectedMapel, setSelectedMapel] = useState('');
+    const [selectedSubjectId, setSelectedSubjectId] = useState('');
     const [judulBab, setJudulBab] = useState('');
 
     useEffect(() => {
-        // Reset form saat modal dibuka
         if (isOpen && mapelList.length > 0) {
-            setSelectedMapel(mapelList[0]); // Otomatis pilih mapel pertama
+            setSelectedSubjectId(mapelList[0].id);
             setJudulBab('');
         }
     }, [isOpen, mapelList]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!selectedMapel || !judulBab.trim()) {
+        if (!selectedSubjectId || !judulBab.trim()) {
             alert('Mata pelajaran dan judul bab tidak boleh kosong.');
             return;
         }
-        // Kirimkan mapel yang dipilih dan judul bab baru
-        onSubmit({ mapel: selectedMapel, judul: judulBab.trim() });
+        onSubmit({ subjectId: selectedSubjectId, judul: judulBab.trim() });
         onClose();
     };
 
@@ -56,13 +53,13 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Pilih Mata Pelajaran (Mapel)</label>
                                 <select 
-                                    value={selectedMapel} 
-                                    onChange={(e) => setSelectedMapel(e.target.value)} 
+                                    value={selectedSubjectId} 
+                                    onChange={(e) => setSelectedSubjectId(e.target.value)} 
                                     className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal"
                                     required
                                 >
                                     {mapelList.length > 0 ? (
-                                        mapelList.map(m => <option key={m} value={m}>{m}</option>)
+                                        mapelList.map(m => <option key={m.id} value={m.id}>{m.nama_mapel}</option>)
                                     ) : (
                                         <option disabled>Tidak ada mapel tersedia</option>
                                     )}
