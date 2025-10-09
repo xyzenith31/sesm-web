@@ -15,16 +15,16 @@ import RankPage from './pages/RankPage';
 import ExplorePage from './pages/ExplorePage';
 
 // --- Impor halaman-halaman Mapel ---
-import MatematikaPage from './pages/MatematikaPage';
-import MembacaPage from './pages/MembacaPage';
-import MenulisPage from './pages/MenulisPage';
-import BerhitungPage from './pages/BerhitungPage';
-import PendidikanAgamaIslamPage from './pages/PendidikanAgamaIslamPage';
-import BahasaIndonesiaPage from './pages/BahasaIndonesiaPage';
-import BahasaInggrisPage from './pages/BahasaInggrisPage';
-import PKNPage from './pages/PKNPage';
-import IPAPage from './pages/IPAPage';
-import IPSPage from './pages/IPSPage';
+import MatematikaPage from './pages/mapel/MatematikaPage';
+import MembacaPage from './pages/mapel/MembacaPage';
+import MenulisPage from './pages/mapel/MenulisPage';
+import BerhitungPage from './pages/mapel/BerhitungPage';
+import PendidikanAgamaIslamPage from './pages/mapel/PendidikanAgamaIslamPage';
+import BahasaIndonesiaPage from './pages/mapel/BahasaIndonesiaPage';
+import BahasaInggrisPage from './pages/mapel/BahasaInggrisPage';
+import PKNPage from './pages/mapel/PKNPage';
+import IPAPage from './pages/mapel/IPAPage';
+import IPSPage from './pages/mapel/IPSPage';
 
 // Komponen dan layout
 import MainLayout from './layouts/MainLayout';

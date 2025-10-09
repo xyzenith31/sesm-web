@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FiSearch, FiArrowLeft } from 'react-icons/fi';
 import { FaDice } from 'react-icons/fa';
-import logoSesm from '../assets/logo.png';
+import logoSesm from '../../assets/logo.png';
 
 // --- Komponen Ikon SVG Kustom ---
 const NumberBlocksIcon = () => (

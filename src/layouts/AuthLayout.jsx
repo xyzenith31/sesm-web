@@ -1,5 +1,5 @@
 import React from 'react';
-import AnimatedBackground from '../components/AnimatedBackground'; // 1. Impor background animasi
+import AnimatedBackground from '../components/Auth/AnimatedBackground'; // 1. Impor background animasi
 
 const AuthLayout = ({ children }) => {
   return (

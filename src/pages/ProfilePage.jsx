@@ -4,9 +4,8 @@ import {
   FiChevronRight, FiUser, FiHelpCircle, FiLogOut, FiTrendingUp, 
   FiFeather, FiCheckSquare, FiClock, FiZap, FiAlertTriangle
 } from 'react-icons/fi';
-import { useAuth } from '../hooks/useAuth'; // 1. Impor useAuth hook
+import { useAuth } from '../hooks/useAuth';
 
-// --- Komponen Modal Konfirmasi (tidak ada perubahan) ---
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     if (!isOpen) return null;
     return (
@@ -48,9 +47,6 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     );
 };
 
-
-// --- Komponen lain (RankCard, AnimatedNumber, dll) tidak ada perubahan ---
-// ... (Kode komponen lain tetap sama seperti sebelumnya)
 const ranks = [
   { name: 'Murid Baru', points: 0, color: '#CD7F32', icon: 'bronze' },
   { name: 'Siswa Rajin', points: 5000, color: '#C0C0C0', icon: 'silver' },
@@ -103,14 +99,12 @@ const StatCard = ({ icon: Icon, value, label, color }) => ( <div className="bg-w
 
 const ProfilePage = ({ onNavigate }) => {
   
-  const { logout } = useAuth(); // 2. Ambil fungsi logout dari hook
+  const { logout } = useAuth();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  // 3. Perbarui fungsi handleLogout
   const handleLogout = () => {
-    setIsLogoutModalOpen(false); // Tutup modal
-    logout(); // Panggil fungsi logout dari useAuth
-    // Navigasi akan ditangani secara otomatis oleh NavigationContext
+    setIsLogoutModalOpen(false);
+    logout();
   };
 
   const currentUserPoints = 15500;

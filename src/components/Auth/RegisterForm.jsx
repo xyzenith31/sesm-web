@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import { useAuth } from '../hooks/useAuth'; // <-- Ganti impor ini
+import { useAuth } from '../../hooks/useAuth'; // <-- Ganti impor ini
 
 const RegisterForm = ({ onSwitchToLogin }) => {
   const [formData, setFormData] = useState({

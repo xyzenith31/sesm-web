@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
-import LoginForm from '../components/LoginForm';
+import LoginForm from '../components/Auth/LoginForm';
 import Logo from '../assets/logo.png'; // Path ini sudah benar
 import Card from '../components/Card';
 

@@ -20,10 +20,7 @@ const stationeryIcons = [
 ];
 
 const FallingIcon = ({ icon: Icon, color, size }) => {
-  const duration = Math.random() * 8 + 8; // Durasi 8-16 detik
-  // FIX: Mengatur delay menjadi nilai negatif acak.
-  // Ini akan membuat animasi dimulai seolah-olah sudah berjalan,
-  // sehingga ikon langsung muncul tersebar di layar.
+  const duration = Math.random() * 8 + 8;
   const delay = Math.random() * -duration;
   const xStart = Math.random() * 100; 
   
@@ -33,7 +30,7 @@ const FallingIcon = ({ icon: Icon, color, size }) => {
   const animateRotate = initialRotate + (Math.random() > 0.5 ? 180 : -180);
 
   return (
-    <motion.div
+    <motion.div 
       className="absolute cursor-pointer"
       style={{
         top: '-10vh',

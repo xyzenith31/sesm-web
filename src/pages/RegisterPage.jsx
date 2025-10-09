@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
-import RegisterForm from '../components/RegisterForm';
+import RegisterForm from '../components/Auth/RegisterForm';
 import Logo from '../assets/logo.png';
 import Card from '../components/Card'; // <-- Impor komponen Card
 
