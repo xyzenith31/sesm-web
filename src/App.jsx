@@ -28,6 +28,11 @@ import PKNPage from './pages/mapel/PKNPage';
 import IPAPage from './pages/mapel/IPAPage';
 import IPSPage from './pages/mapel/IPSPage';
 
+// --- Impor Halaman dan Layout Guru ---
+import AdminLayout from './layouts/AdminLayout';
+import DashboardGuru from './pages/admin/DashboardGuru';
+import ManajemenMateri from './pages/admin/ManajemenMateri';
+
 // Komponen dan layout
 import MainLayout from './layouts/MainLayout';
 import QuizForm from './components/QuizForm';
@@ -59,25 +64,26 @@ function App() {
   };
 
   const renderView = () => {
-    // Array ini sudah benar, 'bookmark' sudah ada di sini
+    // --- (1) Views Siswa ---
     const viewsInMainLayout = [
       'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz',
-      'matematika', 'membaca', 'menulis', 'berhitung', 'pai', 
+      'matematika', 'membaca', 'menulis', 'berhitung', 'pai',
       'bahasaIndonesia', 'bahasaInggris', 'pkn', 'ipa', 'ips',
       'accountSettings'
     ];
 
+    // --- (2) Views Guru ---
+    const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri'];
+
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
-
       const pageMap = {
         home: <HomePage onNavigate={navigate} />,
         explore: <ExplorePage onNavigate={navigate} />,
         profile: <ProfilePage onNavigate={navigate} />,
         quiz: <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />,
         rank: <RankPage onNavigate={navigate} />,
-        bookmark: <BookmarkPage onNavigate={navigate} />, // <-- (PENTING) Tambahkan view & komponen di sini
-        // Halaman Mapel
+        bookmark: <BookmarkPage onNavigate={navigate} />,
         matematika: <MatematikaPage onNavigate={navigate} />,
         membaca: <MembacaPage onNavigate={navigate} />,
         menulis: <MenulisPage onNavigate={navigate} />,
@@ -88,10 +94,8 @@ function App() {
         pkn: <PKNPage onNavigate={navigate} />,
         ipa: <IPAPage onNavigate={navigate} />,
         ips: <IPSPage onNavigate={navigate} />,
-        // Halaman Akun
         accountSettings: <AccountSettingsPage onNavigate={navigate} />,
       };
-
       pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
 
       return (
@@ -103,7 +107,21 @@ function App() {
       );
     }
 
-    // Halaman di luar MainLayout
+    if (viewsInAdminLayout.includes(currentView)) {
+      let pageComponent;
+      if (currentView === 'dashboardGuru') pageComponent = <DashboardGuru />;
+      if (currentView === 'manajemenMateri') pageComponent = <ManajemenMateri />;
+
+      return (
+        <AdminLayout activePage={currentView} onNavigate={navigate}>
+          <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
+            {pageComponent}
+          </motion.div>
+        </AdminLayout>
+      );
+    }
+
+    // --- (3) Halaman di luar Layout ---
     switch (currentView) {
       case 'login':
         return <LoginPage onSwitchToRegister={() => navigate('register')} />;

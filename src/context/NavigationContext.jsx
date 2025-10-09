@@ -5,7 +5,7 @@ export const NavigationContext = createContext();
 
 export const NavigationProvider = ({ children }) => {
   const { user, loading } = useAuth();
-  const [currentView, setCurrentView] = useState(null); // Mulai dari null untuk mencegah kedipan
+  const [currentView, setCurrentView] = useState(null); // Mulai dari null untuk mencegah kedipan UI
 
   // useEffect ini sekarang HANYA berjalan saat status login/loading berubah.
   // Tugasnya adalah menentukan halaman mana yang harus ditampilkan saat aplikasi pertama dimuat,
@@ -25,23 +25,22 @@ export const NavigationProvider = ({ children }) => {
       } else {
         setCurrentView('login');
       }
-    } 
+    }
     // Jika ADA user (sudah login)
     else {
-      if (user.jenjang) {
-        // Jika sudah memilih jenjang, langsung ke home.
-        // PENTING: Cek dulu apakah currentView sudah di dalam area aplikasi utama.
-        // Ini mencegah 'home' menimpa navigasi yang sedang berlangsung (misal ke 'ipa').
-        const mainAppViews = ['home', 'explore', 'profile', 'matematika', 'ipa', 'pkn']; // Tambahkan view lain di sini jika perlu
-        if (!currentView || !mainAppViews.includes(currentView)) {
-           setCurrentView('home');
-        }
+      // Pengecekan role pengguna
+      if (user.role === 'guru') {
+        setCurrentView('dashboardGuru'); // Arahkan guru ke dasbornya
       } else {
-        // Jika belum memilih jenjang
-        setCurrentView('levelSelection');
+        // Logika untuk siswa (tidak berubah)
+        if (user.jenjang) {
+          setCurrentView('home');
+        } else {
+          setCurrentView('levelSelection');
+        }
       }
     }
-  }, [user, loading]);
+  }, [user, loading]); // <-- PERBAIKAN UTAMA: Hapus 'currentView' dari dependensi
 
   // Fungsi navigate sekarang menjadi satu-satunya cara untuk berpindah halaman
   // setelah halaman awal ditentukan.
