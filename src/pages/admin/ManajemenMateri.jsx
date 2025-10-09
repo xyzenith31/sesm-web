@@ -201,7 +201,7 @@ const ManajemenMateri = () => {
                 <h1 className="text-3xl font-bold text-sesm-deep mb-6">Manajemen Materi & Soal</h1>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
                     <div className="md:col-span-1 bg-white p-4 rounded-xl shadow-md flex flex-col h-[75vh]">
-                        <h2 className="text-lg font-bold border-b pb-2 mb-2 flex-shrink-0">Pilih Bab</h2>
+                        <h2 className="text-lg font-bold border-b pb-2 mb-2 flex-shrink-0">Pilih Bab & Mapel</h2>
                         <div className="flex-shrink-0 mb-3">
                             <select value={selectedFilter} onChange={(e) => setSelectedFilter(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal">
                                 {Object.keys(allDataByGrade).map(filterName => (
