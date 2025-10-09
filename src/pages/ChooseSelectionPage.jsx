@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
 import UserLayout from '../layouts/UserLayout';
 import ConfirmationModal from '../components/ConfirmationModal';
-import UserService from '../api/user.js'; // <-- Impor service baru
+import { useData } from '../hooks/useData'; // <-- GANTI DENGAN INI
 
 const ChooseSelectionPage = ({ onExit, onSelectClass1, onSelectClass2, onSelectClass3_4, onSelectClass5, onSelectClass6 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { updateLevelAndClass } = useData(); // <-- GUNAKAN HOOK
 
-  // Ubah struktur data agar lebih mudah di-map
   const classes = [
     { label: 'KELAS 1', handler: onSelectClass1, value: 1 },
     { label: 'KELAS 2', handler: onSelectClass2, value: 2 },
@@ -23,7 +23,8 @@ const ChooseSelectionPage = ({ onExit, onSelectClass1, onSelectClass2, onSelectC
     if (loading) return;
     setLoading(true);
 
-    UserService.updateLevelAndClass({ jenjang: 'SD', kelas: classItem.value })
+    // Panggil fungsi dari hook
+    updateLevelAndClass({ jenjang: 'SD', kelas: classItem.value })
       .then(() => {
         if (classItem.handler) {
           classItem.handler();

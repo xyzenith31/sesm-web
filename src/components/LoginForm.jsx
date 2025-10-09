@@ -1,31 +1,34 @@
 import React, { useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import AuthService from '../api/auth.js'; // <-- Impor service baru
+import { useAuth } from '../hooks/useAuth';
 
-const LoginForm = ({ onLoginSuccess }) => {
+// Prop 'onLoginSuccess' sudah dihapus karena tidak lagi diperlukan
+const LoginForm = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(''); // State ini hanya untuk pesan error
+
+  const { login } = useAuth();
 
   const handleSignIn = (event) => {
     event.preventDefault();
-    setMessage('');
+    setMessage(''); // Selalu bersihkan pesan error di awal
     setLoading(true);
 
-    AuthService.login(identifier, password)
+    login(identifier, password)
       .then(() => {
-        onLoginSuccess(); // Panggil fungsi ini jika login berhasil
       })
       .catch((error) => {
+        // Bagian ini hanya akan berjalan jika login GAGAL
         const resMessage =
           (error.response && error.response.data && error.response.data.message) ||
           error.message ||
           error.toString();
         
-        setMessage(resMessage);
-        setLoading(false);
+        setMessage(resMessage); // Tampilkan pesan error dari server
+        setLoading(false);      // Hentikan loading
       });
   };
 
@@ -79,6 +82,7 @@ const LoginForm = ({ onLoginSuccess }) => {
         </button>
       </div>
       
+      {/* Pesan ini sekarang hanya akan muncul jika ada error dari server */}
       {message && (
          <div className="p-3 mt-4 rounded-lg text-center font-bold bg-red-500/80 text-white">
           {message}

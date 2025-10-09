@@ -3,14 +3,14 @@ import { motion } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
 import UserLayout from '../layouts/UserLayout';
 import ConfirmationModal from '../components/ConfirmationModal';
-import UserService from '../api/user.js'; // <-- Impor service baru
+import { useData } from '../hooks/useData'; // <-- GANTI DENGAN INI
 
 const LevelSelectionPage = ({ onSelectSD, onSelectTK, onExit }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { updateLevelAndClass } = useData(); // <-- GUNAKAN HOOK
 
   const handleSDClick = () => {
-    // Untuk SD, kita tidak kirim API dulu, biarkan halaman Pilih Kelas yang melakukannya
     if (onSelectSD) {
       onSelectSD();
     }
@@ -18,8 +18,8 @@ const LevelSelectionPage = ({ onSelectSD, onSelectTK, onExit }) => {
 
   const handleTKClick = () => {
     setLoading(true);
-    // Untuk TK, kita langsung kirim API dan navigasi ke home
-    UserService.updateLevelAndClass({ jenjang: 'TK', kelas: null })
+    // Panggil fungsi dari hook
+    updateLevelAndClass({ jenjang: 'TK', kelas: null })
       .then(() => {
         if (onSelectTK) {
           onSelectTK();

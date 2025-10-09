@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from './hooks/useNavigation';
 
-// Impor semua halaman Anda
+// Impor semua halaman
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -10,8 +10,8 @@ import LevelSelectionPage from './pages/LevelSelectionPage';
 import ChooseSelectionPage from './pages/ChooseSelectionPage';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
-import QuizPage from './pages/QuizPage';
 // ... (Impor semua halaman lainnya)
+import RankPage from './pages/RankPage';
 
 // Impor komponen dan layout
 import MainLayout from './layouts/MainLayout';
@@ -29,9 +29,13 @@ const pageTransition = {
   duration: 0.4,
 };
 
-function App() {
+const AppRoutes = () => {
   const { currentView, navigate } = useNavigation();
   const [selectedQuiz, setSelectedQuiz] = useState(null);
+
+  const onLoginSuccess = () => {
+    // Navigasi sudah dihandle oleh `useNavigation` hook
+  };
 
   const handleSelectQuiz = (quizData) => {
     setSelectedQuiz(quizData);
@@ -45,27 +49,31 @@ function App() {
 
   const renderView = () => {
     const viewsInMainLayout = [
-      'home', 'explore', 'bookmark', 'profile', 'rank', 'diary', 'quiz',
-      // ... (tambahkan halaman lain yang butuh MainLayout)
+      'home', 'explore', 'bookmark', 'profile', 'activityLog', 'diary',
+      'dailyChallenge', 'creativeZone', 'studyReport', 'accountSettings', 'rank', 'quiz'
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
       if (currentView === 'home') pageComponent = <HomePage onNavigate={navigate} />;
+      if (currentView === 'explore') pageComponent = <ExplorePage onNavigate={navigate} />;
+      // ... (tambahkan sisa halaman di MainLayout di sini)
       if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
       if (currentView === 'quiz') pageComponent = <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />;
-      // ... (tambahkan komponen halaman lainnya di sini)
+
 
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
-          {pageComponent}
+          <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
+            {pageComponent}
+          </motion.div>
         </MainLayout>
       );
     }
 
     switch (currentView) {
       case 'login':
-        return <LoginPage onSwitchToRegister={() => navigate('register')} />;
+        return <LoginPage onSwitchToRegister={() => navigate('register')} onLoginSuccess={onLoginSuccess} />;
       case 'register':
         return <RegisterPage onSwitchToLogin={() => navigate('login')} />;
       case 'levelSelection':
@@ -74,6 +82,7 @@ function App() {
         return <ChooseSelectionPage onExit={() => navigate('login')} onSelectClass1={() => navigate('home')} onSelectClass2={() => navigate('home')} onSelectClass3_4={() => navigate('home')} onSelectClass5={() => navigate('home')} onSelectClass6={() => navigate('home')} />;
       case 'quizForm':
         return <QuizForm quizData={selectedQuiz} onCompleteQuiz={handleCompleteQuiz} />;
+      // ... (tambahkan halaman lain yang tidak menggunakan MainLayout di sini)
       default:
         return <WelcomePage onExplore={() => navigate('login')} />;
     }
@@ -86,6 +95,6 @@ function App() {
       </motion.div>
     </AnimatePresence>
   );
-}
+};
 
-export default App;
+export default AppRoutes;
