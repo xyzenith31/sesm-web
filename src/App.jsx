@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from './hooks/useNavigation';
 
-// --- Impor halaman umum ---
+// --- Impor semua halaman ---
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -14,8 +14,9 @@ import QuizPage from './pages/QuizPage';
 import RankPage from './pages/RankPage';
 import ExplorePage from './pages/ExplorePage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
+import BookmarkPage from './pages/BookmarkPage';
 
-// --- (INI BAGIAN YANG DIPERBAIKI) Impor halaman Mapel dari folder 'pages/mapel/' ---
+// Halaman Mapel
 import MatematikaPage from './pages/mapel/MatematikaPage';
 import MembacaPage from './pages/mapel/MembacaPage';
 import MenulisPage from './pages/mapel/MenulisPage';
@@ -58,7 +59,7 @@ function App() {
   };
 
   const renderView = () => {
-    // Logika di bawah ini sudah benar dan tidak perlu diubah
+    // Array ini sudah benar, 'bookmark' sudah ada di sini
     const viewsInMainLayout = [
       'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz',
       'matematika', 'membaca', 'menulis', 'berhitung', 'pai', 
@@ -75,6 +76,7 @@ function App() {
         profile: <ProfilePage onNavigate={navigate} />,
         quiz: <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />,
         rank: <RankPage onNavigate={navigate} />,
+        bookmark: <BookmarkPage onNavigate={navigate} />, // <-- (PENTING) Tambahkan view & komponen di sini
         // Halaman Mapel
         matematika: <MatematikaPage onNavigate={navigate} />,
         membaca: <MembacaPage onNavigate={navigate} />,
