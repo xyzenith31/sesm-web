@@ -12,9 +12,14 @@ const updateLevelAndClass = (levelData) => {
   return apiClient.put('/user/profile/level', levelData);
 };
 
+const updateUserProfile = (profileData) => {
+  return apiClient.put('/user', profileData); 
+};
+
 const DataService = {
   getSubjects,
   updateLevelAndClass,
+  updateUserProfile,
 };
 
 export default DataService;

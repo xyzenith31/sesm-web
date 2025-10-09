@@ -1,6 +1,8 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import AuthService from '../services/authService';
+// Impor DataService yang sudah diperbarui
+import DataService from '../services/dataService';
 
 export const useAuth = () => {
   const { user, setUser, loading, refreshUser } = useContext(AuthContext);
@@ -15,24 +17,35 @@ export const useAuth = () => {
     return response.data;
   };
 
-  // --- FUNGSI LOGOUT DIPERBARUI UNTUK KEMBALI KE WELCOME PAGE ---
   const logout = () => {
-    // Hapus data pengguna dari state dan local storage
-    AuthService.logout(); // Ini akan menghapus item 'user'
-    
-    // HAPUS PENANDA 'hasSeenWelcome' AGAR KEMBALI KE WELCOME PAGE
+    AuthService.logout();
     localStorage.removeItem('hasSeenWelcome');
-    
-    // Kosongkan state pengguna di AuthContext, yang akan memicu redirect
     setUser(null);
   };
   
-  const updateUserLocally = (updatedData) => {
+  // --- FUNGSI UPDATE PROFILE DIPERBAIKI DI SINI ---
+  const updateProfile = async (updatedData) => {
+    try {
+      // 1. Kirim data pembaruan ke backend (baris ini diaktifkan)
+      await DataService.updateUserProfile(updatedData);
+
+      // 2. Jika pengiriman ke backend berhasil, perbarui data lokal
       const currentUser = AuthService.getCurrentUser();
       const updatedUser = { ...currentUser, ...updatedData };
       localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // 3. Perbarui state global agar semua komponen mendapat data baru
       refreshUser();
+
+      return { success: true, message: 'Profil berhasil diperbarui!' };
+
+    } catch (error) {
+      console.error("Gagal memperbarui profil:", error);
+      const errorMessage = error.response?.data?.message || 'Gagal terhubung ke server.';
+      return { success: false, message: errorMessage };
+    }
   };
+
 
   return {
     user,
@@ -40,6 +53,6 @@ export const useAuth = () => {
     login,
     logout,
     register: AuthService.register,
-    updateUserLocally,
+    updateProfile,
   };
 };

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from './hooks/useNavigation';
 
-// --- Impor semua halaman yang ada ---
+// --- Impor halaman umum ---
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -13,8 +13,9 @@ import ProfilePage from './pages/ProfilePage';
 import QuizPage from './pages/QuizPage';
 import RankPage from './pages/RankPage';
 import ExplorePage from './pages/ExplorePage';
+import AccountSettingsPage from './pages/AccountSettingsPage';
 
-// --- Impor halaman-halaman Mapel ---
+// --- (INI BAGIAN YANG DIPERBAIKI) Impor halaman Mapel dari folder 'pages/mapel/' ---
 import MatematikaPage from './pages/mapel/MatematikaPage';
 import MembacaPage from './pages/mapel/MembacaPage';
 import MenulisPage from './pages/mapel/MenulisPage';
@@ -57,23 +58,24 @@ function App() {
   };
 
   const renderView = () => {
-    // 1. Daftarkan SEMUA view yang butuh Sidebar dan Bottom Nav Bar di sini
+    // Logika di bawah ini sudah benar dan tidak perlu diubah
     const viewsInMainLayout = [
       'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz',
       'matematika', 'membaca', 'menulis', 'berhitung', 'pai', 
-      'bahasaIndonesia', 'bahasaInggris', 'pkn', 'ipa', 'ips'
+      'bahasaIndonesia', 'bahasaInggris', 'pkn', 'ipa', 'ips',
+      'accountSettings'
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
 
-      // 2. Buat "peta" untuk mencocokkan view dengan komponen halamannya
       const pageMap = {
         home: <HomePage onNavigate={navigate} />,
         explore: <ExplorePage onNavigate={navigate} />,
         profile: <ProfilePage onNavigate={navigate} />,
         quiz: <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />,
         rank: <RankPage onNavigate={navigate} />,
+        // Halaman Mapel
         matematika: <MatematikaPage onNavigate={navigate} />,
         membaca: <MembacaPage onNavigate={navigate} />,
         menulis: <MenulisPage onNavigate={navigate} />,
@@ -84,11 +86,12 @@ function App() {
         pkn: <PKNPage onNavigate={navigate} />,
         ipa: <IPAPage onNavigate={navigate} />,
         ips: <IPSPage onNavigate={navigate} />,
+        // Halaman Akun
+        accountSettings: <AccountSettingsPage onNavigate={navigate} />,
       };
 
-      pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />; // Fallback ke HomePage
+      pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
 
-      // 3. Render komponen di dalam MainLayout
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
           <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
@@ -98,7 +101,7 @@ function App() {
       );
     }
 
-    // Switch case untuk halaman di luar MainLayout (login, register, dll)
+    // Halaman di luar MainLayout
     switch (currentView) {
       case 'login':
         return <LoginPage onSwitchToRegister={() => navigate('register')} />;
@@ -117,7 +120,6 @@ function App() {
 
   return (
     <AnimatePresence mode="wait">
-      {/* Cukup render hasilnya, motion.div pembungkus sudah ada di dalam renderView */}
       {renderView()}
     </AnimatePresence>
   );
