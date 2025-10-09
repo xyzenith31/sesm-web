@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from './hooks/useNavigation';
 
-// Impor semua halaman
+// --- Impor semua halaman yang ada ---
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -10,10 +10,23 @@ import LevelSelectionPage from './pages/LevelSelectionPage';
 import ChooseSelectionPage from './pages/ChooseSelectionPage';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
-// ... (Impor semua halaman lainnya)
+import QuizPage from './pages/QuizPage';
 import RankPage from './pages/RankPage';
+import ExplorePage from './pages/ExplorePage';
 
-// Impor komponen dan layout
+// --- Impor halaman-halaman Mapel ---
+import MatematikaPage from './pages/MatematikaPage';
+import MembacaPage from './pages/MembacaPage';
+import MenulisPage from './pages/MenulisPage';
+import BerhitungPage from './pages/BerhitungPage';
+import PendidikanAgamaIslamPage from './pages/PendidikanAgamaIslamPage';
+import BahasaIndonesiaPage from './pages/BahasaIndonesiaPage';
+import BahasaInggrisPage from './pages/BahasaInggrisPage';
+import PKNPage from './pages/PKNPage';
+import IPAPage from './pages/IPAPage';
+import IPSPage from './pages/IPSPage';
+
+// Komponen dan layout
 import MainLayout from './layouts/MainLayout';
 import QuizForm from './components/QuizForm';
 
@@ -33,9 +46,7 @@ const AppRoutes = () => {
   const { currentView, navigate } = useNavigation();
   const [selectedQuiz, setSelectedQuiz] = useState(null);
 
-  const onLoginSuccess = () => {
-    // Navigasi sudah dihandle oleh `useNavigation` hook
-  };
+  const onLoginSuccess = () => {};
 
   const handleSelectQuiz = (quizData) => {
     setSelectedQuiz(quizData);
@@ -48,20 +59,36 @@ const AppRoutes = () => {
   };
 
   const renderView = () => {
+    // --- (1) DAFTARKAN SEMUA VIEW YANG MENGGUNAKAN MAINLAYOUT DI SINI ---
     const viewsInMainLayout = [
-      'home', 'explore', 'bookmark', 'profile', 'activityLog', 'diary',
-      'dailyChallenge', 'creativeZone', 'studyReport', 'accountSettings', 'rank', 'quiz'
+      'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz',
+      // Tambahkan semua kunci navigasi mapel ke dalam array ini
+      'matematika', 'membaca', 'menulis', 'berhitung', 'pai', 
+      'bahasaIndonesia', 'bahasaInggris', 'pkn', 'ipa', 'ips'
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
+      
+      // --- (2) BUAT KONDISI UNTUK SETIAP HALAMAN ---
       if (currentView === 'home') pageComponent = <HomePage onNavigate={navigate} />;
-      if (currentView === 'explore') pageComponent = <ExplorePage onNavigate={navigate} />;
-      // ... (tambahkan sisa halaman di MainLayout di sini)
-      if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
-      if (currentView === 'quiz') pageComponent = <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />;
+      else if (currentView === 'explore') pageComponent = <ExplorePage onNavigate={navigate} />;
+      else if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
+      else if (currentView === 'quiz') pageComponent = <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />;
+      else if (currentView === 'rank') pageComponent = <RankPage onNavigate={navigate} />;
+      // --- Kondisi untuk Halaman Mapel ---
+      else if (currentView === 'matematika') pageComponent = <MatematikaPage onNavigate={navigate} />;
+      else if (currentView === 'membaca') pageComponent = <MembacaPage onNavigate={navigate} />;
+      else if (currentView === 'menulis') pageComponent = <MenulisPage onNavigate={navigate} />;
+      else if (currentView === 'berhitung') pageComponent = <BerhitungPage onNavigate={navigate} />;
+      else if (currentView === 'pai') pageComponent = <PendidikanAgamaIslamPage onNavigate={navigate} />;
+      else if (currentView === 'bahasaIndonesia') pageComponent = <BahasaIndonesiaPage onNavigate={navigate} />;
+      else if (currentView === 'bahasaInggris') pageComponent = <BahasaInggrisPage onNavigate={navigate} />;
+      else if (currentView === 'pkn') pageComponent = <PKNPage onNavigate={navigate} />;
+      else if (currentView === 'ipa') pageComponent = <IPAPage onNavigate={navigate} />;
+      else if (currentView === 'ips') pageComponent = <IPSPage onNavigate={navigate} />;
 
-
+      // --- (3) RENDER KOMPONEN DI DALAM MAINLAYOUT ---
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
           <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
@@ -71,6 +98,7 @@ const AppRoutes = () => {
       );
     }
 
+    // Switch case untuk halaman yang TIDAK menggunakan MainLayout
     switch (currentView) {
       case 'login':
         return <LoginPage onSwitchToRegister={() => navigate('register')} onLoginSuccess={onLoginSuccess} />;
@@ -82,7 +110,6 @@ const AppRoutes = () => {
         return <ChooseSelectionPage onExit={() => navigate('login')} onSelectClass1={() => navigate('home')} onSelectClass2={() => navigate('home')} onSelectClass3_4={() => navigate('home')} onSelectClass5={() => navigate('home')} onSelectClass6={() => navigate('home')} />;
       case 'quizForm':
         return <QuizForm quizData={selectedQuiz} onCompleteQuiz={handleCompleteQuiz} />;
-      // ... (tambahkan halaman lain yang tidak menggunakan MainLayout di sini)
       default:
         return <WelcomePage onExplore={() => navigate('login')} />;
     }

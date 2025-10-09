@@ -1,42 +1,50 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
-// 1. Buat Context baru
 export const NavigationContext = createContext();
 
-// 2. Buat Provider (komponen pembungkus) untuk Context ini
 export const NavigationProvider = ({ children }) => {
   const { user, loading } = useAuth();
-  const [currentView, setCurrentView] = useState('welcome'); // Default view selalu 'welcome'
+  const [currentView, setCurrentView] = useState(null); // Mulai dari null untuk mencegah kedipan
 
-  // 3. Logika utama untuk menentukan halaman mana yang akan ditampilkan
+  // useEffect ini sekarang HANYA berjalan saat status login/loading berubah.
+  // Tugasnya adalah menentukan halaman mana yang harus ditampilkan saat aplikasi pertama dimuat,
+  // atau saat pengguna login/logout.
   useEffect(() => {
     // Jangan lakukan apa-apa sampai status otentikasi selesai diperiksa
-    if (loading) return;
+    if (loading) {
+      return;
+    }
 
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
 
-    // Jika belum pernah lihat Welcome Page, tampilkan 'welcome'
-    if (!hasSeenWelcome) {
-      setCurrentView('welcome');
-    } else {
-      // Jika sudah pernah lihat, periksa status login
-      if (user) {
-        // Jika user ada dan sudah memilih jenjang, langsung ke 'home'
-        if (user.jenjang) {
-          setCurrentView('home');
-        } else {
-          // Jika user ada tapi jenjangnya NULL, ke halaman 'levelSelection'
-          setCurrentView('levelSelection');
-        }
+    // Jika TIDAK ADA user (belum login)
+    if (!user) {
+      if (!hasSeenWelcome) {
+        setCurrentView('welcome');
       } else {
-        // Jika tidak ada user, arahkan ke 'login'
         setCurrentView('login');
       }
+    } 
+    // Jika ADA user (sudah login)
+    else {
+      if (user.jenjang) {
+        // Jika sudah memilih jenjang, langsung ke home.
+        // PENTING: Cek dulu apakah currentView sudah di dalam area aplikasi utama.
+        // Ini mencegah 'home' menimpa navigasi yang sedang berlangsung (misal ke 'ipa').
+        const mainAppViews = ['home', 'explore', 'profile', 'matematika', 'ipa', 'pkn']; // Tambahkan view lain di sini jika perlu
+        if (!currentView || !mainAppViews.includes(currentView)) {
+           setCurrentView('home');
+        }
+      } else {
+        // Jika belum memilih jenjang
+        setCurrentView('levelSelection');
+      }
     }
-  }, [user, loading]); // Efek ini berjalan setiap kali status user atau loading berubah
+  }, [user, loading]);
 
-  // 4. Fungsi untuk navigasi manual
+  // Fungsi navigate sekarang menjadi satu-satunya cara untuk berpindah halaman
+  // setelah halaman awal ditentukan.
   const navigate = (view) => {
     // Saat pengguna klik "Explore Now" di Welcome Page,
     // tandai bahwa mereka sudah melihatnya.
@@ -51,14 +59,15 @@ export const NavigationProvider = ({ children }) => {
     navigate,
   };
 
+  // Tampilkan aplikasi hanya setelah view awal berhasil ditentukan
   return (
     <NavigationContext.Provider value={value}>
-      {children}
+      {currentView ? children : null /* Atau tampilkan loading screen di sini */}
     </NavigationContext.Provider>
   );
 };
 
-// 5. Hook kustom untuk mempermudah penggunaan context
+// Hook kustom (tidak berubah)
 export const useNavigation = () => {
   return useContext(NavigationContext);
 };

@@ -3,10 +3,9 @@ import { motion } from 'framer-motion';
 import { FiSearch, FiChevronRight, FiStar, FiHelpCircle, FiAlertCircle } from 'react-icons/fi';
 import { FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale, FaLanguage, FaMosque, FaBookReader, FaPencilAlt, FaBullseye, FaQuestionCircle } from 'react-icons/fa';
 import logoSesm from '../assets/logo.png';
-import { useAuth } from '../hooks/useAuth'; // 1. Impor hook
+import { useAuth } from '../hooks/useAuth'; 
 import { useData } from '../hooks/useData';
 
-// Peta ikon untuk mencocokkan string dari backend dengan komponen ikon
 const iconMap = {
   FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale,
   FaLanguage, FaMosque, FaBookReader, FaPencilAlt, FaBullseye, FaQuestionCircle
@@ -55,27 +54,24 @@ const TestimonialCard = ({ avatar, quote, name }) => (
   </div>
 );
 
-// Hapus 'user' dari props karena kita akan ambil dari hook
 const HomePage = ({ onNavigate }) => {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // 2. Ambil data user dan fungsi dari hook
   const { user } = useAuth();
   const { getSubjects } = useData();
 
   useEffect(() => {
-    // 3. Logika dieksekusi setiap kali 'user' berubah
     if (user && user.jenjang) {
-      setError(null); // Hapus error sebelumnya jika ada
+      setError(null);
       setLoading(true);
       
       getSubjects(user.jenjang, user.kelas)
         .then(response => {
           const subjectsWithIcons = response.data.map(subject => ({
             ...subject,
-            icon: iconMap[subject.icon] || FaBook, // Fallback ke ikon default
+            icon: iconMap[subject.icon] || FaBook, 
           }));
           setSubjects(subjectsWithIcons);
         })
@@ -86,15 +82,34 @@ const HomePage = ({ onNavigate }) => {
         })
         .finally(() => setLoading(false));
     } else if (user) {
-      // Jika ada user tapi tidak ada jenjang, tampilkan error
       setLoading(false);
       setError("Data jenjang pengguna tidak ditemukan. Silakan login ulang.");
     }
-  }, [user, getSubjects]); // Efek ini bergantung pada 'user'
+  }, [user, getSubjects]);
 
   const handleSubjectClick = (subjectLabel) => {
-    if (subjectLabel === 'Matematika' && onNavigate) {
-      onNavigate('matematika1');
+    if (!onNavigate) return;
+
+    // Peta untuk mengubah nama mapel menjadi key navigasi yang simpel
+    const subjectToViewMap = {
+      'Matematika': 'matematika',
+      'Membaca': 'membaca',
+      'Menulis': 'menulis',
+      'Berhitung': 'berhitung',
+      'Pendidikan Agama Islam': 'pai',
+      'Bahasa Indonesia': 'bahasaIndonesia',
+      'Bahasa Inggris': 'bahasaInggris',
+      'PKN': 'pkn',
+      'IPA': 'ipa',
+      'IPS': 'ips'
+    };
+
+    const view = subjectToViewMap[subjectLabel.trim()];
+
+    if (view) {
+      onNavigate(view);
+    } else {
+      alert(`Halaman untuk "${subjectLabel}" belum tersedia.`);
     }
   };
 

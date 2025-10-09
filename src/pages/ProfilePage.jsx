@@ -1,19 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, animate } from 'framer-motion';
 import {
-  FiChevronRight,
-  FiUser,
-  FiHelpCircle,
-  FiLogOut,
-  FiTrendingUp,
-  FiFeather,
-  FiCheckSquare,
-  FiClock,
-  FiZap,
-  FiAlertTriangle
+  FiChevronRight, FiUser, FiHelpCircle, FiLogOut, FiTrendingUp, 
+  FiFeather, FiCheckSquare, FiClock, FiZap, FiAlertTriangle
 } from 'react-icons/fi';
+import { useAuth } from '../hooks/useAuth'; // 1. Impor useAuth hook
 
-// --- Komponen Modal Konfirmasi ---
+// --- Komponen Modal Konfirmasi (tidak ada perubahan) ---
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     if (!isOpen) return null;
     return (
@@ -56,7 +49,8 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 
-// --- DATA PERINGKAT ---
+// --- Komponen lain (RankCard, AnimatedNumber, dll) tidak ada perubahan ---
+// ... (Kode komponen lain tetap sama seperti sebelumnya)
 const ranks = [
   { name: 'Murid Baru', points: 0, color: '#CD7F32', icon: 'bronze' },
   { name: 'Siswa Rajin', points: 5000, color: '#C0C0C0', icon: 'silver' },
@@ -65,8 +59,6 @@ const ranks = [
   { name: 'Cendekiawan Muda', points: 50000, color: '#9370DB', icon: 'diamond' },
   { name: 'Legenda Sekolah', points: 100000, color: '#FF4500', icon: 'master' },
 ];
-
-// --- Komponen Ikon Peringkat Kustom (SVG) ---
 const RankIcon = ({ rank, size = "w-16 h-16" }) => {
   const iconStyle = `drop-shadow-lg ${size}`;
   switch (rank) {
@@ -79,100 +71,46 @@ const RankIcon = ({ rank, size = "w-16 h-16" }) => {
     default: return null;
   }
 };
-
-// --- KOMPONEN KARTU PERINGKAT ---
 const RankCard = ({ currentUserPoints, onNavigate }) => {
   const currentRankIndex = ranks.slice().reverse().findIndex(r => currentUserPoints >= r.points);
   const currentRank = ranks[ranks.length - 1 - currentRankIndex];
   const nextRank = ranks[ranks.length - currentRankIndex];
-
   const pointsForNextRank = nextRank ? nextRank.points - currentRank.points : 0;
   const pointsProgress = currentUserPoints - currentRank.points;
   const progressPercentage = nextRank ? (pointsProgress / pointsForNextRank) * 100 : 100;
-
   return (
-    <motion.button
-      onClick={() => onNavigate('rank')}
-      className="w-full bg-white p-5 rounded-2xl shadow-md text-left"
-      whileHover={{ y: -5, boxShadow: "0px 10px 20px rgba(0,0,0,0.08)" }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-gray-800">Peringkat Saat Ini</h3>
-        <FiChevronRight className="text-gray-400" />
-      </div>
+    <motion.button onClick={() => onNavigate('rank')} className="w-full bg-white p-5 rounded-2xl shadow-md text-left" whileHover={{ y: -5, boxShadow: "0px 10px 20px rgba(0,0,0,0.08)" }} whileTap={{ scale: 0.98 }}>
+      <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-gray-800">Peringkat Saat Ini</h3><FiChevronRight className="text-gray-400" /></div>
       <div className="flex items-center space-x-4">
-        <div style={{ color: currentRank.color }}>
-            <RankIcon rank={currentRank.icon} />
-        </div>
+        <div style={{ color: currentRank.color }}><RankIcon rank={currentRank.icon} /></div>
         <div className="flex-grow">
           <h4 className="text-lg font-bold" style={{ color: currentRank.color }}>{currentRank.name}</h4>
-          <p className="text-sm text-gray-600 flex items-center">
-            <FiZap className="mr-1 text-yellow-500" /> {currentUserPoints.toLocaleString()} Poin
-          </p>
-          {nextRank && (
-            <div className="mt-2">
-              <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                <motion.div
-                  className="h-2.5 rounded-full"
-                  style={{ backgroundColor: currentRank.color }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPercentage}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-              </div>
-            </div>
-          )}
+          <p className="text-sm text-gray-600 flex items-center"><FiZap className="mr-1 text-yellow-500" /> {currentUserPoints.toLocaleString()} Poin</p>
+          {nextRank && ( <div className="mt-2"><div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"><motion.div className="h-2.5 rounded-full" style={{ backgroundColor: currentRank.color }} initial={{ width: 0 }} animate={{ width: `${progressPercentage}%` }} transition={{ duration: 1, ease: "easeOut" }}/></div></div>)}
         </div>
       </div>
     </motion.button>
   );
 };
-
-// Komponen Angka Animasi
 const AnimatedNumber = ({ value }) => {
   const [displayValue, setDisplayValue] = useState(0);
-  useEffect(() => {
-    const controls = animate(0, parseInt(value) || 0, {
-      duration: 1.5, ease: "easeOut", onUpdate(latest) { setDisplayValue(Math.round(latest)); }
-    });
-    return () => controls.stop();
-  }, [value]);
+  useEffect(() => { const controls = animate(0, parseInt(value) || 0, { duration: 1.5, ease: "easeOut", onUpdate(latest) { setDisplayValue(Math.round(latest)); }}); return () => controls.stop(); }, [value]);
   return <p className="text-xl font-bold text-white">{displayValue}</p>;
 };
-
-// Komponen Menu
-const ProfileMenuItem = ({ icon: Icon, label, hasChevron = true, isLogout = false, onClick }) => (
-  <motion.button onClick={onClick} className={`w-full flex items-center justify-between text-left px-5 py-4 bg-white rounded-xl shadow-sm transition-colors ${isLogout ? 'text-red-500' : 'text-gray-700'} hover:bg-gray-50`} whileTap={{ scale: 0.98 }}>
-    <div className="flex items-center space-x-4">
-      <Icon className={isLogout ? 'text-red-500' : 'text-sesm-deep'} size={22} />
-      <span className="font-semibold">{label}</span>
-    </div>
-    {hasChevron && <FiChevronRight className="text-gray-400" size={20} />}
-  </motion.button>
-);
-
-// Komponen Kartu Statistik
-const StatCard = ({ icon: Icon, value, label, color }) => (
-  <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl flex items-center space-x-3">
-    <Icon className={`${color} text-3xl`} />
-    <div>
-      <AnimatedNumber value={value} />
-      <p className="text-xs text-white/80">{label}</p>
-    </div>
-  </div>
-);
+const ProfileMenuItem = ({ icon: Icon, label, hasChevron = true, isLogout = false, onClick }) => ( <motion.button onClick={onClick} className={`w-full flex items-center justify-between text-left px-5 py-4 bg-white rounded-xl shadow-sm transition-colors ${isLogout ? 'text-red-500' : 'text-gray-700'} hover:bg-gray-50`} whileTap={{ scale: 0.98 }}><div className="flex items-center space-x-4"><Icon className={isLogout ? 'text-red-500' : 'text-sesm-deep'} size={22} /><span className="font-semibold">{label}</span></div>{hasChevron && <FiChevronRight className="text-gray-400" size={20} />}</motion.button>);
+const StatCard = ({ icon: Icon, value, label, color }) => ( <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl flex items-center space-x-3"><Icon className={`${color} text-3xl`} /><div><AnimatedNumber value={value} /><p className="text-xs text-white/80">{label}</p></div></div>);
 
 
 const ProfilePage = ({ onNavigate }) => {
   
+  const { logout } = useAuth(); // 2. Ambil fungsi logout dari hook
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
+  // 3. Perbarui fungsi handleLogout
   const handleLogout = () => {
-    console.log("Pengguna logout...");
-    setIsLogoutModalOpen(false);
-    // --- INI BAGIAN YANG DIUBAH ---
-    onNavigate('login'); // Arahkan ke halaman login
+    setIsLogoutModalOpen(false); // Tutup modal
+    logout(); // Panggil fungsi logout dari useAuth
+    // Navigasi akan ditangani secara otomatis oleh NavigationContext
   };
 
   const currentUserPoints = 15500;
@@ -213,12 +151,10 @@ const ProfilePage = ({ onNavigate }) => {
               {user.stats.map(stat => <StatCard key={stat.label} {...stat} />)}
             </div>
           </div>
-
           <main className="p-6 -mt-4">
             <div className="mb-6">
               <RankCard currentUserPoints={currentUserPoints} onNavigate={onNavigate} />
             </div>
-
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-2">Aktivitas Saya</h3>
@@ -266,10 +202,8 @@ const ProfilePage = ({ onNavigate }) => {
               ))}
             </div>
           </div>
-          
           <div className="lg:col-span-2 space-y-8">
             <RankCard currentUserPoints={currentUserPoints} onNavigate={onNavigate} />
-            
             <div className="bg-white rounded-2xl shadow-md p-6 space-y-5">
               <div>
                   <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-3">Aktivitas Saya</h3>

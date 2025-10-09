@@ -10,20 +10,20 @@ export const useAuth = () => {
     if (response.data.accessToken) {
       const userData = response.data;
       localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData); // Langsung update state, ini lebih cepat
+      setUser(userData);
     }
     return response.data;
   };
 
-  // --- FUNGSI LOGOUT DIPERBAIKI DI SINI ---
+  // --- FUNGSI LOGOUT DIPERBARUI UNTUK KEMBALI KE WELCOME PAGE ---
   const logout = () => {
-    // Hapus data pengguna
-    AuthService.logout();
+    // Hapus data pengguna dari state dan local storage
+    AuthService.logout(); // Ini akan menghapus item 'user'
     
-    // HAPUS PENANDA 'hasSeenWelcome' AGAR KEMBALI KE AWAL
+    // HAPUS PENANDA 'hasSeenWelcome' AGAR KEMBALI KE WELCOME PAGE
     localStorage.removeItem('hasSeenWelcome');
     
-    // Kosongkan state pengguna
+    // Kosongkan state pengguna di AuthContext, yang akan memicu redirect
     setUser(null);
   };
   
