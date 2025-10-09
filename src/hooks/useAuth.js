@@ -1,7 +1,6 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import AuthService from '../services/authService';
-// Impor DataService yang sudah diperbarui
 import DataService from '../services/dataService';
 
 export const useAuth = () => {
@@ -23,22 +22,14 @@ export const useAuth = () => {
     setUser(null);
   };
   
-  // --- FUNGSI UPDATE PROFILE DIPERBAIKI DI SINI ---
   const updateProfile = async (updatedData) => {
     try {
-      // 1. Kirim data pembaruan ke backend (baris ini diaktifkan)
       await DataService.updateUserProfile(updatedData);
-
-      // 2. Jika pengiriman ke backend berhasil, perbarui data lokal
       const currentUser = AuthService.getCurrentUser();
       const updatedUser = { ...currentUser, ...updatedData };
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      // 3. Perbarui state global agar semua komponen mendapat data baru
       refreshUser();
-
       return { success: true, message: 'Profil berhasil diperbarui!' };
-
     } catch (error) {
       console.error("Gagal memperbarui profil:", error);
       const errorMessage = error.response?.data?.message || 'Gagal terhubung ke server.';
@@ -46,6 +37,20 @@ export const useAuth = () => {
     }
   };
 
+  // --- TAMBAHKAN FUNGSI INI ---
+  // Fungsi ini hanya untuk memperbarui data user di local storage dan state,
+  // tanpa mengirim data lagi ke server.
+  const updateUserLocally = (newData) => {
+    const currentUser = AuthService.getCurrentUser();
+    if (currentUser) {
+      // Gabungkan data user lama dengan data baru
+      const updatedUser = { ...currentUser, ...newData };
+      // Simpan kembali ke local storage
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      // Refresh state global
+      refreshUser();
+    }
+  };
 
   return {
     user,
@@ -54,5 +59,6 @@ export const useAuth = () => {
     logout,
     register: AuthService.register,
     updateProfile,
+    updateUserLocally, // <-- PASTIKAN FUNGSI INI DI-EXPORT DI SINI
   };
 };
