@@ -61,7 +61,16 @@ const ManajemenMateri = () => {
             return;
         }
         setIsDetailLoading(true);
-        const materiInfo = Object.values(materiList).flat().find(m => m.materiKey === selectedKey);
+        
+        // Cari info materi dari struktur data yang sudah ada
+        let materiInfo = null;
+        for (const mapelData of Object.values(materiList)) {
+            const foundChapter = mapelData.chapters.find(m => m.materiKey === selectedKey);
+            if (foundChapter) {
+                materiInfo = foundChapter;
+                break;
+            }
+        }
         
         DataService.getDetailMateriForAdmin(selectedKey)
             .then(response => {
@@ -126,14 +135,16 @@ const ManajemenMateri = () => {
         }
     };
 
+    // --- PERBAIKAN LOGIKA UNTUK MODAL DROPDOWN ---
     const currentMapelList = useMemo(() => {
-        if (!materiList) return [];
+        if (!materiList || Object.keys(materiList).length === 0) return [];
+        // Ubah cara memetakan data sesuai struktur baru dari backend
         return Object.entries(materiList)
-            .map(([nama_mapel, chapters]) => ({
-                id: chapters[0]?.subject_id,
+            .map(([nama_mapel, data]) => ({
+                id: data.subject_id, // Ambil ID langsung dari properti data
                 nama_mapel
             }))
-            .filter(m => m.id);
+            .filter(m => m.id); // Filter untuk memastikan ID valid
     }, [materiList]);
 
     return (
@@ -167,7 +178,8 @@ const ManajemenMateri = () => {
                                     <div key={mapel}>
                                         <h3 className="font-bold text-sesm-teal mt-4 first:mt-0">{mapel}</h3>
                                         <div className="space-y-1 mt-1">
-                                            {materiList[mapel].map(materi => (
+                                            {/* --- PERBAIKAN LOGIKA RENDER DAFTAR BAB --- */}
+                                            {materiList[mapel].chapters.map(materi => (
                                                 <div key={materi.materiKey} className={`group w-full text-left p-2 rounded-md flex justify-between items-center text-sm transition-colors ${selectedKey === materi.materiKey ? 'bg-sesm-teal/10' : 'hover:bg-gray-100'}`}>
                                                     <button onClick={() => setSelectedKey(materi.materiKey)} className={`flex-grow flex justify-between items-center text-left pr-2 ${selectedKey === materi.materiKey ? 'font-bold text-sesm-deep' : 'text-gray-700'}`}>
                                                         <span>{materi.judul}</span>
