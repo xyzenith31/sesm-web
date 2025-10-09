@@ -1,32 +1,29 @@
 // src/components/AddChapterModal.jsx
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
 
 const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
     const [selectedMapel, setSelectedMapel] = useState('');
-    const [newMapel, setNewMapel] = useState('');
     const [judulBab, setJudulBab] = useState('');
-    const isNewMapel = selectedMapel === '__NEW__';
 
     useEffect(() => {
         // Reset form saat modal dibuka
-        if (isOpen) {
-            setSelectedMapel(mapelList.length > 0 ? mapelList[0] : '__NEW__');
-            setNewMapel('');
+        if (isOpen && mapelList.length > 0) {
+            setSelectedMapel(mapelList[0]); // Otomatis pilih mapel pertama
             setJudulBab('');
         }
     }, [isOpen, mapelList]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const mapel = isNewMapel ? newMapel.trim() : selectedMapel;
-        if (!mapel || !judulBab.trim()) {
-            alert('Nama mapel dan judul bab tidak boleh kosong.');
+        if (!selectedMapel || !judulBab.trim()) {
+            alert('Mata pelajaran dan judul bab tidak boleh kosong.');
             return;
         }
-        onSubmit({ mapel, judul: judulBab.trim() });
+        // Kirimkan mapel yang dipilih dan judul bab baru
+        onSubmit({ mapel: selectedMapel, judul: judulBab.trim() });
         onClose();
     };
 
@@ -53,41 +50,25 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
                                 <FiX size={20}/>
                             </button>
                         </div>
-                        <p className="text-sm text-gray-500 mb-6">Pilih mata pelajaran yang ada, atau buat baru untuk jenjang <span className="font-bold">{jenjang}</span>.</p>
+                        <p className="text-sm text-gray-500 mb-6">Buat bab baru di dalam mata pelajaran untuk jenjang <span className="font-bold">{jenjang}</span>.</p>
                         
                         <div className="space-y-5">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Mata Pelajaran (Mapel)</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Pilih Mata Pelajaran (Mapel)</label>
                                 <select 
                                     value={selectedMapel} 
                                     onChange={(e) => setSelectedMapel(e.target.value)} 
                                     className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal"
+                                    required
                                 >
-                                    {mapelList.map(m => <option key={m} value={m}>{m}</option>)}
-                                    <option value="__NEW__">-- Buat Mapel Baru --</option>
+                                    {mapelList.length > 0 ? (
+                                        mapelList.map(m => <option key={m} value={m}>{m}</option>)
+                                    ) : (
+                                        <option disabled>Tidak ada mapel tersedia</option>
+                                    )}
                                 </select>
                             </div>
                             
-                            <AnimatePresence>
-                                {isNewMapel && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                                        animate={{ height: 'auto', opacity: 1, marginTop: '1.25rem' }}
-                                        exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                                    >
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Nama Mapel Baru</label>
-                                        <input 
-                                            type="text"
-                                            value={newMapel}
-                                            onChange={(e) => setNewMapel(e.target.value)}
-                                            placeholder="cth: Seni Budaya"
-                                            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal"
-                                            required={isNewMapel}
-                                        />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Judul Bab Baru</label>
                                 <input 
