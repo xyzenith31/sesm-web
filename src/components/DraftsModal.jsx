@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiX, FiFileText, FiTrash2, FiEdit } from 'react-icons/fi';
+import { FiX, FiFileText, FiTrash2 } from 'react-icons/fi';
 
 const DraftsModal = ({ isOpen, onClose, allData, onContinue, onDelete }) => {
     const [drafts, setDrafts] = useState([]);
@@ -17,11 +17,12 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue, onDelete }) => {
                     const chapterId = key.replace('question_draft_', '');
                     const draftData = JSON.parse(localStorage.getItem(key));
                     
-                    // Cari judul bab dari allData
                     let chapterTitle = 'Bab Tidak Ditemukan';
-                    for (const grade in allData) {
-                        for (const mapel in allData[grade]) {
-                            const found = allData[grade][mapel].find(ch => ch.materiKey === chapterId);
+                    // --- PERBAIKAN LOGIKA PENCARIAN JUDUL ---
+                    if (allData) {
+                        for (const mapelName in allData) {
+                            const mapel = allData[mapelName];
+                            const found = mapel.chapters.find(ch => ch.materiKey === chapterId);
                             if (found) {
                                 chapterTitle = found.judul;
                                 break;
@@ -37,6 +38,7 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue, onDelete }) => {
                         lastSaved: new Date(draftData.lastSaved).toLocaleString('id-ID')
                     };
                 } catch (e) {
+                    console.error("Gagal memuat draf:", key, e);
                     return null; // Abaikan draf yang korup
                 }
             }).filter(Boolean); // Hapus hasil null
@@ -71,10 +73,10 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue, onDelete }) => {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => {onDelete(draft.key); onClose();}} className="p-2 text-red-500 hover:bg-red-100 rounded-md" title="Hapus Draf">
+                                        <button onClick={() => onDelete(draft.key)} className="p-2 text-red-500 hover:bg-red-100 rounded-md" title="Hapus Draf">
                                             <FiTrash2/>
                                         </button>
-                                        <button onClick={() => {onContinue(draft.chapterId); onClose();}} className="px-4 py-2 text-sm bg-sesm-teal text-white font-semibold rounded-md hover:bg-sesm-deep">
+                                        <button onClick={() => onContinue(draft.chapterId)} className="px-4 py-2 text-sm bg-sesm-teal text-white font-semibold rounded-md hover:bg-sesm-deep">
                                             Lanjutkan
                                         </button>
                                     </div>

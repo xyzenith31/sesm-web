@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
 
-// Hook useDebounce dan komponen preview tidak berubah
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -57,16 +56,17 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const getNewQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', media: [], links: [], texts: [], subQuestions: [], id: Date.now() + Math.random() });
     const getNewSubQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', id: Date.now() + Math.random() + '_sub' });
     
-    const debouncedQuestions = useDebounce(questions, 1000);
+    // Autosave (tetap ada sebagai backup)
+    const debouncedQuestions = useDebounce(questions, 1500);
     useEffect(() => {
-        if (debouncedQuestions.length > 0) {
+        if (isOpen && debouncedQuestions.length > 0 && debouncedQuestions.some(q => q.question.trim() !== '')) {
             const draftToSave = {
                 lastSaved: new Date().toISOString(),
                 questions: debouncedQuestions.map(({ media, ...rest }) => ({ ...rest, media: media.map(f => ({ name: f.name, type: f.type, size: f.size }))}))
             };
             localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
         }
-    }, [debouncedQuestions, DRAFT_KEY]);
+    }, [debouncedQuestions, DRAFT_KEY, isOpen]);
 
     useEffect(() => {
         if (isOpen) {
@@ -99,7 +99,28 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const addSubOptionField = (qIndex, subQIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions[subQIndex].options.push(''); setQuestions(newQuestions); };
     const removeSubOptionField = (qIndex, subQIndex, oIndex) => { const newQuestions = [...questions]; const subQ = newQuestions[qIndex].subQuestions[subQIndex]; const removedOption = subQ.options[oIndex]; if (subQ.correctAnswer === removedOption) { subQ.correctAnswer = ''; } subQ.options = subQ.options.filter((_, i) => i !== oIndex); setQuestions(newQuestions); };
     
-    const handleSaveDraft = () => { alert('Draf berhasil disimpan!'); onClose(); };
+    // --- PERBAIKAN UTAMA ADA DI FUNGSI INI ---
+    const handleSaveDraft = () => {
+        // Cek apakah ada sesuatu untuk disimpan
+        if (questions.length === 0 || questions.every(q => q.question.trim() === '')) {
+            alert('Tidak ada soal untuk disimpan sebagai draf.');
+            return;
+        }
+
+        // Buat objek draf yang akan disimpan
+        const draftToSave = {
+            lastSaved: new Date().toISOString(),
+            questions: questions.map(({ media, ...rest }) => ({ ...rest, media: media.map(f => ({ name: f.name, type: f.type, size: f.size }))}))
+        };
+        
+        // Simpan ke localStorage secara langsung
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
+        
+        // Beri notifikasi dan tutup modal
+        alert('Draf berhasil disimpan!');
+        onClose();
+    };
+    
     const handleSubmit = (e) => { e.preventDefault(); onSubmit(questions); localStorage.removeItem(DRAFT_KEY); onClose(); };
 
     if (!isOpen) return null;

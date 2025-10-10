@@ -1,11 +1,12 @@
 // contoh-sesm-web/src/pages/admin/ManajemenMateri.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiBook, FiChevronRight, FiPlus, FiTrash2, FiLoader, FiAlertCircle } from 'react-icons/fi';
+import { FiBook, FiChevronRight, FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiFileText } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 
 import AddChapterModal from '../../components/AddChapterModal';
 import QuestionFormModal from '../../components/QuestionFormModal';
+import DraftsModal from '../../components/DraftsModal'; // <-- Diimpor
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -38,6 +39,7 @@ const ManajemenMateri = () => {
     
     const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState(false);
     const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+    const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false); // State untuk modal draf
     
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
 
@@ -172,6 +174,20 @@ const ManajemenMateri = () => {
         }
     };
 
+    const handleDeleteDraft = (draftKey) => {
+        if (window.confirm("Yakin ingin menghapus draf ini?")) {
+            localStorage.removeItem(draftKey);
+            alert("Draf berhasil dihapus.");
+            setIsDraftsModalOpen(false); // Tutup modal untuk refresh
+        }
+    };
+
+    const handleContinueDraft = (chapterMateriKey) => {
+        setSelectedKey(chapterMateriKey);
+        setIsQuestionModalOpen(true);
+        setIsDraftsModalOpen(false);
+    };
+
     const currentMapelList = useMemo(() => {
         if (!materiList || Object.keys(materiList).length === 0) return [];
         return Object.entries(materiList)
@@ -186,6 +202,15 @@ const ManajemenMateri = () => {
         <>
             <AnimatePresence>
                 {isAddChapterModalOpen && <AddChapterModal isOpen={isAddChapterModalOpen} onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
+                {isDraftsModalOpen && (
+                    <DraftsModal
+                        isOpen={isDraftsModalOpen}
+                        onClose={() => setIsDraftsModalOpen(false)}
+                        allData={materiList}
+                        onContinue={handleContinueDraft}
+                        onDelete={handleDeleteDraft}
+                    />
+                )}
             </AnimatePresence>
             {isQuestionModalOpen && <QuestionFormModal isOpen={isQuestionModalOpen} onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
 
@@ -200,9 +225,14 @@ const ManajemenMateri = () => {
                             </select>
                         </div>
                         <div className="flex-shrink-0 mb-3">
-                            <button onClick={() => setIsAddChapterModalOpen(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-sesm-teal text-white rounded-lg font-semibold text-sm hover:bg-sesm-deep transition-colors">
-                                <FiPlus/> Tambah Materi
-                            </button>
+                            <div className="flex gap-2">
+                                <button onClick={() => setIsAddChapterModalOpen(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-sesm-teal text-white rounded-lg font-semibold text-sm hover:bg-sesm-deep transition-colors">
+                                    <FiPlus/> Tambah Materi
+                                </button>
+                                <button onClick={() => setIsDraftsModalOpen(true)} className="flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-300 transition-colors" title="Lihat Draf Tersimpan">
+                                    <FiFileText/> Draf
+                                </button>
+                            </div>
                         </div>
                         <div className="flex-grow overflow-y-auto pr-2">
                             {isLoading ? ( <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div> ) 
