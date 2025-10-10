@@ -1,9 +1,44 @@
 // contoh-sesm-web/pages/WorksheetPage.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMenu, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiDownload } from 'react-icons/fi';
 import DataService from '../services/dataService';
 import ConfirmationModal from '../components/ConfirmationModal';
+
+// --- (A) KOMPONEN BARU UNTUK MENAMPILKAN MEDIA ---
+const MediaViewer = ({ mediaUrls }) => {
+    if (!mediaUrls || mediaUrls.length === 0) {
+        return null; // Jangan tampilkan apa-apa jika tidak ada media
+    }
+
+    const API_URL = 'http://localhost:8080'; // Sesuaikan jika URL backend Anda berbeda
+
+    return (
+        <div className="mb-6 space-y-4">
+            {mediaUrls.map((url, index) => {
+                const fullUrl = `${API_URL}/${url}`;
+                const fileExtension = url.split('.').pop().toLowerCase();
+
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+                    return <img key={index} src={fullUrl} alt={`Lampiran soal ${index + 1}`} className="max-w-full mx-auto rounded-lg shadow-md" />;
+                }
+                
+                if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                    return <video key={index} src={fullUrl} controls className="w-full rounded-lg shadow-md" />;
+                }
+
+                // Untuk file lain (PDF, DOCX, dll.), tampilkan sebagai link download
+                return (
+                    <a key={index} href={fullUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-sesm-deep font-semibold hover:bg-gray-200 transition-colors">
+                        <FiDownload />
+                        <span>Lihat/Unduh Lampiran {index + 1} ({fileExtension.toUpperCase()})</span>
+                    </a>
+                );
+            })}
+        </div>
+    );
+};
+
 
 // Komponen untuk Opsi Jawaban Pilihan Ganda
 const OptionButton = ({ option, userAnswer, onClick }) => {
@@ -22,7 +57,7 @@ const OptionButton = ({ option, userAnswer, onClick }) => {
     );
 };
 
-// Komponen untuk Jawaban Esai (BARU)
+// Komponen untuk Jawaban Esai
 const EssayInput = ({ answer, onChange }) => (
     <textarea
         value={answer}
@@ -114,7 +149,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
         onNavigate(navigationKey || 'home');
     };
     
-    // Fungsi untuk logika pewarnaan tombol navigasi
     const getNavButtonClass = (q, index) => {
         const isActive = index === currentQuestionIndex;
         const isMarked = marked[q.id];
@@ -227,9 +261,11 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                                         </button>
                                     </div>
 
+                                    {/* --- (B) PANGGIL KOMPONEN MEDIAVIEWER DI SINI --- */}
+                                    <MediaViewer mediaUrls={currentQuestion.media_urls} />
+
                                     <h2 className="text-xl md:text-2xl font-bold text-sesm-deep mb-8 text-left">{currentQuestion.pertanyaan}</h2>
 
-                                    {/* --- PERBAIKAN LOGIKA RENDER JAWABAN --- */}
                                     <div className="grid grid-cols-1 gap-4 text-left">
                                         {currentQuestion.tipe_soal.includes('pilihan-ganda') && currentQuestion.options.map((option) => (
                                             <OptionButton

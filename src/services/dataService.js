@@ -40,9 +40,38 @@ const addChapter = (chapterData) => {
   return apiClient.post('/admin/materi/chapters', chapterData);
 };
 
+// --- PERBAIKI FUNGSI INI ---
 const addQuestion = (materiKey, questionData) => {
-  return apiClient.post(`/admin/materi/${materiKey}/questions`, questionData);
+  // 1. Buat objek FormData baru
+  const formData = new FormData();
+
+  // 2. Tambahkan semua data teks ke formData
+  formData.append('type', questionData.type);
+  formData.append('question', questionData.question);
+  formData.append('correctAnswer', questionData.correctAnswer);
+  formData.append('essayAnswer', questionData.essayAnswer || '');
+  
+  // Opsi adalah array, jadi kita stringify sebelum dikirim
+  if (questionData.options) {
+    formData.append('options', JSON.stringify(questionData.options));
+  }
+
+  // 3. Tambahkan setiap file media ke formData dengan key 'media'
+  if (questionData.media && questionData.media.length > 0) {
+    questionData.media.forEach(file => {
+      formData.append('media', file); // 'media' harus sama dengan nama di upload.array()
+    });
+  }
+
+  // 4. Kirim formData. Axios akan otomatis mengatur header menjadi 'multipart/form-data'
+  // Perhatikan kita tidak lagi mengirim JSON biasa, tapi objek formData
+  return apiClient.post(`/admin/materi/${materiKey}/questions`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
+
 
 const deleteChapter = (materiKey) => {
   return apiClient.delete(`/admin/materi/chapters/${materiKey}`);
