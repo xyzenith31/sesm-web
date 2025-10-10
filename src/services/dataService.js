@@ -1,4 +1,4 @@
-// contoh-sesm-web/src/services/dataService.js
+// contoh-sesm-web/services/dataService.js
 import apiClient from '../utils/apiClient';
 
 // --- FUNGSI SISWA ---
@@ -66,9 +66,7 @@ const updateGradingMode = (chapterId, mode) => {
   return apiClient.put(`/admin/chapters/${chapterId}/grading-mode`, { mode });
 };
 
-// --- PERBAIKAN DI SINI ---
-// Mengganti nama fungsi agar sesuai dengan yang dipanggil di komponen
-const getSubmissionsForChapter = (chapterId) => {
+const getAllSubmissionsForChapter = (chapterId) => {
   return apiClient.get(`/admin/nilai/chapter/${chapterId}`);
 };
 
@@ -78,6 +76,10 @@ const getSubmissionDetails = (submissionId) => {
 
 const gradeSubmission = (submissionId, score) => {
   return apiClient.post(`/admin/nilai/submission/${submissionId}`, { score });
+};
+
+const overrideAnswer = (answerId, isCorrect) => {
+  return apiClient.patch(`/admin/nilai/answer/${answerId}`, { isCorrect });
 };
 
 // --- EXPORT SEMUA FUNGSI ---
@@ -100,9 +102,10 @@ const DataService = {
 
   // Penilaian
   updateGradingMode,
-  getSubmissionsForChapter, // <-- Pastikan nama ini yang diekspor
+  getAllSubmissionsForChapter,
   getSubmissionDetails,
   gradeSubmission,
+  overrideAnswer,
 };
 
 export default DataService;

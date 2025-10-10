@@ -36,16 +36,20 @@ const ManajemenNilai = () => {
             .finally(() => setLoading(false));
     }, [selectedFilterKey]);
 
-    useEffect(() => {
+    const fetchSubmissions = useCallback(() => {
         if (!selectedChapterId) {
             setSubmissions([]);
             return;
         };
         setSubmissionsLoading(true);
-        DataService.getSubmissionsForChapter(selectedChapterId)
+        DataService.getAllSubmissionsForChapter(selectedChapterId)
             .then(response => setSubmissions(response.data))
             .finally(() => setSubmissionsLoading(false));
     }, [selectedChapterId]);
+
+    useEffect(() => {
+        fetchSubmissions();
+    }, [fetchSubmissions]);
     
     const chapterOptions = useMemo(() => {
         return Object.values(materiList).flatMap(mapel => mapel.chapters);
@@ -53,13 +57,7 @@ const ManajemenNilai = () => {
 
     const handleGradeSubmitted = () => {
         setSelectedSubmission(null);
-        // Refresh data setelah menilai
-        if (selectedChapterId) {
-            setSubmissionsLoading(true);
-            DataService.getSubmissionsForChapter(selectedChapterId)
-                .then(response => setSubmissions(response.data))
-                .finally(() => setSubmissionsLoading(false));
-        }
+        fetchSubmissions();
     };
     
     return (
@@ -67,6 +65,7 @@ const ManajemenNilai = () => {
             {selectedSubmission && (
                 <SubmissionDetailModal 
                     submission={selectedSubmission}
+                    isViewOnly={selectedSubmission.status === 'dinilai'}
                     onClose={() => setSelectedSubmission(null)}
                     onGradeSubmitted={handleGradeSubmitted}
                 />
@@ -75,7 +74,6 @@ const ManajemenNilai = () => {
                 <h1 className="text-3xl font-bold text-sesm-deep mb-6">Manajemen Nilai Siswa</h1>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                    {/* KOLOM FILTER */}
                     <div className="md:col-span-1 bg-white p-4 rounded-xl shadow-md space-y-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Jenjang & Kelas</label>
@@ -94,7 +92,6 @@ const ManajemenNilai = () => {
                         </div>
                     </div>
 
-                    {/* KOLOM DAFTAR SISWA */}
                     <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-md min-h-[60vh]">
                         <h2 className="text-xl font-bold text-sesm-deep border-b pb-3 mb-4">Daftar Hasil Pengerjaan</h2>
                         {submissionsLoading ? (
@@ -106,13 +103,21 @@ const ManajemenNilai = () => {
                         ) : (
                             <div className="space-y-3">
                                 {submissions.map(sub => (
-                                    <motion.div key={sub.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-gray-50 border rounded-lg p-4 flex justify-between items-center">
+                                    <motion.button 
+                                        key={sub.id} 
+                                        initial={{ opacity: 0 }} 
+                                        animate={{ opacity: 1 }}
+                                        onClick={() => setSelectedSubmission(sub)}
+                                        className="w-full text-left bg-gray-50 border rounded-lg p-4 flex justify-between items-center transition-colors hover:bg-sesm-sky/20 hover:border-sesm-teal"
+                                        whileTap={{ scale: 0.98 }}
+                                    >
                                         <div>
                                             <p className="font-bold text-gray-800">{sub.student_name}</p>
                                             <p className="text-sm text-gray-500">
                                                 Mengumpulkan: {new Date(sub.submission_date).toLocaleString('id-ID')}
                                             </p>
                                         </div>
+                                        
                                         <div>
                                             {sub.status === 'dinilai' ? (
                                                 <div className="text-right">
@@ -122,12 +127,12 @@ const ManajemenNilai = () => {
                                                     </span>
                                                 </div>
                                             ) : (
-                                                <button onClick={() => setSelectedSubmission(sub)} className="px-4 py-2 text-sm bg-orange-500 text-white font-semibold rounded-md hover:bg-orange-600 flex items-center gap-2">
+                                                <div className="px-4 py-2 text-sm bg-orange-500 text-white font-semibold rounded-md flex items-center gap-2">
                                                     <FiClock size={14}/> Beri Nilai
-                                                </button>
+                                                </div>
                                             )}
                                         </div>
-                                    </motion.div>
+                                    </motion.button>
                                 ))}
                             </div>
                         )}
