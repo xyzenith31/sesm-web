@@ -1,12 +1,14 @@
 // contoh-sesm-web/src/pages/admin/ManajemenMateri.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiBook, FiChevronRight, FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiFileText } from 'react-icons/fi';
+// 1. Impor hook useAuth dan beberapa ikon baru
+import { FiBook, FiChevronRight, FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiFileText, FiGrid, FiFile, FiCheckSquare } from 'react-icons/fi';
+import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
 
 import AddChapterModal from '../../components/AddChapterModal';
 import QuestionFormModal from '../../components/QuestionFormModal';
-import DraftsModal from '../../components/DraftsModal'; // <-- Diimpor
+import DraftsModal from '../../components/DraftsModal';
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -23,13 +25,69 @@ const ToggleSwitch = ({ enabled, onToggle }) => (
         onClick={onToggle}
         className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none ${enabled ? 'bg-sesm-teal' : 'bg-gray-300'}`}
     >
-        <span
-            className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`}
-        />
+        <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
     </button>
 );
 
+// 2. Buat Komponen StatCard (helper component untuk dasbor)
+const StatCard = ({ icon: Icon, value, label, color }) => (
+    <div className="bg-gray-50 p-4 rounded-xl flex-1 border">
+        <div className="flex items-center">
+            <Icon className={`text-2xl mr-3 ${color}`} />
+            <div>
+                <p className="text-2xl font-bold text-sesm-deep">{value}</p>
+                <p className="text-xs text-gray-500 font-semibold">{label}</p>
+            </div>
+        </div>
+    </div>
+);
+
+// 3. Buat Komponen DashboardView (tampilan awal yang baru)
+const DashboardView = ({ userName, jenjang, stats, onAddMateri, onOpenDrafts }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col justify-center h-full p-4"
+    >
+        <div className="text-left mb-8">
+            <h2 className="text-3xl font-bold text-gray-800">Selamat Datang, {userName || 'Guru'}!</h2>
+            <p className="text-gray-500">Anda sedang mengelola materi untuk jenjang <span className="font-bold text-sesm-deep">{jenjang}</span>.</p>
+        </div>
+
+        <div>
+            <h3 className="font-bold text-gray-700 mb-3">Ringkasan Materi</h3>
+            <div className="flex space-x-4">
+                <StatCard icon={FiGrid} value={stats.totalMapel} label="Total Mapel" color="text-blue-500" />
+                <StatCard icon={FiFile} value={stats.totalBab} label="Total Bab" color="text-green-500" />
+                <StatCard icon={FiCheckSquare} value={stats.totalSoal} label="Total Soal" color="text-orange-500" />
+            </div>
+        </div>
+
+        <div className="mt-8">
+            <h3 className="font-bold text-gray-700 mb-3">Aksi Cepat</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                    onClick={onAddMateri}
+                    className="flex flex-col items-center justify-center p-6 bg-sesm-teal/10 text-sesm-deep rounded-xl hover:bg-sesm-teal/20 transition-colors"
+                >
+                    <FiPlus size={28} className="mb-2"/>
+                    <span className="font-semibold">Tambah Materi Baru</span>
+                </button>
+                 <button
+                    onClick={onOpenDrafts}
+                    className="flex flex-col items-center justify-center p-6 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                    <FiFileText size={28} className="mb-2"/>
+                    <span className="font-semibold">Lihat Draf Tersimpan</span>
+                </button>
+            </div>
+        </div>
+    </motion.div>
+);
+
+
 const ManajemenMateri = () => {
+    const { user } = useAuth(); // 4. Ambil data user dari useAuth
     const [materiList, setMateriList] = useState({});
     const [selectedKey, setSelectedKey] = useState(null);
     const [selectedMateri, setSelectedMateri] = useState(null);
@@ -39,7 +97,7 @@ const ManajemenMateri = () => {
     
     const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState(false);
     const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
-    const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false); // State untuk modal draf
+    const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
     
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
 
@@ -102,6 +160,18 @@ const ManajemenMateri = () => {
     useEffect(() => {
         fetchDetailMateri();
     }, [fetchDetailMateri]);
+    
+    // 5. Hitung statistik materi menggunakan useMemo
+    const stats = useMemo(() => {
+        const totalMapel = Object.keys(materiList).length;
+        const totalBab = Object.values(materiList).reduce((sum, mapel) => sum + (mapel.chapters?.length || 0), 0);
+        const totalSoal = Object.values(materiList).reduce((sum, mapel) => 
+            sum + (mapel.chapters?.reduce((chapSum, chap) => chapSum + (chap.questionCount || 0), 0) || 0)
+        , 0);
+
+        return { totalMapel, totalBab, totalSoal };
+    }, [materiList]);
+
 
     const handleAddChapterSubmit = async ({ subjectId, judul }) => {
         try {
@@ -178,7 +248,7 @@ const ManajemenMateri = () => {
         if (window.confirm("Yakin ingin menghapus draf ini?")) {
             localStorage.removeItem(draftKey);
             alert("Draf berhasil dihapus.");
-            setIsDraftsModalOpen(false); // Tutup modal untuk refresh
+            setIsDraftsModalOpen(false);
         }
     };
 
@@ -263,7 +333,16 @@ const ManajemenMateri = () => {
 
                     <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-md min-h-[75vh]">
                        {isDetailLoading ? ( <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div> ) 
-                        : selectedMateri ? (
+                        // 6. Ganti placeholder lama dengan DashboardView yang baru
+                        : !selectedMateri ? (
+                            <DashboardView
+                                userName={user?.nama}
+                                jenjang={selectedFilterKey}
+                                stats={stats}
+                                onAddMateri={() => setIsAddChapterModalOpen(true)}
+                                onOpenDrafts={() => setIsDraftsModalOpen(true)}
+                            />
+                        ) : (
                             <div>
                                 <div className="border-b pb-4 mb-4">
                                     <div className="flex justify-between items-start">
@@ -302,12 +381,6 @@ const ManajemenMateri = () => {
                                         </div>
                                     )) : <p className="text-center text-gray-500 mt-8">Belum ada soal untuk materi ini. Silakan tambahkan soal baru.</p>}
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col justify-center items-center h-full text-center text-gray-400">
-                                <FiBook className="text-5xl mb-3"/>
-                                <p className="font-semibold">Pilih materi dari daftar di samping</p>
-                                <p className="text-sm">untuk melihat dan mengelola soal.</p>
                             </div>
                         )}
                     </div>
