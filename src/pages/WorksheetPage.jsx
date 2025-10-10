@@ -5,13 +5,35 @@ import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMe
 import DataService from '../services/dataService';
 import ConfirmationModal from '../components/ConfirmationModal';
 
-// --- (A) KOMPONEN BARU UNTUK MENAMPILKAN MEDIA ---
-const MediaViewer = ({ mediaUrls }) => {
+const ImageLightbox = ({ imageUrl, onClose }) => {
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4"
+            onClick={onClose}
+        >
+            <motion.img
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.8 }}
+                src={imageUrl}
+                alt="Tampilan gambar diperbesar"
+                className="max-w-full max-h-full rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            />
+        </motion.div>
+    );
+};
+
+// --- MODIFIKASI: Tambahkan penanganan untuk audio ---
+const MediaViewer = ({ mediaUrls, onImageClick }) => {
     if (!mediaUrls || mediaUrls.length === 0) {
-        return null; // Jangan tampilkan apa-apa jika tidak ada media
+        return null;
     }
 
-    const API_URL = 'http://localhost:8080'; // Sesuaikan jika URL backend Anda berbeda
+    const API_URL = 'http://localhost:8080';
 
     return (
         <div className="mb-6 space-y-4">
@@ -20,14 +42,26 @@ const MediaViewer = ({ mediaUrls }) => {
                 const fileExtension = url.split('.').pop().toLowerCase();
 
                 if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
-                    return <img key={index} src={fullUrl} alt={`Lampiran soal ${index + 1}`} className="max-w-full mx-auto rounded-lg shadow-md" />;
+                    return (
+                        <img 
+                            key={index} 
+                            src={fullUrl} 
+                            alt={`Lampiran soal ${index + 1}`} 
+                            className="max-w-full mx-auto rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105"
+                            onClick={() => onImageClick(fullUrl)}
+                        />
+                    );
                 }
                 
-                if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                if (['mp4', 'webm'].includes(fileExtension)) {
                     return <video key={index} src={fullUrl} controls className="w-full rounded-lg shadow-md" />;
                 }
 
-                // Untuk file lain (PDF, DOCX, dll.), tampilkan sebagai link download
+                // --- BARIS BARU UNTUK AUDIO ---
+                if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
+                    return <audio key={index} src={fullUrl} controls className="w-full" />;
+                }
+
                 return (
                     <a key={index} href={fullUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-sesm-deep font-semibold hover:bg-gray-200 transition-colors">
                         <FiDownload />
@@ -39,8 +73,7 @@ const MediaViewer = ({ mediaUrls }) => {
     );
 };
 
-
-// Komponen untuk Opsi Jawaban Pilihan Ganda
+// ... (sisa kode komponen WorksheetPage tidak ada yang berubah, jadi saya ringkas)
 const OptionButton = ({ option, userAnswer, onClick }) => {
     const isSelected = userAnswer === option;
     return (
@@ -57,7 +90,6 @@ const OptionButton = ({ option, userAnswer, onClick }) => {
     );
 };
 
-// Komponen untuk Jawaban Esai
 const EssayInput = ({ answer, onChange }) => (
     <textarea
         value={answer}
@@ -70,7 +102,6 @@ const EssayInput = ({ answer, onChange }) => (
 
 const WorksheetPage = ({ onNavigate, chapterInfo }) => {
     const { materiKey, chapterTitle, subjectName, navigationKey } = chapterInfo || {};
-
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
     const [marked, setMarked] = useState({});
@@ -80,6 +111,7 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
     const [submissionResult, setSubmissionResult] = useState(null);
     const [isNavOpen, setIsNavOpen] = useState(false);
     const [isExitModalOpen, setIsExitModalOpen] = useState(false);
+    const [lightboxImage, setLightboxImage] = useState(null);
 
     useEffect(() => {
         if (materiKey) {
@@ -92,10 +124,7 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                     setAnswers(initialAnswers);
                     setMarked({});
                 })
-                .catch(err => {
-                    console.error(err);
-                    onNavigate('home'); 
-                })
+                .catch(err => { console.error(err); onNavigate('home'); })
                 .finally(() => setLoading(false));
         } else {
             onNavigate('home');
@@ -103,28 +132,12 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
     }, [materiKey, onNavigate]);
 
     const currentQuestion = questions[currentQuestionIndex];
-
-    const handleAnswerChange = (questionId, answer) => {
-        setAnswers(prev => ({ ...prev, [questionId]: answer }));
-    };
-
-    const toggleMark = (questionId) => {
-        setMarked(prev => ({ ...prev, [questionId]: !prev[questionId] }));
-    };
-
-    const goToQuestion = (index) => {
-        if (index >= 0 && index < questions.length) {
-            setCurrentQuestionIndex(index);
-            setIsNavOpen(false);
-        }
-    };
-
+    const handleAnswerChange = (questionId, answer) => setAnswers(prev => ({ ...prev, [questionId]: answer }));
+    const toggleMark = (questionId) => setMarked(prev => ({ ...prev, [questionId]: !prev[questionId] }));
+    const goToQuestion = (index) => { if (index >= 0 && index < questions.length) { setCurrentQuestionIndex(index); setIsNavOpen(false); } };
+    
     const handleSubmit = async () => {
-        const answerPayload = Object.entries(answers).map(([questionId, answer]) => ({
-            questionId: parseInt(questionId),
-            answer: answer || ""
-        }));
-
+        const answerPayload = Object.entries(answers).map(([questionId, answer]) => ({ questionId: parseInt(questionId), answer: answer || "" }));
         try {
             const response = await DataService.submitAnswers(materiKey, answerPayload);
             setSubmissionResult(response.data);
@@ -136,33 +149,20 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
         }
     };
 
-    const handleExit = () => {
-        if (isSubmitted) {
-            onNavigate(navigationKey || 'home');
-        } else {
-            setIsExitModalOpen(true);
-        }
-    };
-    
-    const confirmExit = () => {
-        setIsExitModalOpen(false);
-        onNavigate(navigationKey || 'home');
-    };
+    const handleExit = () => { isSubmitted ? onNavigate(navigationKey || 'home') : setIsExitModalOpen(true); };
+    const confirmExit = () => { setIsExitModalOpen(false); onNavigate(navigationKey || 'home'); };
     
     const getNavButtonClass = (q, index) => {
         const isActive = index === currentQuestionIndex;
         const isMarked = marked[q.id];
         const isAnswered = answers[q.id] && answers[q.id].trim() !== '';
-
         if (isActive) return 'bg-sesm-deep text-white';
         if (isMarked) return 'bg-yellow-400 text-white';
         if (isAnswered) return 'bg-green-500 text-white';
         return 'bg-gray-200 text-gray-600 hover:bg-gray-300';
     };
     
-    if (loading) {
-        return <div className="min-h-screen bg-gray-100 flex justify-center items-center">Memuat soal...</div>;
-    }
+    if (loading) return <div className="min-h-screen bg-gray-100 flex justify-center items-center">Memuat soal...</div>;
 
     if (isSubmitted) {
         return (
@@ -175,9 +175,7 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                             <p className="text-gray-600 mt-2">Skor akhir kamu:</p>
                             <p className="text-5xl font-bold text-sesm-teal my-3">{submissionResult.score}</p>
                         </>
-                    ) : (
-                        <p className="text-gray-600 my-4">{submissionResult?.message || "Jawaban telah dikumpulkan."}</p>
-                    )}
+                    ) : ( <p className="text-gray-600 my-4">{submissionResult?.message || "Jawaban telah dikumpulkan."}</p> )}
                     <motion.button onClick={handleExit} className="w-full py-3 bg-sesm-deep text-white font-bold rounded-lg mt-6" whileTap={{ scale: 0.95 }}>
                         Kembali ke Daftar Bab
                     </motion.button>
@@ -188,98 +186,58 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
 
     return (
         <>
-            <ConfirmationModal 
-                isOpen={isExitModalOpen}
-                onClose={() => setIsExitModalOpen(false)}
-                onConfirm={confirmExit}
-                title="Yakin Ingin Keluar?"
-                message="Proses pengerjaan soal Anda belum selesai dan tidak akan disimpan."
-                confirmText="Ya, Keluar"
-            />
             <AnimatePresence>
-                {isNavOpen && (
-                    <motion.div 
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
-                        className="fixed inset-0 bg-black/60 z-50 md:hidden"
-                        onClick={() => setIsNavOpen(false)}
-                    />
+                {lightboxImage && (
+                    <ImageLightbox imageUrl={lightboxImage} onClose={() => setLightboxImage(null)} />
                 )}
             </AnimatePresence>
-            <motion.div 
-                className="fixed top-0 bottom-0 left-0 w-64 bg-white shadow-lg z-50 p-4 transform md:translate-x-0"
-                initial={{ x: '-100%' }} animate={{ x: isNavOpen ? '0%' : '-100%' }} exit={{ x: '-100%' }}
-                transition={{ type: 'tween', ease: 'easeInOut' }}
-            >
+            <ConfirmationModal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)} onConfirm={confirmExit} title="Yakin Ingin Keluar?" message="Proses pengerjaan soal Anda belum selesai dan tidak akan disimpan." confirmText="Ya, Keluar" />
+            <AnimatePresence>
+                {isNavOpen && ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 md:hidden" onClick={() => setIsNavOpen(false)} /> )}
+            </AnimatePresence>
+            <motion.div className="fixed top-0 bottom-0 left-0 w-64 bg-white shadow-lg z-50 p-4 transform md:translate-x-0" initial={{ x: '-100%' }} animate={{ x: isNavOpen ? '0%' : '-100%' }} exit={{ x: '-100%' }} transition={{ type: 'tween', ease: 'easeInOut' }}>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-sesm-deep">Navigasi Soal</h3>
                     <button onClick={() => setIsNavOpen(false)} className="md:hidden"><FiX/></button>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
                     {questions.map((q, index) => (
-                        <button 
-                            key={q.id} 
-                            onClick={() => goToQuestion(index)}
-                            className={`relative w-10 h-10 rounded-lg font-bold flex items-center justify-center transition-all ${getNavButtonClass(q, index)}`}
-                        >
+                        <button key={q.id} onClick={() => goToQuestion(index)} className={`relative w-10 h-10 rounded-lg font-bold flex items-center justify-center transition-all ${getNavButtonClass(q, index)}`}>
                             {index + 1}
                             {marked[q.id] && <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white"></div>}
                         </button>
                     ))}
                 </div>
             </motion.div>
-
             <div className="min-h-screen bg-gray-100 flex flex-col md:pl-64">
                 <header className="bg-white p-4 flex items-center sticky top-0 z-10 shadow-sm">
-                    <button onClick={() => setIsNavOpen(true)} className="p-2 rounded-full hover:bg-gray-100 md:hidden mr-2">
-                        <FiMenu size={24} className="text-gray-700" />
-                    </button>
-                     <button onClick={handleExit} className="p-2 rounded-full hover:bg-gray-100">
-                        <FiArrowLeft size={24} className="text-gray-700" />
-                    </button>
+                    <button onClick={() => setIsNavOpen(true)} className="p-2 rounded-full hover:bg-gray-100 md:hidden mr-2"> <FiMenu size={24} className="text-gray-700" /> </button>
+                     <button onClick={handleExit} className="p-2 rounded-full hover:bg-gray-100"> <FiArrowLeft size={24} className="text-gray-700" /> </button>
                     <div className="text-center flex-grow">
                         <h1 className="text-lg font-bold text-sesm-deep truncate">{chapterTitle}</h1>
                         <p className="text-xs text-gray-500">{subjectName}</p>
                     </div>
                     <div className="w-10"></div>
                 </header>
-
                 <main className="flex-grow flex flex-col items-center justify-center p-6 text-center">
                     {currentQuestion && (
                         <div className="w-full max-w-2xl">
                             <AnimatePresence mode="wait">
-                                <motion.div 
-                                    key={currentQuestionIndex} 
-                                    initial={{ opacity: 0, y: 30 }} 
-                                    animate={{ opacity: 1, y: 0 }} 
-                                    exit={{ opacity: 0, y: -30 }}
-                                    className="bg-white p-6 rounded-2xl shadow-md"
-                                >
+                                <motion.div key={currentQuestionIndex} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="bg-white p-6 rounded-2xl shadow-md">
                                     <div className="flex justify-between items-start mb-6">
                                         <p className="text-sm font-semibold text-gray-500">Pertanyaan {currentQuestionIndex + 1} dari {questions.length}</p>
                                         <button onClick={() => toggleMark(currentQuestion.id)} className={`flex items-center gap-2 text-sm font-semibold p-2 rounded-lg ${marked[currentQuestion.id] ? 'bg-yellow-100 text-yellow-600' : 'text-gray-500 hover:bg-gray-100'}`}>
                                             <FiFlag/> <span>{marked[currentQuestion.id] ? 'Hilangkan Tanda' : 'Tandai Ragu'}</span>
                                         </button>
                                     </div>
-
-                                    {/* --- (B) PANGGIL KOMPONEN MEDIAVIEWER DI SINI --- */}
-                                    <MediaViewer mediaUrls={currentQuestion.media_urls} />
-
+                                    <MediaViewer mediaUrls={currentQuestion.media_urls} onImageClick={setLightboxImage} />
                                     <h2 className="text-xl md:text-2xl font-bold text-sesm-deep mb-8 text-left">{currentQuestion.pertanyaan}</h2>
-
                                     <div className="grid grid-cols-1 gap-4 text-left">
                                         {currentQuestion.tipe_soal.includes('pilihan-ganda') && currentQuestion.options.map((option) => (
-                                            <OptionButton
-                                                key={option}
-                                                option={option}
-                                                userAnswer={answers[currentQuestion.id]}
-                                                onClick={() => handleAnswerChange(currentQuestion.id, option)}
-                                            />
+                                            <OptionButton key={option} option={option} userAnswer={answers[currentQuestion.id]} onClick={() => handleAnswerChange(currentQuestion.id, option)} />
                                         ))}
                                         {currentQuestion.tipe_soal.includes('esai') && (
-                                            <EssayInput 
-                                                answer={answers[currentQuestion.id]}
-                                                onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                                            />
+                                            <EssayInput answer={answers[currentQuestion.id]} onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)} />
                                         )}
                                     </div>
                                 </motion.div>
@@ -287,7 +245,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                         </div>
                     )}
                 </main>
-
                 <footer className="p-4 bg-white flex justify-between items-center border-t">
                     <motion.button onClick={() => goToQuestion(currentQuestionIndex - 1)} disabled={currentQuestionIndex === 0} className="flex items-center gap-2 font-semibold p-3 rounded-lg hover:bg-gray-100 disabled:opacity-50" whileTap={{ scale: 0.95 }}>
                         <FiChevronLeft/> Sebelumnya

@@ -126,7 +126,16 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                         <textarea value={q.question} onChange={(e) => handleQuestionChange(qIndex, 'question', e.target.value)} placeholder="Tulis pertanyaan utama di sini..." className="w-full p-2 border rounded-md h-24" required />
                                         <div>
                                             <div className="flex flex-wrap items-center gap-2 mb-2">
-                                                <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors cursor-pointer"><FiPaperclip/> Lampirkan File<input type="file" multiple onChange={(e) => handleMediaUpload(qIndex, e)} className="hidden" /></label>
+                                                <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors cursor-pointer">
+                                                    <FiPaperclip/> Lampirkan File
+                                                    <input 
+                                                        type="file" 
+                                                        multiple 
+                                                        onChange={(e) => handleMediaUpload(qIndex, e)} 
+                                                        className="hidden" 
+                                                        accept="image/*,video/*,audio/*,application/pdf,.doc,.docx"
+                                                    />
+                                                </label>
                                                 <button type="button" onClick={() => setLinkInput({ qIndex, value: '' })} className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors cursor-pointer"><FiLink/> Lampirkan Link</button>
                                                 <button type="button" onClick={() => setTextInput({ qIndex, value: '' })} className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors cursor-pointer"><FiType/> Lampirkan Teks</button>
                                             </div>
