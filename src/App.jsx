@@ -34,6 +34,8 @@ import AdminLayout from './layouts/AdminLayout';
 import DashboardGuru from './pages/admin/DashboardGuru';
 import ManajemenMateri from './pages/admin/ManajemenMateri';
 import ManajemenNilai from './pages/admin/ManajemenNilai';
+import ManajemenKuis from './pages/admin/ManajemenKuis';
+import EvaluasiKuis from './pages/admin/EvaluasiKuis'; // <-- 1. Impor halaman baru
 
 // Komponen dan layout
 import MainLayout from './layouts/MainLayout';
@@ -84,7 +86,8 @@ function App() {
       'accountSettings'
     ];
 
-    const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri', 'manajemenNilai'];
+    // --- 2. Tambahkan 'evaluasiKuis' ke dalam daftar ---
+    const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis'];
 
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
@@ -123,6 +126,8 @@ function App() {
       if (currentView === 'dashboardGuru') pageComponent = <DashboardGuru />;
       if (currentView === 'manajemenMateri') pageComponent = <ManajemenMateri />;
       if (currentView === 'manajemenNilai') pageComponent = <ManajemenNilai />;
+      if (currentView === 'manajemenKuis') pageComponent = <ManajemenKuis />;
+      if (currentView === 'evaluasiKuis') pageComponent = <EvaluasiKuis />; // <-- 3. Tambahkan kondisinya
 
       return (
         <AdminLayout activePage={currentView} onNavigate={navigate}>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiArrowLeft, FiClock, FiAward, FiCheck, FiX } from 'react-icons/fi';
-import AnswerFeedback from './AnswerFeedback';
+import { FiArrowLeft, FiClock, FiAward, FiCheck, FiX, FiLoader, FiAlertCircle } from 'react-icons/fi';
+import AnswerFeedback from '../components/AnswerFeedback';
 import thankYouMeme from '../assets/meme/terima-kasih.jpeg';
+import DataService from '../services/dataService';
 
-// Impor Meme
+// Impor Meme (tidak berubah)
 const correctMemeModules = import.meta.glob('/src/assets/meme/meme-benar/*.jpeg', { eager: true });
 const incorrectMemeModules = import.meta.glob('/src/assets/meme/meme-salah/*.jpeg', { eager: true });
 const correctMemes = Object.values(correctMemeModules).map(module => module.default);
@@ -12,7 +13,7 @@ const incorrectMemes = Object.values(incorrectMemeModules).map(module => module.
 
 const QUIZ_DURATION = 20;
 
-// Komponen Overlay Meme
+// Komponen MemeOverlay dan QuizLeaderboard (tidak berubah)
 const MemeOverlay = ({ meme, title, onClose }) => {
     if (!meme) return null;
     return (
@@ -24,7 +25,6 @@ const MemeOverlay = ({ meme, title, onClose }) => {
     );
 };
 
-// --- Komponen Leaderboard/Hasil Akhir (DIPERBARUI) ---
 const QuizLeaderboard = ({ score, results, onCompleteQuiz }) => {
     const correctAnswers = results.filter(r => r.isCorrect).length;
     const incorrectAnswers = results.length - correctAnswers;
@@ -60,7 +60,6 @@ const QuizLeaderboard = ({ score, results, onCompleteQuiz }) => {
                     </div>
                 </div>
 
-                {/* --- TOMBOL INI DIPERBARUI --- */}
                 <motion.button onClick={onCompleteQuiz} className="w-full py-3 bg-sesm-deep text-white font-bold rounded-lg mt-6" whileTap={{ scale: 0.95 }}>
                     Kembali ke Daftar Kuis
                 </motion.button>
@@ -70,78 +69,102 @@ const QuizLeaderboard = ({ score, results, onCompleteQuiz }) => {
 };
 
 
-// --- Komponen Utama QuizForm (DIPERBARUI) ---
-const QuizForm = ({ quizData, onCompleteQuiz }) => {
-    const [gameState, setGameState] = useState('playing');
+// --- Komponen Utama QuizForm (DIPERBAIKI) ---
+const QuizForm = ({ quizData: initialQuizData, onCompleteQuiz }) => {
+    // --- STATE BARU: Untuk menyimpan data kuis lengkap dan status loading ---
+    const [fullQuizData, setFullQuizData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const [gameState, setGameState] = useState('playing'); 
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState(null);
     const [score, setScore] = useState(0);
     const [timeLeft, setTimeLeft] = useState(QUIZ_DURATION);
-    const [correctStreak, setCorrectStreak] = useState(0);
-    const [incorrectCount, setIncorrectCount] = useState(0);
     const [activeMeme, setActiveMeme] = useState({ src: null, title: '' });
-    const [results, setResults] = useState([]);
+    const [results, setResults] = useState([]); 
     const [feedback, setFeedback] = useState({ show: false, isCorrect: false });
+
+    // --- EFFECT BARU: Untuk mengambil data pertanyaan saat komponen dimuat ---
+    useEffect(() => {
+        if (!initialQuizData?.id) {
+            setError("Data kuis tidak valid.");
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        DataService.getQuizForStudent(initialQuizData.id)
+            .then(response => {
+                // Gabungkan data awal (judul, dll) dengan data pertanyaan yang baru didapat
+                setFullQuizData({ ...initialQuizData, questions: response.data });
+            })
+            .catch(err => {
+                console.error("Gagal mengambil soal kuis:", err);
+                setError("Tidak dapat memuat soal kuis. Silakan coba lagi.");
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+
+    }, [initialQuizData]);
     
-    const currentQuestion = useMemo(() => quizData.questions[currentQuestionIndex], [currentQuestionIndex, quizData]);
+    // Gunakan state baru 'fullQuizData' untuk mendapatkan pertanyaan
+    const currentQuestion = useMemo(() => fullQuizData?.questions?.[currentQuestionIndex], [currentQuestionIndex, fullQuizData]);
+
+    const submitAndFinishQuiz = useCallback(async (finalResults) => {
+        setGameState('submitting');
+        try {
+            const answersPayload = finalResults.map(r => ({ questionId: r.questionId, answer: r.answer }));
+            const response = await DataService.submitQuizAnswers(initialQuizData.id, answersPayload);
+            setScore(response.data.score);
+            setActiveMeme({ src: thankYouMeme, title: "Terima Kasih Telah Bermain!" });
+            setGameState('meme');
+        } catch (error) {
+            console.error("Gagal submit kuis:", error);
+            alert("Gagal mengirim jawaban, coba lagi.");
+            setGameState('playing');
+        }
+    }, [initialQuizData.id]);
 
     const goToNextStep = useCallback(() => {
-        setActiveMeme({ src: null, title: '' });
         const nextIndex = currentQuestionIndex + 1;
-
-        if (nextIndex >= quizData.questions.length) {
-            setGameState('finished');
-            if (thankYouMeme) setActiveMeme({ src: thankYouMeme, title: "Terima Kasih Telah Bermain!" });
+        if (nextIndex >= fullQuizData?.questions?.length) {
+            submitAndFinishQuiz(results);
         } else {
             setCurrentQuestionIndex(nextIndex);
             setSelectedAnswer(null);
             setTimeLeft(QUIZ_DURATION);
             setGameState('playing');
         }
-    }, [currentQuestionIndex, quizData.questions.length]);
+    }, [currentQuestionIndex, fullQuizData?.questions?.length, results, submitAndFinishQuiz]);
 
     const handleAnswerSubmit = useCallback((answer) => {
-        if (gameState !== 'playing') return;
-
+        if (gameState !== 'playing' || !currentQuestion) return;
         setGameState('feedback');
-        const isCorrect = answer === currentQuestion.correctAnswer;
+
+        const correctAnswer = currentQuestion.options.find(opt => opt.is_correct)?.option_text;
+        const isCorrect = answer === correctAnswer;
         
-        setResults(prev => [...prev, { question: currentQuestion.question, isCorrect }]);
+        const resultToSave = { 
+            questionId: currentQuestion.id,
+            answer: answer || "",
+            isCorrect: isCorrect,
+            question: currentQuestion.question_text
+        };
+        
+        setResults(prev => [...prev, resultToSave]);
         setFeedback({ show: true, isCorrect });
 
-        let memeToShow = { src: null, title: '' };
-
-        if (isCorrect) {
-            setScore(prev => prev + 500 + Math.floor(timeLeft * (500 / QUIZ_DURATION)));
-            const newStreak = correctStreak + 1;
-            setCorrectStreak(newStreak);
-            if (newStreak === 3) {
-                memeToShow = { src: correctMemes[Math.floor(Math.random() * correctMemes.length)], title: 'Kamu Terlalu Benar!' };
-                setCorrectStreak(0);
-            }
-        } else {
-            setCorrectStreak(0);
-            const newIncorrectCount = incorrectCount + 1;
-            setIncorrectCount(newIncorrectCount);
-            if (newIncorrectCount === 2) {
-                memeToShow = { src: incorrectMemes[Math.floor(Math.random() * incorrectMemes.length)], title: 'Waduh, Kebanyakan Salah Nih!' };
-                setIncorrectCount(0);
-            }
-        }
-        
         setTimeout(() => {
             setFeedback({ show: false, isCorrect: false });
-            if (memeToShow.src) {
-                setActiveMeme(memeToShow);
-                setGameState('meme');
-            } else {
-                goToNextStep();
-            }
+            goToNextStep();
         }, 1200);
-    }, [gameState, currentQuestion, timeLeft, correctStreak, incorrectCount, goToNextStep]);
+
+    }, [gameState, currentQuestion, goToNextStep]);
 
     useEffect(() => {
-        if (gameState !== 'playing' || !quizData) return;
+        if (gameState !== 'playing' || !fullQuizData || !currentQuestion) return;
         const timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
@@ -153,26 +176,72 @@ const QuizForm = ({ quizData, onCompleteQuiz }) => {
             });
         }, 1000);
         return () => clearInterval(timer);
-    }, [gameState, currentQuestionIndex, handleAnswerSubmit, quizData]);
+    }, [gameState, currentQuestionIndex, handleAnswerSubmit, fullQuizData, currentQuestion]);
     
     const getButtonClass = (option) => {
         const isSubmitted = gameState !== 'playing';
         if (!isSubmitted) return selectedAnswer === option ? 'bg-sesm-teal text-white' : 'bg-white';
-        if (option === currentQuestion.correctAnswer) return 'bg-green-500 text-white';
+        
+        const correctAnswer = currentQuestion.options.find(opt => opt.is_correct)?.option_text;
+        if (option === correctAnswer) return 'bg-green-500 text-white';
         if (option === selectedAnswer) return 'bg-red-500 text-white';
         return 'bg-white opacity-60';
     };
 
-    if (!quizData) return <div>Memuat kuis...</div>;
+    // --- Tampilan Loading dan Error ---
+    if (loading) {
+        return <div className="min-h-screen bg-gray-100 flex justify-center items-center flex-col"><FiLoader className="animate-spin text-3xl text-sesm-teal mb-4"/><p className="font-semibold text-gray-600">Memuat soal...</p></div>;
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6 text-center">
+                <FiAlertCircle className="text-5xl text-red-500 mb-4" />
+                <h2 className="text-2xl font-bold text-gray-800">Terjadi Kesalahan</h2>
+                <p className="text-gray-600 mt-2">{error}</p>
+                <button onClick={onCompleteQuiz} className="mt-6 px-6 py-2 bg-sesm-deep text-white font-semibold rounded-lg">Kembali</button>
+            </div>
+        );
+    }
+    
+    // Cek jika setelah loading selesai, soal tetap tidak ada
+    if (!fullQuizData?.questions || fullQuizData.questions.length === 0) {
+        return (
+            <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6 text-center">
+                <FiAlertCircle className="text-5xl text-yellow-500 mb-4" />
+                <h2 className="text-2xl font-bold text-gray-800">Kuis Belum Siap</h2>
+                <p className="text-gray-600 mt-2">Maaf, kuis ini belum memiliki soal. Silakan coba kuis yang lain.</p>
+                <button onClick={onCompleteQuiz} className="mt-6 px-6 py-2 bg-sesm-deep text-white font-semibold rounded-lg">Kembali</button>
+            </div>
+        );
+    }
+
+    if (gameState === 'submitting') {
+        return (
+            <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+                <FiLoader className="animate-spin text-4xl text-sesm-teal mb-4" />
+                <p className="font-semibold text-gray-600">Mengirim jawaban...</p>
+            </div>
+        );
+    }
 
     if (gameState === 'finished' && !activeMeme.src) {
         return <QuizLeaderboard score={score} results={results} onCompleteQuiz={onCompleteQuiz} />;
     }
 
+    const handleMemeClose = () => {
+        if (gameState === 'meme') {
+            setGameState('finished');
+            setActiveMeme({ src: null, title: '' });
+        } else {
+            goToNextStep();
+        }
+    }
+
     return (
         <>
             <AnimatePresence>
-                {activeMeme.src && <MemeOverlay meme={activeMeme.src} title={activeMeme.title} onClose={gameState === 'finished' ? onCompleteQuiz : goToNextStep} />}
+                {activeMeme.src && <MemeOverlay meme={activeMeme.src} title={activeMeme.title} onClose={handleMemeClose} />}
                 {feedback.show && <AnswerFeedback isCorrect={feedback.isCorrect} />}
             </AnimatePresence>
 
@@ -187,12 +256,12 @@ const QuizForm = ({ quizData, onCompleteQuiz }) => {
                         <div className="w-full max-w-2xl">
                             <AnimatePresence mode="wait">
                                 <motion.div key={currentQuestionIndex} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}>
-                                    <p className="text-sm font-semibold text-gray-500">Pertanyaan {currentQuestionIndex + 1} dari {quizData.questions.length}</p>
-                                    <h2 className="text-2xl md:text-3xl font-bold text-sesm-deep mt-2 mb-8">{currentQuestion.question}</h2>
+                                    <p className="text-sm font-semibold text-gray-500">Pertanyaan {currentQuestionIndex + 1} dari {fullQuizData.questions.length}</p>
+                                    <h2 className="text-2xl md:text-3xl font-bold text-sesm-deep mt-2 mb-8">{currentQuestion.question_text}</h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {currentQuestion.options.map((option) => (
-                                            <motion.button key={option} onClick={() => setSelectedAnswer(option)} className={`p-4 rounded-lg font-semibold text-lg shadow-md transition-colors ${getButtonClass(option)}`} whileHover={{ scale: gameState === 'playing' ? 1.03 : 1 }} whileTap={{ scale: gameState === 'playing' ? 0.98 : 1 }} disabled={gameState !== 'playing'}>
-                                                {option}
+                                            <motion.button key={option.id} onClick={() => setSelectedAnswer(option.option_text)} className={`p-4 rounded-lg font-semibold text-lg shadow-md transition-colors ${getButtonClass(option.option_text)}`} whileHover={{ scale: gameState === 'playing' ? 1.03 : 1 }} whileTap={{ scale: gameState === 'playing' ? 0.98 : 1 }} disabled={gameState !== 'playing'}>
+                                                {option.option_text}
                                             </motion.button>
                                         ))}
                                     </div>
@@ -210,7 +279,6 @@ const QuizForm = ({ quizData, onCompleteQuiz }) => {
                 </main>
                 <footer className="p-4 bg-white flex justify-between items-center border-t">
                     <div><p className="text-sm text-gray-500">Skor</p><p className="font-bold text-xl text-sesm-deep">{score}</p></div>
-                    <div className='flex items-center space-x-2'><span className='font-bold text-amber-500'>Streak: {correctStreak} 🔥</span></div>
                 </footer>
             </div>
         </>

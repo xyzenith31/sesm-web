@@ -1,6 +1,6 @@
-// contoh-sesm-web/components/admin/SidebarGuru.jsx
 import React from 'react';
-import { FiBookOpen, FiLogOut, FiTrendingUp } from 'react-icons/fi';
+// 1. Tambah ikon FiAward
+import { FiBookOpen, FiLogOut, FiTrendingUp, FiHelpCircle, FiAward } from 'react-icons/fi';
 import Logo from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -39,10 +39,23 @@ const SidebarGuru = ({ activePage, onNavigate }) => {
           onClick={() => onNavigate('manajemenMateri')}
         />
         <NavLink
+          icon={<FiHelpCircle size={20} />}
+          label="Manajemen Kuis"
+          isActive={activePage === 'manajemenKuis'}
+          onClick={() => onNavigate('manajemenKuis')}
+        />
+        <NavLink
           icon={<FiTrendingUp size={20} />}
           label="Manajemen Nilai"
           isActive={activePage === 'manajemenNilai'}
           onClick={() => onNavigate('manajemenNilai')}
+        />
+        {/* --- ▼▼▼ TAMBAHKAN NAVLINK BARU INI DI SINI ▼▼▼ --- */}
+        <NavLink
+          icon={<FiAward size={20} />}
+          label="Evaluasi Kuis"
+          isActive={activePage === 'evaluasiKuis'}
+          onClick={() => onNavigate('evaluasiKuis')}
         />
       </nav>
       <div className="p-4 border-t">

@@ -5,7 +5,7 @@ export const NavigationContext = createContext();
 
 export const NavigationProvider = ({ children }) => {
   const { user, loading } = useAuth();
-  const [currentView, setCurrentView] = useState(null); // Mulai dari null untuk mencegah kedipan UI
+  const [currentView, setCurrentView] = useState(null);
 
   // useEffect ini sekarang HANYA berjalan saat status login/loading berubah.
   // Tugasnya adalah menentukan halaman mana yang harus ditampilkan saat aplikasi pertama dimuat,
@@ -30,7 +30,11 @@ export const NavigationProvider = ({ children }) => {
     else {
       // Pengecekan role pengguna
       if (user.role === 'guru') {
-        setCurrentView('dashboardGuru'); // Arahkan guru ke dasbornya
+        // Saat pertama kali login, arahkan guru ke dasbornya
+        // Jangan ubah view jika sudah berada di salah satu halaman admin
+        if (!['dashboardGuru', 'manajemenMateri', 'manajemenKuis', 'manajemenNilai', 'evaluasiKuis'].includes(currentView)) {
+           setCurrentView('dashboardGuru');
+        }
       } else {
         // Logika untuk siswa (tidak berubah)
         if (user.jenjang) {
@@ -45,8 +49,6 @@ export const NavigationProvider = ({ children }) => {
   // Fungsi navigate sekarang menjadi satu-satunya cara untuk berpindah halaman
   // setelah halaman awal ditentukan.
   const navigate = (view) => {
-    // Saat pengguna klik "Explore Now" di Welcome Page,
-    // tandai bahwa mereka sudah melihatnya.
     if (view === 'login') {
       localStorage.setItem('hasSeenWelcome', 'true');
     }
