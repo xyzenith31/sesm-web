@@ -42,12 +42,12 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
                 <form onSubmit={handleSubmit}>
                     <div className="p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-sesm-deep">Tambah Bab Baru</h3>
+                            <h3 className="text-xl font-bold text-sesm-deep">Tambah Materi Baru</h3>
                             <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200">
                                 <FiX size={20}/>
                             </button>
                         </div>
-                        <p className="text-sm text-gray-500 mb-6">Buat bab baru di dalam mata pelajaran untuk jenjang <span className="font-bold">{jenjang}</span>.</p>
+                        <p className="text-sm text-gray-500 mb-6">Buat materi baru di dalam mata pelajaran untuk jenjang <span className="font-bold">{jenjang}</span>.</p>
                         
                         <div className="space-y-5">
                             <div>
@@ -67,7 +67,7 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
                             </div>
                             
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Judul Bab Baru</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Judul Materi Baru</label>
                                 <input 
                                     type="text"
                                     value={judulBab}

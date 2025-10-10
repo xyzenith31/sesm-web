@@ -82,9 +82,9 @@ const ManajemenNilai = () => {
                             </select>
                         </div>
                          <div>
-                            <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Bab</label>
+                            <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Materi</label>
                             <select value={selectedChapterId} onChange={(e) => setSelectedChapterId(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal" disabled={loading}>
-                                <option value="">-- Harap Pilih Bab --</option>
+                                <option value="">-- Harap Pilih Materi --</option>
                                 {chapterOptions.map(chap => (
                                     <option key={chap.chapter_id} value={chap.chapter_id}>{chap.judul}</option>
                                 ))}
@@ -97,9 +97,9 @@ const ManajemenNilai = () => {
                         {submissionsLoading ? (
                             <div className="flex justify-center items-center h-48"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>
                         ) : !selectedChapterId ? (
-                            <div className="text-center text-gray-400 py-16"><p>Silakan pilih jenjang dan bab terlebih dahulu.</p></div>
+                            <div className="text-center text-gray-400 py-16"><p>Silakan pilih jenjang dan materi terlebih dahulu.</p></div>
                         ) : submissions.length === 0 ? (
-                            <div className="text-center text-gray-400 py-16"><p>Belum ada siswa yang mengerjakan bab ini.</p></div>
+                            <div className="text-center text-gray-400 py-16"><p>Belum ada siswa yang mengerjakan materi ini.</p></div>
                         ) : (
                             <div className="space-y-3">
                                 {submissions.map(sub => (

@@ -106,17 +106,17 @@ const ManajemenMateri = () => {
             await DataService.addChapter({ subjectId, judul });
             fetchMateriList();
         } catch (error) {
-            alert("Gagal menambah bab baru: " + (error.response?.data?.message || error.message));
+            alert("Gagal menambah materi baru: " + (error.response?.data?.message || error.message));
         }
     };
 
     const handleDeleteChapter = async (materiKey) => {
-        if (window.confirm("Yakin ingin menghapus bab ini beserta semua soal di dalamnya?")) {
+        if (window.confirm("Yakin ingin menghapus materi ini beserta semua soal di dalamnya?")) {
             try {
                 await DataService.deleteChapter(materiKey);
                 fetchMateriList();
             } catch (error) {
-                alert("Gagal menghapus bab.");
+                alert("Gagal menghapus materi.");
             }
         }
     };
@@ -201,7 +201,7 @@ const ManajemenMateri = () => {
                         </div>
                         <div className="flex-shrink-0 mb-3">
                             <button onClick={() => setIsAddChapterModalOpen(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-sesm-teal text-white rounded-lg font-semibold text-sm hover:bg-sesm-deep transition-colors">
-                                <FiPlus/> Tambah Bab
+                                <FiPlus/> Tambah Materi
                             </button>
                         </div>
                         <div className="flex-grow overflow-y-auto pr-2">
@@ -219,7 +219,7 @@ const ManajemenMateri = () => {
                                                         <span>{materi.judul}</span>
                                                         <FiChevronRight/>
                                                     </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteChapter(materi.materiKey); }} className="ml-2 p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 transition-opacity" title="Hapus bab">
+                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteChapter(materi.materiKey); }} className="ml-2 p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 transition-opacity" title="Hapus materi">
                                                         <FiTrash2 size={14} />
                                                     </button>
                                                 </div>
@@ -270,13 +270,13 @@ const ManajemenMateri = () => {
                                                 <button onClick={() => handleDeleteQuestion(q.id)} className="p-2 hover:bg-gray-200 rounded-md" title="Hapus Soal"><FiTrash2 className="text-red-500"/></button>
                                             </div>
                                         </div>
-                                    )) : <p className="text-center text-gray-500 mt-8">Belum ada soal untuk bab ini. Silakan tambahkan soal baru.</p>}
+                                    )) : <p className="text-center text-gray-500 mt-8">Belum ada soal untuk materi ini. Silakan tambahkan soal baru.</p>}
                                 </div>
                             </div>
                         ) : (
                             <div className="flex flex-col justify-center items-center h-full text-center text-gray-400">
                                 <FiBook className="text-5xl mb-3"/>
-                                <p className="font-semibold">Pilih bab dari daftar di samping</p>
+                                <p className="font-semibold">Pilih materi dari daftar di samping</p>
                                 <p className="text-sm">untuk melihat dan mengelola soal.</p>
                             </div>
                         )}
