@@ -1,7 +1,8 @@
+// contoh-sesm-web/components/admin/SidebarGuru.jsx
 import React from 'react';
-import { FiBookOpen, FiLogOut } from 'react-icons/fi';
+import { FiBookOpen, FiLogOut, FiTrendingUp } from 'react-icons/fi';
 import Logo from '../../assets/logo.png';
-import { useAuth } from '../../hooks/useAuth'; // 1. Impor hook useAuth
+import { useAuth } from '../../hooks/useAuth';
 
 const NavLink = ({ icon, label, isActive, onClick }) => (
   <button
@@ -20,10 +21,7 @@ const NavLink = ({ icon, label, isActive, onClick }) => (
 );
 
 const SidebarGuru = ({ activePage, onNavigate }) => {
-  const { logout } = useAuth(); // 2. Panggil hook untuk mendapatkan fungsi logout
-
-  // 3. Buat fungsi handler yang memanggil logout
-  // Fungsi ini akan menghapus sesi dan memicu redirect ke halaman welcome
+  const { logout } = useAuth();
   const handleLogout = () => {
     logout();
   };
@@ -40,9 +38,14 @@ const SidebarGuru = ({ activePage, onNavigate }) => {
           isActive={activePage === 'manajemenMateri'}
           onClick={() => onNavigate('manajemenMateri')}
         />
+        <NavLink
+          icon={<FiTrendingUp size={20} />}
+          label="Manajemen Nilai"
+          isActive={activePage === 'manajemenNilai'}
+          onClick={() => onNavigate('manajemenNilai')}
+        />
       </nav>
       <div className="p-4 border-t">
-        {/* 4. Gunakan handleLogout pada tombol Logout */}
         <NavLink
             icon={<FiLogOut size={20} />}
             label="Logout"

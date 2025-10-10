@@ -27,11 +27,13 @@ import BahasaInggrisPage from './pages/mapel/BahasaInggrisPage';
 import PKNPage from './pages/mapel/PKNPage';
 import IPAPage from './pages/mapel/IPAPage';
 import IPSPage from './pages/mapel/IPSPage';
+import WorksheetPage from './pages/WorksheetPage';
 
 // --- Impor Halaman dan Layout Guru ---
 import AdminLayout from './layouts/AdminLayout';
 import DashboardGuru from './pages/admin/DashboardGuru';
 import ManajemenMateri from './pages/admin/ManajemenMateri';
+import ManajemenNilai from './pages/admin/ManajemenNilai';
 
 // Komponen dan layout
 import MainLayout from './layouts/MainLayout';
@@ -52,6 +54,7 @@ const pageTransition = {
 function App() {
   const { currentView, navigate } = useNavigation();
   const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [selectedChapterInfo, setSelectedChapterInfo] = useState(null);
 
   const handleSelectQuiz = (quizData) => {
     setSelectedQuiz(quizData);
@@ -63,8 +66,17 @@ function App() {
     navigate('quiz');
   };
 
+  const handleNavigateToWorksheet = (chapterInfo) => {
+    setSelectedChapterInfo(chapterInfo);
+    navigate('worksheet');
+  };
+
   const renderView = () => {
-    // --- (1) Views Siswa ---
+    const subjectPageProps = {
+        onNavigate: navigate,
+        onNavigateToWorksheet: handleNavigateToWorksheet,
+    };
+
     const viewsInMainLayout = [
       'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz',
       'matematika', 'membaca', 'menulis', 'berhitung', 'pai',
@@ -72,8 +84,7 @@ function App() {
       'accountSettings'
     ];
 
-    // --- (2) Views Guru ---
-    const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri'];
+    const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri', 'manajemenNilai'];
 
     if (viewsInMainLayout.includes(currentView)) {
       let pageComponent;
@@ -84,17 +95,17 @@ function App() {
         quiz: <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />,
         rank: <RankPage onNavigate={navigate} />,
         bookmark: <BookmarkPage onNavigate={navigate} />,
-        matematika: <MatematikaPage onNavigate={navigate} />,
-        membaca: <MembacaPage onNavigate={navigate} />,
-        menulis: <MenulisPage onNavigate={navigate} />,
-        berhitung: <BerhitungPage onNavigate={navigate} />,
-        pai: <PendidikanAgamaIslamPage onNavigate={navigate} />,
-        bahasaIndonesia: <BahasaIndonesiaPage onNavigate={navigate} />,
-        bahasaInggris: <BahasaInggrisPage onNavigate={navigate} />,
-        pkn: <PKNPage onNavigate={navigate} />,
-        ipa: <IPAPage onNavigate={navigate} />,
-        ips: <IPSPage onNavigate={navigate} />,
         accountSettings: <AccountSettingsPage onNavigate={navigate} />,
+        matematika: <MatematikaPage {...subjectPageProps} />,
+        membaca: <MembacaPage {...subjectPageProps} />,
+        menulis: <MenulisPage {...subjectPageProps} />,
+        berhitung: <BerhitungPage {...subjectPageProps} />,
+        pai: <PendidikanAgamaIslamPage {...subjectPageProps} />,
+        bahasaIndonesia: <BahasaIndonesiaPage {...subjectPageProps} />,
+        bahasaInggris: <BahasaInggrisPage {...subjectPageProps} />,
+        pkn: <PKNPage {...subjectPageProps} />,
+        ipa: <IPAPage {...subjectPageProps} />,
+        ips: <IPSPage {...subjectPageProps} />,
       };
       pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
 
@@ -111,6 +122,7 @@ function App() {
       let pageComponent;
       if (currentView === 'dashboardGuru') pageComponent = <DashboardGuru />;
       if (currentView === 'manajemenMateri') pageComponent = <ManajemenMateri />;
+      if (currentView === 'manajemenNilai') pageComponent = <ManajemenNilai />;
 
       return (
         <AdminLayout activePage={currentView} onNavigate={navigate}>
@@ -121,7 +133,6 @@ function App() {
       );
     }
 
-    // --- (3) Halaman di luar Layout ---
     switch (currentView) {
       case 'login':
         return <LoginPage onSwitchToRegister={() => navigate('register')} />;
@@ -133,6 +144,8 @@ function App() {
         return <ChooseSelectionPage onExit={() => navigate('login')} onSelectClass1={() => navigate('home')} onSelectClass2={() => navigate('home')} onSelectClass3_4={() => navigate('home')} onSelectClass5={() => navigate('home')} onSelectClass6={() => navigate('home')} />;
       case 'quizForm':
         return <QuizForm quizData={selectedQuiz} onCompleteQuiz={handleCompleteQuiz} />;
+      case 'worksheet':
+        return <WorksheetPage onNavigate={navigate} chapterInfo={selectedChapterInfo} />;
       default:
         return <WelcomePage onExplore={() => navigate('login')} />;
     }

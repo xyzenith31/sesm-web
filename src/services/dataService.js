@@ -1,7 +1,7 @@
 // contoh-sesm-web/src/services/dataService.js
 import apiClient from '../utils/apiClient';
 
-// --- FUNGSI LAMA (SISWA) ---
+// --- FUNGSI SISWA ---
 const getSubjects = (jenjang, kelas) => {
   let url = `/subjects/${jenjang}`;
   if (jenjang && jenjang.toLowerCase() === 'sd' && kelas) {
@@ -18,41 +18,36 @@ const updateUserProfile = (profileData) => {
   return apiClient.put('/user', profileData);
 };
 
-const getMateriDetail = (materiKey) => {
+const getDetailMateriForSiswa = (materiKey) => {
   return apiClient.get(`/materi/${materiKey}`);
 };
 
+const submitAnswers = (materiKey, answers) => {
+  return apiClient.post(`/materi/${materiKey}/submit`, { answers });
+};
 
-// --- FUNGSI-FUNGSI BARU UNTUK ADMIN (GURU) ---
+// --- FUNGSI GURU / ADMIN ---
 
-// Mendapatkan daftar Mapel dan Bab untuk dashboard admin berdasarkan jenjang & kelas
 const getMateriForAdmin = (jenjang, kelas) => {
-  // Menggunakan query params: /api/admin/materi?jenjang=SD&kelas=1
   return apiClient.get('/admin/materi', { params: { jenjang, kelas } });
 };
 
-// Mendapatkan detail soal dari satu bab (dengan kunci jawaban)
 const getDetailMateriForAdmin = (materiKey) => {
     return apiClient.get(`/admin/materi/${materiKey}`);
 };
 
-// Menambah bab baru
 const addChapter = (chapterData) => {
-  // chapterData = { judul, mapel, jenjang, kelas }
   return apiClient.post('/admin/materi/chapters', chapterData);
 };
 
-// Menambah soal baru ke bab
 const addQuestion = (materiKey, questionData) => {
   return apiClient.post(`/admin/materi/${materiKey}/questions`, questionData);
 };
 
-// Menghapus bab berdasarkan materiKey
 const deleteChapter = (materiKey) => {
   return apiClient.delete(`/admin/materi/chapters/${materiKey}`);
 };
 
-// Menghapus soal berdasarkan ID soal
 const deleteQuestion = (questionId) => {
   return apiClient.delete(`/admin/materi/questions/${questionId}`);
 };
@@ -66,12 +61,34 @@ const getChaptersForSubject = (jenjang, kelas, subjectName) => {
     return apiClient.get(url);
 };
 
+// --- FUNGSI MANAJEMEN NILAI ---
+const updateGradingMode = (chapterId, mode) => {
+  return apiClient.put(`/admin/chapters/${chapterId}/grading-mode`, { mode });
+};
+
+// --- PERBAIKAN DI SINI ---
+// Mengganti nama fungsi agar sesuai dengan yang dipanggil di komponen
+const getSubmissionsForChapter = (chapterId) => {
+  return apiClient.get(`/admin/nilai/chapter/${chapterId}`);
+};
+
+const getSubmissionDetails = (submissionId) => {
+    return apiClient.get(`/admin/nilai/submission/${submissionId}`);
+};
+
+const gradeSubmission = (submissionId, score) => {
+  return apiClient.post(`/admin/nilai/submission/${submissionId}`, { score });
+};
+
+// --- EXPORT SEMUA FUNGSI ---
 const DataService = {
   // Siswa
   getSubjects,
   updateLevelAndClass,
   updateUserProfile,
-  getMateriDetail,
+  submitAnswers,
+  getDetailMateriForSiswa,
+  
   // Guru / Admin
   getMateriForAdmin,
   getDetailMateriForAdmin,
@@ -80,6 +97,12 @@ const DataService = {
   deleteChapter,
   deleteQuestion,
   getChaptersForSubject,
+
+  // Penilaian
+  updateGradingMode,
+  getSubmissionsForChapter, // <-- Pastikan nama ini yang diekspor
+  getSubmissionDetails,
+  gradeSubmission,
 };
 
 export default DataService;

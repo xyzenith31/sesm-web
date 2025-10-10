@@ -1,18 +1,17 @@
+// contoh-sesm-web/pages/mapel/IPAPage.jsx
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle } from 'react-icons/fi';
-import { FaCalculator } from 'react-icons/fa';
+import { FaFlask } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
-import ChapterDetailModal from '../../components/ChapterDetailModal';
 
-// --- KONFIGURASI UNTUK HALAMAN INI ---
-const SUBJECT_NAME = 'Berhitung';
-const HEADER_TITLE = 'BERHITUNG';
-const HEADER_SUBTITLE = 'Jenjang TK Kurikulum SESM';
-const ICON = FaCalculator;
-const ICON_COLOR = 'text-green-500';
-const ICON_BG_COLOR = 'bg-green-100';
+const SUBJECT_NAME = 'IPA';
+const HEADER_TITLE = 'ILMU PENGETAHUAN ALAM';
+const HEADER_SUBTITLE = 'Kurikulum SESM';
+const ICON = FaFlask;
+const ICON_COLOR = 'text-blue-500';
+const ICON_BG_COLOR = 'bg-blue-100';
 
 const ChapterButton = ({ chapter, onClick, Icon, iconBgColor }) => (
     <motion.button
@@ -31,12 +30,11 @@ const ChapterButton = ({ chapter, onClick, Icon, iconBgColor }) => (
     </motion.button>
 );
 
-const BerhitungPage = ({ onNavigate }) => {
+const IPAPage = ({ onNavigate, onNavigateToWorksheet }) => {
     const { user } = useAuth();
     const [chapters, setChapters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedMateriKey, setSelectedMateriKey] = useState(null);
 
     useEffect(() => {
         if (user?.jenjang) {
@@ -73,7 +71,12 @@ const BerhitungPage = ({ onNavigate }) => {
                     <ChapterButton
                         key={chapter.id}
                         chapter={chapter}
-                        onClick={() => setSelectedMateriKey(chapter.materiKey)}
+                        onClick={() => onNavigateToWorksheet({
+                            materiKey: chapter.materiKey,
+                            chapterTitle: chapter.judul,
+                            subjectName: SUBJECT_NAME,
+                            navigationKey: 'ipa',
+                        })}
                         Icon={ICON}
                         iconBgColor={ICON_BG_COLOR}
                     />
@@ -83,48 +86,42 @@ const BerhitungPage = ({ onNavigate }) => {
     };
 
     return (
-        <>
-            <AnimatePresence>
-                {selectedMateriKey && <ChapterDetailModal materiKey={selectedMateriKey} onClose={() => setSelectedMateriKey(null)} />}
-            </AnimatePresence>
-
-            <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
-                <div className="flex flex-col h-screen md:h-auto md:items-center w-full md:min-h-screen md:bg-gray-100 md:p-8">
-                    <div className="w-full md:max-w-2xl md:mx-auto">
-                        <header className="bg-sesm-teal pt-8 pb-4 px-6 rounded-b-[2.5rem] shadow-lg text-white md:bg-white md:p-6 md:rounded-2xl md:shadow-md md:mb-8 md:text-black">
-                            <div className="flex items-center mb-4">
-                                <motion.button onClick={() => onNavigate('home')} className="p-2 -ml-2 mr-2 rounded-full md:mr-4 md:hover:bg-gray-100" whileTap={{ scale: 0.9 }}>
-                                    <FiArrowLeft size={24} className="text-white md:text-gray-600"/>
-                                </motion.button>
-                                <div className="hidden md:flex flex-1 items-center">
-                                    <div className="flex-1">
-                                        <h1 className="text-3xl font-bold text-sesm-deep tracking-wide">{HEADER_TITLE}</h1>
-                                        <p className="text-md text-gray-500">{HEADER_SUBTITLE}</p>
-                                    </div>
-                                    <ICON size={40} className="text-sesm-teal"/>
+        <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
+            <div className="flex flex-col h-screen md:h-auto md:items-center w-full md:min-h-screen md:bg-gray-100 md:p-8">
+                <div className="w-full md:max-w-2xl md:mx-auto">
+                    <header className="bg-sesm-teal pt-8 pb-4 px-6 rounded-b-[2.5rem] shadow-lg text-white md:bg-white md:p-6 md:rounded-2xl md:shadow-md md:mb-8 md:text-black">
+                        <div className="flex items-center mb-4">
+                            <motion.button onClick={() => onNavigate('home')} className="p-2 -ml-2 mr-2 rounded-full md:mr-4 md:hover:bg-gray-100" whileTap={{ scale: 0.9 }}>
+                                <FiArrowLeft size={24} className="text-white md:text-gray-600"/>
+                            </motion.button>
+                            <div className="hidden md:flex flex-1 items-center">
+                                <div className="flex-1">
+                                    <h1 className="text-3xl font-bold text-sesm-deep tracking-wide">{HEADER_TITLE}</h1>
+                                    <p className="text-md text-gray-500">{HEADER_SUBTITLE}</p>
                                 </div>
+                                <ICON size={40} className="text-sesm-teal"/>
                             </div>
-                            <div className="relative mb-4 md:hidden">
-                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-800/60" size={20} />
-                                <input type="text" placeholder={`Cari materi ${SUBJECT_NAME}...`} className="w-full bg-white text-gray-800 placeholder:text-gray-500 rounded-full py-3 pl-12 pr-4 text-sm border-none focus:outline-none focus:ring-2 focus:ring-white/50" />
+                        </div>
+                        <div className="relative mb-4 md:hidden">
+                            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-800/60" size={20} />
+                            <input type="text" placeholder={`Cari materi ${SUBJECT_NAME}...`} className="w-full bg-white text-gray-800 placeholder:text-gray-500 rounded-full py-3 pl-12 pr-4 text-sm border-none focus:outline-none focus:ring-2 focus:ring-white/50" />
+                        </div>
+                        <div className="flex justify-between items-center md:hidden">
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-wide">{HEADER_TITLE}</h1>
+                                <p className="text-sm opacity-90">{HEADER_SUBTITLE}</p>
                             </div>
-                            <div className="flex justify-between items-center md:hidden">
-                                <div>
-                                    <h1 className="text-2xl font-bold tracking-wide">{HEADER_TITLE}</h1>
-                                    <p className="text-sm opacity-90">{HEADER_SUBTITLE}</p>
-                                </div>
-                                <ICON size={40} className="opacity-80"/>
-                            </div>
-                        </header>
-                        <main className="flex-1 overflow-y-auto pt-6 pb-6 px-6 md:p-0">
-                            <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:px-2">Semua bab</h2>
-                            {renderContent()}
-                        </main>
-                    </div>
+                            <ICON size={40} className="opacity-80"/>
+                        </div>
+                    </header>
+                    <main className="flex-1 overflow-y-auto pt-6 pb-6 px-6 md:p-0">
+                        <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:px-2">Semua bab</h2>
+                        {renderContent()}
+                    </main>
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 
-export default BerhitungPage;
+export default IPAPage;

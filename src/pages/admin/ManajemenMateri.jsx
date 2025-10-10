@@ -17,6 +17,17 @@ const jenjangOptions = {
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
 
+const ToggleSwitch = ({ enabled, onToggle }) => (
+    <button
+        onClick={onToggle}
+        className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none ${enabled ? 'bg-sesm-teal' : 'bg-gray-300'}`}
+    >
+        <span
+            className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`}
+        />
+    </button>
+);
+
 const ManajemenMateri = () => {
     const [materiList, setMateriList] = useState({});
     const [selectedKey, setSelectedKey] = useState(null);
@@ -62,7 +73,6 @@ const ManajemenMateri = () => {
         }
         setIsDetailLoading(true);
         
-        // Cari info materi dari struktur data yang sudah ada
         let materiInfo = null;
         for (const mapelData of Object.values(materiList)) {
             const foundChapter = mapelData.chapters.find(m => m.materiKey === selectedKey);
@@ -119,7 +129,7 @@ const ManajemenMateri = () => {
                 await DataService.addQuestion(selectedKey, question);
             }
             alert(`${newQuestions.length} soal berhasil dipublikasikan!`);
-            fetchDetailMateri(); // Refresh detail
+            fetchDetailMateri();
         } catch (error) {
             alert("Gagal mempublikasikan soal.");
         }
@@ -129,22 +139,47 @@ const ManajemenMateri = () => {
         if (!window.confirm("Yakin ingin menghapus soal ini?")) return;
         try {
             await DataService.deleteQuestion(questionId);
-            fetchDetailMateri(); // Refresh detail
+            fetchDetailMateri();
         } catch (error) {
             alert("Gagal menghapus soal.");
         }
     };
 
-    // --- PERBAIKAN LOGIKA UNTUK MODAL DROPDOWN ---
+    const handleGradingModeChange = async (chapterId, currentMode) => {
+        const newMode = currentMode === 'otomatis' ? 'manual' : 'otomatis';
+        try {
+            await DataService.updateGradingMode(chapterId, newMode);
+            
+            setMateriList(prevList => {
+                const newList = { ...prevList };
+                for (const mapel in newList) {
+                    newList[mapel].chapters = newList[mapel].chapters.map(chap => {
+                        if (chap.chapter_id === chapterId) {
+                            return { ...chap, grading_mode: newMode };
+                        }
+                        return chap;
+                    });
+                }
+                return newList;
+            });
+
+            if (selectedMateri && selectedMateri.chapter_id === chapterId) {
+                setSelectedMateri(prev => ({ ...prev, grading_mode: newMode }));
+            }
+
+        } catch (err) {
+            alert(`Gagal mengubah mode penilaian: ${err.response?.data?.message || err.message}`);
+        }
+    };
+
     const currentMapelList = useMemo(() => {
         if (!materiList || Object.keys(materiList).length === 0) return [];
-        // Ubah cara memetakan data sesuai struktur baru dari backend
         return Object.entries(materiList)
             .map(([nama_mapel, data]) => ({
-                id: data.subject_id, // Ambil ID langsung dari properti data
+                id: data.subject_id,
                 nama_mapel
             }))
-            .filter(m => m.id); // Filter untuk memastikan ID valid
+            .filter(m => m.id);
     }, [materiList]);
 
     return (
@@ -178,7 +213,6 @@ const ManajemenMateri = () => {
                                     <div key={mapel}>
                                         <h3 className="font-bold text-sesm-teal mt-4 first:mt-0">{mapel}</h3>
                                         <div className="space-y-1 mt-1">
-                                            {/* --- PERBAIKAN LOGIKA RENDER DAFTAR BAB --- */}
                                             {materiList[mapel].chapters.map(materi => (
                                                 <div key={materi.materiKey} className={`group w-full text-left p-2 rounded-md flex justify-between items-center text-sm transition-colors ${selectedKey === materi.materiKey ? 'bg-sesm-teal/10' : 'hover:bg-gray-100'}`}>
                                                     <button onClick={() => setSelectedKey(materi.materiKey)} className={`flex-grow flex justify-between items-center text-left pr-2 ${selectedKey === materi.materiKey ? 'font-bold text-sesm-deep' : 'text-gray-700'}`}>
@@ -201,11 +235,31 @@ const ManajemenMateri = () => {
                        {isDetailLoading ? ( <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div> ) 
                         : selectedMateri ? (
                             <div>
-                                <div className="flex justify-between items-center border-b pb-3 mb-4">
-                                    <h2 className="text-xl font-bold text-sesm-deep">{selectedMateri.judul}</h2>
-                                    <button onClick={() => setIsQuestionModalOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm">
-                                        <FiPlus/> Tambah Soal
-                                    </button>
+                                <div className="border-b pb-4 mb-4">
+                                    <div className="flex justify-between items-start">
+                                        <h2 className="text-xl font-bold text-sesm-deep">{selectedMateri.judul}</h2>
+                                        <button onClick={() => setIsQuestionModalOpen(true)} className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm">
+                                            <FiPlus/> Tambah Soal
+                                        </button>
+                                    </div>
+                                    <div className="mt-4 flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <ToggleSwitch 
+                                                enabled={selectedMateri.grading_mode === 'manual'}
+                                                onToggle={() => handleGradingModeChange(selectedMateri.chapter_id, selectedMateri.grading_mode)}
+                                            />
+                                            <div>
+                                                <p className="font-semibold text-sm text-gray-800">
+                                                    Penilaian Manual {selectedMateri.grading_mode === 'manual' ? 'Aktif' : 'Nonaktif'}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    {selectedMateri.grading_mode === 'manual' 
+                                                        ? 'Guru akan menilai jawaban siswa secara manual.' 
+                                                        : 'Sistem akan menilai otomatis (hanya PG).'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="space-y-3">
                                     {selectedMateri.questions && selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, index) => (
