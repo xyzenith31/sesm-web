@@ -12,7 +12,6 @@ const iconMap = {
 
 const QuizCard = ({ quiz, onSelect }) => {
     const API_BASE_URL = 'http://localhost:8080';
-    // Gunakan 'recommended_level' sebagai fallback jika 'subject' tidak ada
     const subject = quiz.subject || quiz.recommended_level;
     const Icon = iconMap[subject] || FaGlobe;
 
@@ -63,7 +62,6 @@ const QuizPage = ({ onNavigate, onSelectQuiz }) => {
             });
     }, []);
 
-    // Gunakan recommended_level jika subject tidak ada, dan filter nilai null/undefined
     const categories = useMemo(() => ['Semua', ...new Set(quizzes.map(q => q.subject || q.recommended_level).filter(Boolean))], [quizzes]);
     const filteredQuizzes = activeFilter === 'Semua' 
         ? quizzes 
@@ -89,7 +87,6 @@ const QuizPage = ({ onNavigate, onSelectQuiz }) => {
                     <h2 className="text-lg font-bold text-gray-700 my-3">Daftar Kuis</h2>
                     <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
                         {categories.map(cat => (
-                            // --- PERBAIKAN DI SINI: Tambahkan `key={cat}` pada tombol ---
                             <button key={cat} onClick={() => setActiveFilter(cat)} className={`px-4 py-1.5 text-sm font-semibold rounded-full flex-shrink-0 ${activeFilter === cat ? 'bg-sesm-deep text-white' : 'bg-white text-gray-600'}`}>
                                 {cat}
                             </button>
