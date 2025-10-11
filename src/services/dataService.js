@@ -1,4 +1,3 @@
-// contoh-sesm-web/services/dataService.js
 import apiClient from '../utils/apiClient';
 
 // --- FUNGSI SISWA ---
@@ -77,11 +76,35 @@ const addQuestionToQuiz = (quizId, formData) => {
   });
 };
 
+// --- ▼▼▼ FUNGSI BARU UNTUK EDIT & HAPUS SOAL SPESIFIK DI KUIS ▼▼▼ ---
+const updateQuestionInQuiz = (questionId, questionData) => {
+    const formData = new FormData();
+    formData.append('question_text', questionData.question);
+    formData.append('question_type', questionData.type);
+    
+    const formattedOptions = questionData.options.map(opt => ({
+        text: opt,
+        isCorrect: opt === questionData.correctAnswer
+    }));
+    formData.append('options', JSON.stringify(formattedOptions));
+
+    // Kirim media yang sudah ada untuk disimpan kembali oleh backend
+    formData.append('existingMedia', JSON.stringify(questionData.media));
+
+    // Di sini kita tidak mengirim file baru, karena logic edit hanya untuk teks
+    // Jika ingin ada fitur ganti file, logic-nya harus ditambahkan di sini
+
+    return apiClient.put(`/admin/quizzes/questions/${questionId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+};
+
 const deleteQuestionFromQuiz = (questionId) => {
     return apiClient.delete(`/admin/quizzes/questions/${questionId}`);
 };
+// --- ▲▲▲ BATAS FUNGSI BARU ▲▲▲ ---
 
-// --- ▼▼▼ FUNGSI BARU UNTUK BANK SOAL ▼▼▼ ---
+// Bank Soal
 const getAllQuestionsForBank = (jenjang, kelas) => {
     return apiClient.get('/admin/all-questions', { params: { jenjang, kelas } });
 };
@@ -89,7 +112,6 @@ const getAllQuestionsForBank = (jenjang, kelas) => {
 const addQuestionsFromBank = (quizId, questionIds) => {
     return apiClient.post(`/admin/quizzes/${quizId}/add-from-bank`, { questionIds });
 };
-// --- ▲▲▲ BATAS FUNGSI BARU ▲▲▲ ---
 
 
 // === FUNGSI KHUSUS SISWA ===
@@ -113,7 +135,7 @@ const DataService = {
   getQuizForStudent,
   submitQuizAnswers,
   
-  // Guru / Admin
+  // Guru / Admin Materi
   getMateriForAdmin,
   getDetailMateriForAdmin,
   addChapter,
@@ -121,14 +143,18 @@ const DataService = {
   deleteChapter,
   deleteQuestion,
   getChaptersForSubject,
+  
+  // Guru / Admin Kuis
   getAllQuizzes,
   getQuizDetailsForAdmin,
   createQuiz,
   getSubmissionsForQuiz,
   deleteQuiz,
   addQuestionToQuiz,
-  deleteQuestionFromQuiz,
-  // Bank Soal
+  updateQuestionInQuiz, // <-- Export fungsi edit
+  deleteQuestionFromQuiz, // <-- Export fungsi hapus
+  
+  // Guru / Admin Bank Soal
   getAllQuestionsForBank,
   addQuestionsFromBank,
 
