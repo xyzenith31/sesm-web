@@ -45,9 +45,9 @@ const gradeSubmission = (submissionId, score) => { return apiClient.post(`/admin
 const overrideAnswer = (answerId, isCorrect) => { return apiClient.patch(`/admin/nilai/answer/${answerId}`, { isCorrect }); };
 
 
-// --- FUNGSI BARU UNTUK MANAJEMEN KUIS (DIPERBAIKI) ---
+// --- FUNGSI MANAJEMEN KUIS & BANK SOAL ---
 
-// === FUNGSI UMUM (Bisa dipakai Admin & Siswa) ===
+// === FUNGSI UMUM ===
 const getAllQuizzes = () => {
     return apiClient.get('/quizzes');
 };
@@ -63,11 +63,9 @@ const createQuiz = (formData) => {
   });
 };
 
-// --- FUNGSI BARU DITAMBAHKAN DI SINI ---
 const getSubmissionsForQuiz = (quizId) => {
     return apiClient.get(`/admin/quizzes/${quizId}/submissions`);
 };
-// ------------------------------------
 
 const deleteQuiz = (quizId) => {
   return apiClient.delete(`/admin/quizzes/${quizId}`);
@@ -82,6 +80,17 @@ const addQuestionToQuiz = (quizId, formData) => {
 const deleteQuestionFromQuiz = (questionId) => {
     return apiClient.delete(`/admin/quizzes/questions/${questionId}`);
 };
+
+// --- ▼▼▼ FUNGSI BARU UNTUK BANK SOAL ▼▼▼ ---
+const getAllQuestionsForBank = (jenjang, kelas) => {
+    return apiClient.get('/admin/all-questions', { params: { jenjang, kelas } });
+};
+
+const addQuestionsFromBank = (quizId, questionIds) => {
+    return apiClient.post(`/admin/quizzes/${quizId}/add-from-bank`, { questionIds });
+};
+// --- ▲▲▲ BATAS FUNGSI BARU ▲▲▲ ---
+
 
 // === FUNGSI KHUSUS SISWA ===
 const getQuizForStudent = (quizId) => {
@@ -115,10 +124,13 @@ const DataService = {
   getAllQuizzes,
   getQuizDetailsForAdmin,
   createQuiz,
-  getSubmissionsForQuiz, // <-- Pastikan ini diexport
+  getSubmissionsForQuiz,
   deleteQuiz,
   addQuestionToQuiz,
   deleteQuestionFromQuiz,
+  // Bank Soal
+  getAllQuestionsForBank,
+  addQuestionsFromBank,
 
   // Penilaian
   updateGradingMode,

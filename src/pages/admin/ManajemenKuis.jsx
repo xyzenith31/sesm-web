@@ -5,6 +5,7 @@ import DataService from '../../services/dataService';
 import CreateQuizModal from '../../components/admin/CreateQuizModal';
 import AddQuestionToQuizModal from '../../components/admin/AddQuestionToQuizModal';
 import { useAuth } from '../../hooks/useAuth';
+import BankSoalModal from '../../components/admin/BankSoalModal';
 
 // --- Helper Components ---
 const StatCard = ({ icon: Icon, value, label, color }) => (
@@ -19,7 +20,7 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
     </div>
 );
 
-const DashboardView = ({ userName, stats, onCreateQuiz }) => (
+const DashboardView = ({ userName, stats, onCreateQuiz, onOpenBankSoal }) => (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col justify-center h-full text-center px-4">
         <FiBookOpen className="text-6xl text-gray-300 mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-gray-800">Selamat Datang, {userName || 'Guru'}!</h2>
@@ -39,8 +40,12 @@ const DashboardView = ({ userName, stats, onCreateQuiz }) => (
                     <button onClick={onCreateQuiz} className="flex items-center justify-center gap-3 p-4 bg-sesm-teal/10 text-sesm-deep rounded-xl hover:bg-sesm-teal/20 transition-colors">
                         <FiPlus size={20}/> <span className="font-semibold">Buat Kuis Baru</span>
                     </button>
-                     <button className="flex items-center justify-center gap-3 p-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors cursor-not-allowed" title="Fitur ini akan segera hadir">
-                        <FiCopy size={20}/> <span className="font-semibold">Bank Soal (Segera Hadir)</span>
+                     {/* --- PERBAIKAN DI SINI: Atribut `disabled` dan `cursor-not-allowed` dihapus --- */}
+                     <button 
+                        onClick={onOpenBankSoal} 
+                        className="flex items-center justify-center gap-3 p-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                     >
+                        <FiCopy size={20}/> <span className="font-semibold">Bank Soal</span>
                     </button>
                 </div>
             </div>
@@ -59,6 +64,8 @@ const ManajemenKuis = () => {
     
     const [isCreateQuizOpen, setCreateQuizOpen] = useState(false);
     const [isAddQuestionOpen, setAddQuestionOpen] = useState(false);
+    const [isBankSoalOpen, setBankSoalOpen] = useState(false);
+
 
     const fetchQuizzes = useCallback(() => {
         setLoading(true);
@@ -68,21 +75,25 @@ const ManajemenKuis = () => {
             .finally(() => setLoading(false));
     }, []);
 
+    const fetchQuizDetails = useCallback((quizId) => {
+        setDetailLoading(true);
+        DataService.getQuizDetailsForAdmin(quizId)
+            .then(res => setQuestions(res.data))
+            .catch(err => console.error("Gagal fetch detail kuis:", err))
+            .finally(() => setDetailLoading(false));
+    }, []);
+
     useEffect(() => {
         fetchQuizzes();
     }, [fetchQuizzes]);
 
     useEffect(() => {
         if (selectedQuiz) {
-            setDetailLoading(true);
-            DataService.getQuizDetailsForAdmin(selectedQuiz.id)
-                .then(res => setQuestions(res.data))
-                .catch(err => console.error("Gagal fetch detail kuis:", err))
-                .finally(() => setDetailLoading(false));
+            fetchQuizDetails(selectedQuiz.id);
         } else {
             setQuestions([]);
         }
-    }, [selectedQuiz]);
+    }, [selectedQuiz, fetchQuizDetails]);
     
     const handleCreateQuiz = async (formData) => {
         try {
@@ -108,15 +119,19 @@ const ManajemenKuis = () => {
     const handleAddQuestion = async (quizId, formData) => {
         try {
             await DataService.addQuestionToQuiz(quizId, formData);
-            setDetailLoading(true);
-            const res = await DataService.getQuizDetailsForAdmin(quizId);
-            setQuestions(res.data);
-            // Refresh total question count in the main list
+            fetchQuizDetails(quizId);
             fetchQuizzes();
         } catch (error) {
             alert("Gagal menambah soal.");
-        } finally {
-            setDetailLoading(false);
+        }
+    };
+    
+    const handleQuestionsFromBankAdded = () => {
+        setBankSoalOpen(false);
+        if (selectedQuiz) {
+            alert("Soal berhasil ditambahkan dari bank soal!");
+            fetchQuizDetails(selectedQuiz.id);
+            fetchQuizzes();
         }
     };
 
@@ -130,14 +145,30 @@ const ManajemenKuis = () => {
             <AnimatePresence>
                 {isCreateQuizOpen && <CreateQuizModal isOpen={isCreateQuizOpen} onClose={() => setCreateQuizOpen(false)} onSubmit={handleCreateQuiz} />}
                 {isAddQuestionOpen && <AddQuestionToQuizModal isOpen={isAddQuestionOpen} onClose={() => setAddQuestionOpen(false)} onSubmit={handleAddQuestion} quizId={selectedQuiz?.id} />}
+                {isBankSoalOpen && <BankSoalModal isOpen={isBankSoalOpen} onClose={() => setBankSoalOpen(false)} quizId={selectedQuiz?.id} onQuestionsAdded={handleQuestionsFromBankAdded} />}
             </AnimatePresence>
 
             <div>
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Kuis</h1>
-                    <button onClick={() => setCreateQuizOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-sesm-deep">
-                        <FiPlus/> Buat Kuis Baru
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => {
+                                if (!selectedQuiz) {
+                                    alert("Pilih salah satu kuis dari daftar di bawah terlebih dahulu.");
+                                    return;
+                                }
+                                setBankSoalOpen(true)
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10"
+                            title="Buka Bank Soal"
+                        >
+                            <FiCopy/> Bank Soal
+                        </button>
+                        <button onClick={() => setCreateQuizOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-sesm-deep">
+                            <FiPlus/> Buat Kuis Baru
+                        </button>
+                    </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -167,7 +198,12 @@ const ManajemenKuis = () => {
                         {/* Right Pane: Details */}
                         <div className="md:col-span-8 lg:col-span-9 p-6 overflow-y-auto">
                            {!selectedQuiz ? (
-                                <DashboardView userName={user?.nama} stats={stats} onCreateQuiz={() => setCreateQuizOpen(true)} />
+                                <DashboardView 
+                                    userName={user?.nama} 
+                                    stats={stats} 
+                                    onCreateQuiz={() => setCreateQuizOpen(true)} 
+                                    onOpenBankSoal={() => alert('Pilih kuis terlebih dahulu dari daftar di sebelah kiri.')} 
+                                />
                            ) : detailLoading ? (
                                 <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>
                            ) : (
@@ -187,7 +223,7 @@ const ManajemenKuis = () => {
                                         {questions.length > 0 ? questions.map((q, index) => (
                                             <div key={q.id} className="bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-colors">
                                                 <p className="font-semibold">{index + 1}. {q.question_text}</p>
-                                                {q.options.map(opt => (
+                                                {q.options && q.options.map(opt => (
                                                     <p key={opt.id} className={`text-sm ml-4 ${opt.is_correct ? 'text-green-600 font-bold' : 'text-gray-600'}`}>- {opt.option_text}</p>
                                                 ))}
                                             </div>
