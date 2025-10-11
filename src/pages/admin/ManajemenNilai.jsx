@@ -1,6 +1,5 @@
-// contoh-sesm-web/pages/admin/ManajemenNilai.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FiLoader, FiAlertCircle, FiCheckCircle, FiEdit, FiClock } from 'react-icons/fi';
+import { FiLoader, FiAlertCircle, FiClock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataService from '../../services/dataService';
 import SubmissionDetailModal from '../../components/SubmissionDetailModal';

@@ -1,11 +1,11 @@
-// contoh-sesm-web/src/pages/admin/ManajemenMateri.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// 1. Impor hook useAuth dan beberapa ikon baru
-import { FiBook, FiChevronRight, FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiFileText, FiGrid, FiFile, FiCheckSquare } from 'react-icons/fi';
+import {
+    FiPlus, FiChevronRight, FiBookOpen, FiTrash2, FiLoader, FiGrid,
+    FiCheckSquare, FiFileText, FiEdit, FiAlertCircle, FiTrendingUp
+} from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
-
 import AddChapterModal from '../../components/AddChapterModal';
 import QuestionFormModal from '../../components/QuestionFormModal';
 import DraftsModal from '../../components/DraftsModal';
@@ -20,85 +20,53 @@ const jenjangOptions = {
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
 
-const ToggleSwitch = ({ enabled, onToggle }) => (
-    <button
-        onClick={onToggle}
-        className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none ${enabled ? 'bg-sesm-teal' : 'bg-gray-300'}`}
-    >
-        <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-    </button>
-);
-
-// 2. Buat Komponen StatCard (helper component untuk dasbor)
 const StatCard = ({ icon: Icon, value, label, color }) => (
-    <div className="bg-gray-50 p-4 rounded-xl flex-1 border">
+    <div className="bg-gray-100 p-4 rounded-lg flex-1 border hover:border-sesm-teal transition-colors">
         <div className="flex items-center">
-            <Icon className={`text-2xl mr-3 ${color}`} />
+            <Icon className={`text-xl mr-3 ${color}`} />
             <div>
-                <p className="text-2xl font-bold text-sesm-deep">{value}</p>
+                <p className="text-xl font-bold text-sesm-deep">{value}</p>
                 <p className="text-xs text-gray-500 font-semibold">{label}</p>
             </div>
         </div>
     </div>
 );
 
-// 3. Buat Komponen DashboardView (tampilan awal yang baru)
-const DashboardView = ({ userName, jenjang, stats, onAddMateri, onOpenDrafts }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col justify-center h-full p-4"
-    >
-        <div className="text-left mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">Selamat Datang, {userName || 'Guru'}!</h2>
-            <p className="text-gray-500">Anda sedang mengelola materi untuk jenjang <span className="font-bold text-sesm-deep">{jenjang}</span>.</p>
-        </div>
-
-        <div>
-            <h3 className="font-bold text-gray-700 mb-3">Ringkasan Materi</h3>
-            <div className="flex space-x-4">
-                <StatCard icon={FiGrid} value={stats.totalMapel} label="Total Mapel" color="text-blue-500" />
-                <StatCard icon={FiFile} value={stats.totalBab} label="Total Bab" color="text-green-500" />
-                <StatCard icon={FiCheckSquare} value={stats.totalSoal} label="Total Soal" color="text-orange-500" />
-            </div>
-        </div>
-
-        <div className="mt-8">
-            <h3 className="font-bold text-gray-700 mb-3">Aksi Cepat</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                    onClick={onAddMateri}
-                    className="flex flex-col items-center justify-center p-6 bg-sesm-teal/10 text-sesm-deep rounded-xl hover:bg-sesm-teal/20 transition-colors"
-                >
-                    <FiPlus size={28} className="mb-2"/>
-                    <span className="font-semibold">Tambah Materi Baru</span>
-                </button>
-                 <button
-                    onClick={onOpenDrafts}
-                    className="flex flex-col items-center justify-center p-6 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
-                >
-                    <FiFileText size={28} className="mb-2"/>
-                    <span className="font-semibold">Lihat Draf Tersimpan</span>
-                </button>
+const DashboardView = ({ userName, stats }) => (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col justify-center h-full text-center px-4">
+        <FiBookOpen className="text-6xl text-gray-300 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-800">Selamat Datang, {userName || 'Guru'}!</h2>
+        <p className="text-gray-500 max-w-md mx-auto mb-8">Pilih materi dari daftar di sebelah kiri untuk melihat detail atau kelola soal. Gunakan tombol di atas untuk membuat materi baru.</p>
+        <div className="space-y-6 text-left">
+            <div>
+                <h3 className="font-bold text-gray-700 mb-3">Ringkasan Materi</h3>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                    <StatCard icon={FiGrid} value={stats.totalMapel} label="Total Mapel" color="text-blue-500" />
+                    <StatCard icon={FiGrid} value={stats.totalBab} label="Total Bab" color="text-green-500" />
+                    <StatCard icon={FiCheckSquare} value={stats.totalSoal} label="Total Soal" color="text-orange-500" />
+                </div>
             </div>
         </div>
     </motion.div>
 );
 
+const ToggleSwitch = ({ enabled, onToggle }) => (
+    <button onClick={onToggle} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none ${enabled ? 'bg-sesm-teal' : 'bg-gray-300'}`}>
+        <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+    </button>
+);
 
-const ManajemenMateri = () => {
-    const { user } = useAuth(); // 4. Ambil data user dari useAuth
+const ManajemenMateri = ({ onNavigate }) => {
+    const { user } = useAuth();
     const [materiList, setMateriList] = useState({});
     const [selectedKey, setSelectedKey] = useState(null);
     const [selectedMateri, setSelectedMateri] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isDetailLoading, setIsDetailLoading] = useState(false);
     const [error, setError] = useState(null);
-    
     const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState(false);
     const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
     const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
-    
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
 
     const fetchMateriList = useCallback(() => {
@@ -107,282 +75,178 @@ const ManajemenMateri = () => {
         setError(null);
         setSelectedKey(null);
         setSelectedMateri(null);
-
-        DataService.getMateriForAdmin(jenjang, kelas)
-            .then(response => {
-                setMateriList(response.data);
-            })
-            .catch(err => {
-                const message = err.response?.data?.message || "Gagal memuat data materi.";
-                setError(message);
-                setMateriList({});
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
+        DataService.getMateriForAdmin(jenjang, kelas).then(res => setMateriList(res.data)).catch(err => setError(err.response?.data?.message || "Gagal memuat data.")).finally(() => setIsLoading(false));
     }, [selectedFilterKey]);
-    
-    useEffect(() => {
-        fetchMateriList();
-    }, [fetchMateriList]);
+
+    useEffect(() => { fetchMateriList(); }, [fetchMateriList]);
 
     const fetchDetailMateri = useCallback(() => {
-        if (!selectedKey) {
-            setSelectedMateri(null);
-            return;
-        }
+        if (!selectedKey) { setSelectedMateri(null); return; }
         setIsDetailLoading(true);
-        
-        let materiInfo = null;
-        for (const mapelData of Object.values(materiList)) {
-            const foundChapter = mapelData.chapters.find(m => m.materiKey === selectedKey);
-            if (foundChapter) {
-                materiInfo = foundChapter;
-                break;
-            }
-        }
-        
-        DataService.getDetailMateriForAdmin(selectedKey)
-            .then(response => {
-                setSelectedMateri({
-                    ...materiInfo,
-                    questions: response.data.questions || []
-                });
-            })
-            .catch(err => {
-                alert("Gagal memuat detail soal.");
-            })
-            .finally(() => {
-                setIsDetailLoading(false);
-            });
+        const materiInfo = Object.values(materiList).flatMap(m => m.chapters).find(m => m.materiKey === selectedKey);
+        DataService.getDetailMateriForAdmin(selectedKey).then(res => setSelectedMateri({ ...materiInfo, questions: res.data.questions || [] })).catch(() => alert("Gagal memuat detail soal.")).finally(() => setIsDetailLoading(false));
     }, [selectedKey, materiList]);
 
-    useEffect(() => {
-        fetchDetailMateri();
-    }, [fetchDetailMateri]);
+    useEffect(() => { fetchDetailMateri(); }, [fetchDetailMateri]);
     
-    // 5. Hitung statistik materi menggunakan useMemo
-    const stats = useMemo(() => {
-        const totalMapel = Object.keys(materiList).length;
-        const totalBab = Object.values(materiList).reduce((sum, mapel) => sum + (mapel.chapters?.length || 0), 0);
-        const totalSoal = Object.values(materiList).reduce((sum, mapel) => 
-            sum + (mapel.chapters?.reduce((chapSum, chap) => chapSum + (chap.questionCount || 0), 0) || 0)
-        , 0);
+    const stats = useMemo(() => ({
+        totalMapel: Object.keys(materiList).length,
+        totalBab: Object.values(materiList).reduce((sum, mapel) => sum + (mapel.chapters?.length || 0), 0),
+        totalSoal: Object.values(materiList).reduce((sum, mapel) => sum + (mapel.chapters?.reduce((cs, c) => cs + c.questionCount, 0) || 0), 0),
+    }), [materiList]);
 
-        return { totalMapel, totalBab, totalSoal };
-    }, [materiList]);
-
-
-    const handleAddChapterSubmit = async ({ subjectId, judul }) => {
-        try {
-            await DataService.addChapter({ subjectId, judul });
-            fetchMateriList();
-        } catch (error) {
-            alert("Gagal menambah materi baru: " + (error.response?.data?.message || error.message));
-        }
+    const handleAddChapterSubmit = async (data) => {
+        try { await DataService.addChapter(data); fetchMateriList(); } catch (e) { alert("Gagal: " + e.message); }
     };
 
     const handleDeleteChapter = async (materiKey) => {
         if (window.confirm("Yakin ingin menghapus materi ini beserta semua soal di dalamnya?")) {
-            try {
-                await DataService.deleteChapter(materiKey);
-                fetchMateriList();
-            } catch (error) {
-                alert("Gagal menghapus materi.");
-            }
+            try { await DataService.deleteChapter(materiKey); fetchMateriList(); if (selectedKey === materiKey) setSelectedKey(null); } catch (e) { alert("Gagal menghapus."); }
         }
     };
-    
+
     const handleBatchQuestionSubmit = async (newQuestions) => {
         if (!selectedKey) return;
-        
+        setIsDetailLoading(true);
         try {
-            for (const question of newQuestions) {
-                await DataService.addQuestion(selectedKey, question);
-            }
+            await Promise.all(newQuestions.map(q => DataService.addQuestion(selectedKey, q)));
             alert(`${newQuestions.length} soal berhasil dipublikasikan!`);
-            fetchDetailMateri();
-        } catch (error) {
-            alert("Gagal mempublikasikan soal.");
-        }
+            fetchDetailMateri(); fetchMateriList();
+        } catch (e) { alert("Gagal publikasi."); } finally { setIsDetailLoading(false); }
     };
 
     const handleDeleteQuestion = async (questionId) => {
         if (!window.confirm("Yakin ingin menghapus soal ini?")) return;
-        try {
-            await DataService.deleteQuestion(questionId);
-            fetchDetailMateri();
-        } catch (error) {
-            alert("Gagal menghapus soal.");
+        try { await DataService.deleteQuestion(questionId); fetchDetailMateri(); fetchMateriList(); } catch (e) { alert("Gagal menghapus."); }
+    };
+
+    const handleDeleteAllQuestions = async () => {
+        if (!selectedMateri || !selectedMateri.questions || selectedMateri.questions.length === 0) {
+            alert("Tidak ada soal untuk dihapus."); return;
+        }
+        if (window.confirm(`Anda yakin ingin menghapus SEMUA (${selectedMateri.questions.length}) soal dari materi "${selectedMateri.judul}"? Tindakan ini tidak dapat diurungkan.`)) {
+            setIsDetailLoading(true);
+            try {
+                await Promise.all(selectedMateri.questions.map(q => DataService.deleteQuestion(q.id)));
+                alert("Semua soal berhasil dihapus.");
+                fetchDetailMateri(); fetchMateriList();
+            } catch (e) { alert("Terjadi kesalahan."); } finally { setIsDetailLoading(false); }
         }
     };
 
+    // --- FUNGSI YANG DIPERBAIKI ---
     const handleGradingModeChange = async (chapterId, currentMode) => {
         const newMode = currentMode === 'otomatis' ? 'manual' : 'otomatis';
         try {
             await DataService.updateGradingMode(chapterId, newMode);
-            
+            // Update state secara lokal tanpa memuat ulang semua data
             setMateriList(prevList => {
-                const newList = { ...prevList };
+                const newList = JSON.parse(JSON.stringify(prevList)); // Deep copy
                 for (const mapel in newList) {
-                    newList[mapel].chapters = newList[mapel].chapters.map(chap => {
-                        if (chap.chapter_id === chapterId) {
-                            return { ...chap, grading_mode: newMode };
-                        }
-                        return chap;
-                    });
+                    const chapterIndex = newList[mapel].chapters.findIndex(chap => chap.chapter_id === chapterId);
+                    if (chapterIndex > -1) {
+                        newList[mapel].chapters[chapterIndex].grading_mode = newMode;
+                        break;
+                    }
                 }
                 return newList;
             });
-
             if (selectedMateri && selectedMateri.chapter_id === chapterId) {
                 setSelectedMateri(prev => ({ ...prev, grading_mode: newMode }));
             }
-
         } catch (err) {
             alert(`Gagal mengubah mode penilaian: ${err.response?.data?.message || err.message}`);
         }
     };
 
-    const handleDeleteDraft = (draftKey) => {
-        if (window.confirm("Yakin ingin menghapus draf ini?")) {
-            localStorage.removeItem(draftKey);
-            alert("Draf berhasil dihapus.");
-            setIsDraftsModalOpen(false);
-        }
-    };
+    const handleDeleteDraft = (key) => { if (window.confirm("Hapus draf ini?")) { localStorage.removeItem(key); setIsDraftsModalOpen(false); }};
+    const handleContinueDraft = (key) => { setSelectedKey(key); setIsQuestionModalOpen(true); setIsDraftsModalOpen(false); };
 
-    const handleContinueDraft = (chapterMateriKey) => {
-        setSelectedKey(chapterMateriKey);
-        setIsQuestionModalOpen(true);
-        setIsDraftsModalOpen(false);
-    };
-
-    const currentMapelList = useMemo(() => {
-        if (!materiList || Object.keys(materiList).length === 0) return [];
-        return Object.entries(materiList)
-            .map(([nama_mapel, data]) => ({
-                id: data.subject_id,
-                nama_mapel
-            }))
-            .filter(m => m.id);
-    }, [materiList]);
+    const currentMapelList = useMemo(() => Object.entries(materiList).map(([nama, data]) => ({ id: data.subject_id, nama_mapel: nama })).filter(m => m.id), [materiList]);
 
     return (
         <>
             <AnimatePresence>
-                {isAddChapterModalOpen && <AddChapterModal isOpen={isAddChapterModalOpen} onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
-                {isDraftsModalOpen && (
-                    <DraftsModal
-                        isOpen={isDraftsModalOpen}
-                        onClose={() => setIsDraftsModalOpen(false)}
-                        allData={materiList}
-                        onContinue={handleContinueDraft}
-                        onDelete={handleDeleteDraft}
-                    />
-                )}
+                {isAddChapterModalOpen && <AddChapterModal isOpen onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
+                {isDraftsModalOpen && <DraftsModal isOpen onClose={() => setIsDraftsModalOpen(false)} allData={materiList} onContinue={handleContinueDraft} onDelete={handleDeleteDraft} />}
             </AnimatePresence>
-            {isQuestionModalOpen && <QuestionFormModal isOpen={isQuestionModalOpen} onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
+            {isQuestionModalOpen && <QuestionFormModal isOpen onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
 
-            <div>
-                <h1 className="text-3xl font-bold text-sesm-deep mb-6">Manajemen Materi & Soal</h1>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                    <div className="md:col-span-1 bg-white p-4 rounded-xl shadow-md flex flex-col h-[75vh]">
-                        <div className="flex-shrink-0 border-b pb-3 mb-2">
-                             <h2 className="text-lg font-bold mb-2">Pilih Jenjang & Kelas</h2>
-                            <select value={selectedFilterKey} onChange={(e) => setSelectedFilterKey(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal">
-                                {Object.keys(jenjangOptions).map(key => (<option key={key} value={key}>{key}</option>))}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div className="grid md:grid-cols-12 min-h-[calc(100vh-10rem)]">
+                    <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
+                        <div className="p-4 border-b">
+                            <label className="text-sm font-bold text-gray-600 mb-1 block">Pilih Jenjang & Kelas</label>
+                            <select value={selectedFilterKey} onChange={e => setSelectedFilterKey(e.target.value)} className="w-full p-2 border rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal">
+                                {Object.keys(jenjangOptions).map(key => <option key={key} value={key}>{key}</option>)}
                             </select>
                         </div>
-                        <div className="flex-shrink-0 mb-3">
-                            <div className="flex gap-2">
-                                <button onClick={() => setIsAddChapterModalOpen(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-sesm-teal text-white rounded-lg font-semibold text-sm hover:bg-sesm-deep transition-colors">
-                                    <FiPlus/> Tambah Materi
-                                </button>
-                                <button onClick={() => setIsDraftsModalOpen(true)} className="flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-300 transition-colors" title="Lihat Draf Tersimpan">
-                                    <FiFileText/> Draf
-                                </button>
-                            </div>
-                        </div>
-                        <div className="flex-grow overflow-y-auto pr-2">
-                            {isLoading ? ( <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div> ) 
-                            : error ? (
-                                <div className="text-center text-red-500 p-4"><FiAlertCircle className="mx-auto text-3xl mb-2"/><p>{error}</p></div>
-                            )
-                            : (Object.keys(materiList).length > 0 ? Object.keys(materiList).sort().map(mapel => (
+                        <div className="flex-grow overflow-y-auto p-2">
+                            {isLoading ? <div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl" /></div> : error ? <div className="p-4 text-red-500 text-center"><FiAlertCircle className="mx-auto mb-2" />{error}</div> :
+                                Object.keys(materiList).length > 0 ? Object.keys(materiList).sort().map(mapel => (
                                     <div key={mapel}>
-                                        <h3 className="font-bold text-sesm-teal mt-4 first:mt-0">{mapel}</h3>
+                                        <h3 className="font-bold text-sesm-teal mt-4 px-2 text-sm uppercase">{mapel}</h3>
                                         <div className="space-y-1 mt-1">
-                                            {materiList[mapel].chapters.map(materi => (
-                                                <div key={materi.materiKey} className={`group w-full text-left p-2 rounded-md flex justify-between items-center text-sm transition-colors ${selectedKey === materi.materiKey ? 'bg-sesm-teal/10' : 'hover:bg-gray-100'}`}>
-                                                    <button onClick={() => setSelectedKey(materi.materiKey)} className={`flex-grow flex justify-between items-center text-left pr-2 ${selectedKey === materi.materiKey ? 'font-bold text-sesm-deep' : 'text-gray-700'}`}>
-                                                        <span>{materi.judul}</span>
-                                                        <FiChevronRight/>
-                                                    </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteChapter(materi.materiKey); }} className="ml-2 p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 transition-opacity" title="Hapus materi">
-                                                        <FiTrash2 size={14} />
-                                                    </button>
+                                            {materiList[mapel].chapters.map(m => (
+                                                <div key={m.materiKey} className={`group w-full p-2 rounded-md flex items-center ${selectedKey === m.materiKey ? 'bg-sesm-teal/20' : 'hover:bg-gray-100'}`}>
+                                                    <button onClick={() => setSelectedKey(m.materiKey)} className={`flex-grow flex justify-between items-center text-left pr-2 text-sm ${selectedKey === m.materiKey ? 'font-bold text-sesm-deep' : 'text-gray-700'}`}><span>{m.judul}</span><FiChevronRight /></button>
+                                                    <button onClick={e => { e.stopPropagation(); handleDeleteChapter(m.materiKey); }} className="p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600" title="Hapus"><FiTrash2 size={14} /></button>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                )) : <p className="text-center text-gray-500 mt-8">Tidak ada materi untuk jenjang ini.</p>
-                            )}
+                                )) : <p className="p-4 text-center text-gray-500">Tidak ada materi.</p>}
                         </div>
                     </div>
 
-                    <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-md min-h-[75vh]">
-                       {isDetailLoading ? ( <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div> ) 
-                        // 6. Ganti placeholder lama dengan DashboardView yang baru
-                        : !selectedMateri ? (
-                            <DashboardView
-                                userName={user?.nama}
-                                jenjang={selectedFilterKey}
-                                stats={stats}
-                                onAddMateri={() => setIsAddChapterModalOpen(true)}
-                                onOpenDrafts={() => setIsDraftsModalOpen(true)}
-                            />
-                        ) : (
-                            <div>
-                                <div className="border-b pb-4 mb-4">
-                                    <div className="flex justify-between items-start">
-                                        <h2 className="text-xl font-bold text-sesm-deep">{selectedMateri.judul}</h2>
-                                        <button onClick={() => setIsQuestionModalOpen(true)} className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm">
-                                            <FiPlus/> Tambah Soal
-                                        </button>
-                                    </div>
-                                    <div className="mt-4 flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <ToggleSwitch 
-                                                enabled={selectedMateri.grading_mode === 'manual'}
-                                                onToggle={() => handleGradingModeChange(selectedMateri.chapter_id, selectedMateri.grading_mode)}
-                                            />
+                    <div className="md:col-span-8 lg:col-span-9 flex flex-col">
+                        <div className="p-6">
+                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+                                <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Materi & Nilai</h1>
+                                <p className="text-gray-500 mt-1">Buat materi baru, kelola soal, dan lihat hasil pengerjaan siswa.</p>
+                                <div className="flex items-center gap-3 my-6">
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsDraftsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-white rounded-lg font-semibold shadow-sm"><FiFileText /> Draf</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsAddChapterModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold shadow-sm"><FiPlus /> Buat Materi</motion.button>
+                                </div>
+                            </motion.div>
+                        </div>
+                        <div className="border-t-2 border-dashed border-gray-200 mx-6"></div>
+                        <div className="flex-grow overflow-y-auto p-6">
+                            <AnimatePresence mode="wait">
+                                <motion.div key={selectedMateri ? selectedMateri.materiKey : 'dashboard'} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full">
+                                    {!selectedMateri ? <DashboardView userName={user?.nama} stats={stats} /> :
+                                        isDetailLoading ? <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl" /></div> : (
                                             <div>
-                                                <p className="font-semibold text-sm text-gray-800">
-                                                    Penilaian Manual {selectedMateri.grading_mode === 'manual' ? 'Aktif' : 'Nonaktif'}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {selectedMateri.grading_mode === 'manual' 
-                                                        ? 'Guru akan menilai jawaban siswa secara manual.' 
-                                                        : 'Sistem akan menilai otomatis (hanya PG).'}
-                                                </p>
+                                                <div className="pb-4 mb-4">
+                                                    <div className="flex justify-between items-start gap-4 mb-4">
+                                                        <h2 className="text-2xl font-bold text-sesm-deep">{selectedMateri.judul}</h2>
+                                                        <button onClick={() => setIsQuestionModalOpen(true)} className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm"><FiPlus /> Tambah Soal</button>
+                                                    </div>
+                                                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
+                                                        <div><p className="font-semibold text-sm">Penilaian Manual {selectedMateri.grading_mode === 'manual' ? 'Aktif' : 'Nonaktif'}</p><p className="text-xs text-gray-500">{selectedMateri.grading_mode === 'manual' ? 'Guru akan menilai jawaban esai.' : 'Sistem menilai otomatis (hanya PG).'}</p></div>
+                                                        <ToggleSwitch enabled={selectedMateri.grading_mode === 'manual'} onToggle={() => handleGradingModeChange(selectedMateri.chapter_id, selectedMateri.grading_mode)} />
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h3 className="font-bold text-gray-700">Daftar Soal ({selectedMateri.questions.length})</h3>
+                                                    <button onClick={handleDeleteAllQuestions} disabled={!selectedMateri.questions || selectedMateri.questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
+                                                </div>
+                                                <div className="space-y-3 max-h-[calc(100vh-35rem)] overflow-y-auto pr-2">
+                                                    {selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, i) => (
+                                                        <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="group bg-gray-50 p-3 rounded-lg">
+                                                            <div className="flex justify-between items-start">
+                                                                <div className="flex-grow"><p className="font-semibold">{i + 1}. {q.pertanyaan}</p><p className="text-sm text-green-600 font-bold mt-1">Jawaban: {q.correctAnswer || q.jawaban_esai || "N/A"}</p></div>
+                                                                <div className="opacity-0 group-hover:opacity-100"><button onClick={() => handleDeleteQuestion(q.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><FiTrash2 size={16} /></button></div>
+                                                            </div>
+                                                        </motion.div>
+                                                    )) : <p className="text-center text-gray-500 py-8">Belum ada soal.</p>}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    {selectedMateri.questions && selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, index) => (
-                                        <div key={q.id} className="bg-gray-50 p-3 rounded-md">
-                                            <p className="font-semibold">{index + 1}. {q.pertanyaan}</p>
-                                            <p className="text-sm text-green-600 font-bold mt-1">Jawaban: {q.correctAnswer || q.jawaban_esai || "N/A"}</p>
-                                            <div className="flex justify-end gap-2 mt-2">
-                                                <button onClick={() => handleDeleteQuestion(q.id)} className="p-2 hover:bg-gray-200 rounded-md" title="Hapus Soal"><FiTrash2 className="text-red-500"/></button>
-                                            </div>
-                                        </div>
-                                    )) : <p className="text-center text-gray-500 mt-8">Belum ada soal untuk materi ini. Silakan tambahkan soal baru.</p>}
-                                </div>
-                            </div>
-                        )}
+                                        )}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
                     </div>
                 </div>
             </div>

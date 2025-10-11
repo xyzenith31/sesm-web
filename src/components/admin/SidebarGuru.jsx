@@ -1,5 +1,4 @@
 import React from 'react';
-// 1. Tambah ikon FiAward
 import { FiBookOpen, FiLogOut, FiTrendingUp, FiHelpCircle, FiAward } from 'react-icons/fi';
 import Logo from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
@@ -44,13 +43,13 @@ const SidebarGuru = ({ activePage, onNavigate }) => {
           isActive={activePage === 'manajemenKuis'}
           onClick={() => onNavigate('manajemenKuis')}
         />
+        {/* --- TAUTAN DIKEMBALIKAN --- */}
         <NavLink
           icon={<FiTrendingUp size={20} />}
           label="Manajemen Nilai"
           isActive={activePage === 'manajemenNilai'}
           onClick={() => onNavigate('manajemenNilai')}
         />
-        {/* --- ▼▼▼ TAMBAHKAN NAVLINK BARU INI DI SINI ▼▼▼ --- */}
         <NavLink
           icon={<FiAward size={20} />}
           label="Evaluasi Kuis"

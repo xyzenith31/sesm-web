@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from './hooks/useNavigation';
 
-// --- Impor semua halaman ---
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -16,7 +15,6 @@ import ExplorePage from './pages/ExplorePage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
 import BookmarkPage from './pages/BookmarkPage';
 
-// Halaman Mapel
 import MatematikaPage from './pages/mapel/MatematikaPage';
 import MembacaPage from './pages/mapel/MembacaPage';
 import MenulisPage from './pages/mapel/MenulisPage';
@@ -29,15 +27,13 @@ import IPAPage from './pages/mapel/IPAPage';
 import IPSPage from './pages/mapel/IPSPage';
 import WorksheetPage from './pages/WorksheetPage';
 
-// --- Impor Halaman dan Layout Guru ---
 import AdminLayout from './layouts/AdminLayout';
 import DashboardGuru from './pages/admin/DashboardGuru';
 import ManajemenMateri from './pages/admin/ManajemenMateri';
 import ManajemenNilai from './pages/admin/ManajemenNilai';
 import ManajemenKuis from './pages/admin/ManajemenKuis';
-import EvaluasiKuis from './pages/admin/EvaluasiKuis'; // <-- 1. Impor halaman baru
+import EvaluasiKuis from './pages/admin/EvaluasiKuis';
 
-// Komponen dan layout
 import MainLayout from './layouts/MainLayout';
 import QuizForm from './components/QuizForm';
 
@@ -86,11 +82,9 @@ function App() {
       'accountSettings'
     ];
 
-    // --- 2. Tambahkan 'evaluasiKuis' ke dalam daftar ---
     const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis'];
 
     if (viewsInMainLayout.includes(currentView)) {
-      let pageComponent;
       const pageMap = {
         home: <HomePage onNavigate={navigate} />,
         explore: <ExplorePage onNavigate={navigate} />,
@@ -110,7 +104,7 @@ function App() {
         ipa: <IPAPage {...subjectPageProps} />,
         ips: <IPSPage {...subjectPageProps} />,
       };
-      pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
+      const pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
 
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
@@ -124,10 +118,10 @@ function App() {
     if (viewsInAdminLayout.includes(currentView)) {
       let pageComponent;
       if (currentView === 'dashboardGuru') pageComponent = <DashboardGuru />;
-      if (currentView === 'manajemenMateri') pageComponent = <ManajemenMateri />;
+      if (currentView === 'manajemenMateri') pageComponent = <ManajemenMateri onNavigate={navigate} />;
       if (currentView === 'manajemenNilai') pageComponent = <ManajemenNilai />;
       if (currentView === 'manajemenKuis') pageComponent = <ManajemenKuis />;
-      if (currentView === 'evaluasiKuis') pageComponent = <EvaluasiKuis />; // <-- 3. Tambahkan kondisinya
+      if (currentView === 'evaluasiKuis') pageComponent = <EvaluasiKuis />;
 
       return (
         <AdminLayout activePage={currentView} onNavigate={navigate}>
@@ -139,28 +133,17 @@ function App() {
     }
 
     switch (currentView) {
-      case 'login':
-        return <LoginPage onSwitchToRegister={() => navigate('register')} />;
-      case 'register':
-        return <RegisterPage onSwitchToLogin={() => navigate('login')} />;
-      case 'levelSelection':
-        return <LevelSelectionPage onSelectSD={() => navigate('chooseSelection')} onSelectTK={() => navigate('home')} onExit={() => navigate('login')} />;
-      case 'chooseSelection':
-        return <ChooseSelectionPage onExit={() => navigate('login')} onSelectClass1={() => navigate('home')} onSelectClass2={() => navigate('home')} onSelectClass3_4={() => navigate('home')} onSelectClass5={() => navigate('home')} onSelectClass6={() => navigate('home')} />;
-      case 'quizForm':
-        return <QuizForm quizData={selectedQuiz} onCompleteQuiz={handleCompleteQuiz} />;
-      case 'worksheet':
-        return <WorksheetPage onNavigate={navigate} chapterInfo={selectedChapterInfo} />;
-      default:
-        return <WelcomePage onExplore={() => navigate('login')} />;
+      case 'login': return <LoginPage onSwitchToRegister={() => navigate('register')} />;
+      case 'register': return <RegisterPage onSwitchToLogin={() => navigate('login')} />;
+      case 'levelSelection': return <LevelSelectionPage onSelectSD={() => navigate('chooseSelection')} onSelectTK={() => navigate('home')} onExit={() => navigate('login')} />;
+      case 'chooseSelection': return <ChooseSelectionPage onExit={() => navigate('login')} onSelectClass1={() => navigate('home')} onSelectClass2={() => navigate('home')} onSelectClass3_4={() => navigate('home')} onSelectClass5={() => navigate('home')} onSelectClass6={() => navigate('home')} />;
+      case 'quizForm': return <QuizForm quizData={selectedQuiz} onCompleteQuiz={handleCompleteQuiz} />;
+      case 'worksheet': return <WorksheetPage onNavigate={navigate} chapterInfo={selectedChapterInfo} />;
+      default: return <WelcomePage onExplore={() => navigate('login')} />;
     }
   };
 
-  return (
-    <AnimatePresence mode="wait">
-      {renderView()}
-    </AnimatePresence>
-  );
+  return <AnimatePresence mode="wait">{renderView()}</AnimatePresence>;
 }
 
 export default App;
