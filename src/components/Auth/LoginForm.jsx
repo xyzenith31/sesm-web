@@ -2,33 +2,30 @@ import React, { useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 
-// Prop 'onLoginSuccess' sudah dihapus karena tidak lagi diperlukan
-const LoginForm = () => {
+// PERBAIKAN 1: Terima prop 'onNavigate'
+const LoginForm = ({ onNavigate }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(''); // State ini hanya untuk pesan error
+  const [message, setMessage] = useState('');
 
   const { login } = useAuth();
 
   const handleSignIn = (event) => {
     event.preventDefault();
-    setMessage(''); // Selalu bersihkan pesan error di awal
+    setMessage('');
     setLoading(true);
 
     login(identifier, password)
-      .then(() => {
-      })
       .catch((error) => {
-        // Bagian ini hanya akan berjalan jika login GAGAL
         const resMessage =
           (error.response && error.response.data && error.response.data.message) ||
           error.message ||
           error.toString();
         
-        setMessage(resMessage); // Tampilkan pesan error dari server
-        setLoading(false);      // Hentikan loading
+        setMessage(resMessage);
+        setLoading(false);
       });
   };
 
@@ -69,7 +66,14 @@ const LoginForm = () => {
           <input type="checkbox" className="mr-2 h-4 w-4 rounded border-white/50 bg-transparent text-sesm-sky focus:ring-sesm-sky/50" />
           Remember
         </label>
-        <a href="#" className="font-semibold hover:underline">Forget Password?</a>
+        {/* PERBAIKAN 2: Ubah dari <a> menjadi <button> dengan onClick */}
+        <button
+          type="button"
+          onClick={() => onNavigate('forgotPassword')}
+          className="font-semibold hover:underline"
+        >
+          Forget Password?
+        </button>
       </div>
 
       <div className="pt-2">
@@ -82,7 +86,6 @@ const LoginForm = () => {
         </button>
       </div>
       
-      {/* Pesan ini sekarang hanya akan muncul jika ada error dari server */}
       {message && (
          <div className="p-3 mt-4 rounded-lg text-center font-bold bg-red-500/80 text-white">
           {message}

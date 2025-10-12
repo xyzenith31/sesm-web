@@ -5,6 +5,9 @@ import { useNavigation } from './hooks/useNavigation';
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import VerifyCodePage from './pages/VerifyCodePage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import LevelSelectionPage from './pages/LevelSelectionPage';
 import ChooseSelectionPage from './pages/ChooseSelectionPage';
 import HomePage from './pages/HomePage';
@@ -14,7 +17,6 @@ import RankPage from './pages/RankPage';
 import ExplorePage from './pages/ExplorePage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
 import BookmarkPage from './pages/BookmarkPage';
-
 import MatematikaPage from './pages/mapel/MatematikaPage';
 import MembacaPage from './pages/mapel/MembacaPage';
 import MenulisPage from './pages/mapel/MenulisPage';
@@ -26,18 +28,14 @@ import PKNPage from './pages/mapel/PKNPage';
 import IPAPage from './pages/mapel/IPAPage';
 import IPSPage from './pages/mapel/IPSPage';
 import WorksheetPage from './pages/WorksheetPage';
-
 import AdminLayout from './layouts/AdminLayout';
 import DashboardGuru from './pages/admin/DashboardGuru';
 import ManajemenMateri from './pages/admin/ManajemenMateri';
 import ManajemenNilai from './pages/admin/ManajemenNilai';
 import ManajemenKuis from './pages/admin/ManajemenKuis';
 import EvaluasiKuis from './pages/admin/EvaluasiKuis';
-
 import MainLayout from './layouts/MainLayout';
 import QuizForm from './components/QuizForm';
-
-// Halaman-halaman baru dari Zona Kreatif dan Profil
 import DailyChallengePage from './pages/DailyChallengePage';
 import CreativeZonePage from './pages/CreativeZonePage';
 import InteractiveStoryPage from './pages/InteractiveStoryPage';
@@ -134,13 +132,9 @@ function App() {
       let pageComponent;
       if (currentView === 'dashboardGuru') pageComponent = <DashboardGuru />;
       if (currentView === 'manajemenMateri') pageComponent = <ManajemenMateri onNavigate={navigate} />;
-      
-      // --- ▼▼▼ INI BAGIAN PERBAIKANNYA ▼▼▼ ---
-      // Memastikan prop 'onNavigate' diteruskan ke semua komponen admin yang membutuhkannya
       if (currentView === 'manajemenNilai') pageComponent = <ManajemenNilai onNavigate={navigate} />;
       if (currentView === 'manajemenKuis') pageComponent = <ManajemenKuis onNavigate={navigate} />;
       if (currentView === 'evaluasiKuis') pageComponent = <EvaluasiKuis onNavigate={navigate} />;
-      // --- ▲▲▲ BATAS PERBAIKAN ▲▲▲ ---
 
       return (
         <AdminLayout activePage={currentView} onNavigate={navigate}>
@@ -153,15 +147,33 @@ function App() {
 
     // Halaman di luar layout utama
     switch (currentView) {
-      case 'login': return <LoginPage onSwitchToRegister={() => navigate('register')} />;
-      case 'register': return <RegisterPage onSwitchToLogin={() => navigate('login')} />;
-      case 'levelSelection': return <LevelSelectionPage onSelectSD={() => navigate('chooseSelection')} onSelectTK={() => navigate('home')} onExit={() => navigate('login')} />;
-      case 'chooseSelection': return <ChooseSelectionPage onExit={() => navigate('login')} onSelectClass1={() => navigate('home')} onSelectClass2={() => navigate('home')} onSelectClass3_4={() => navigate('home')} onSelectClass5={() => navigate('home')} onSelectClass6={() => navigate('home')} />;
-      case 'quizForm': return <QuizForm quizData={selectedQuiz} onCompleteQuiz={handleCompleteQuiz} />;
-      case 'worksheet': return <WorksheetPage onNavigate={navigate} chapterInfo={selectedChapterInfo} />;
-      case 'drawing': return <DrawingPage onNavigate={navigate} />;
-      case 'writing': return <WritingPage onNavigate={navigate} />;
-      default: return <WelcomePage onExplore={() => navigate('login')} />;
+      case 'login': 
+        return <LoginPage onNavigate={navigate} onSwitchToRegister={() => navigate('register')} />;
+      case 'register': 
+        return <RegisterPage onSwitchToLogin={() => navigate('login')} />;
+      
+      // Alur Lupa Password
+      case 'forgotPassword':
+        return <ForgotPasswordPage onNavigate={navigate} onCodeSent={() => navigate('verifyCode')} />;
+      case 'verifyCode':
+        return <VerifyCodePage onNavigate={navigate} onVerified={() => navigate('resetPassword')} />;
+      case 'resetPassword':
+        return <ResetPasswordPage onPasswordReset={() => navigate('home')} />;
+      
+      case 'levelSelection': 
+        return <LevelSelectionPage onSelectSD={() => navigate('chooseSelection')} onSelectTK={() => navigate('home')} onExit={() => navigate('login')} />;
+      case 'chooseSelection': 
+        return <ChooseSelectionPage onExit={() => navigate('login')} onSelectClass1={() => navigate('home')} onSelectClass2={() => navigate('home')} onSelectClass3_4={() => navigate('home')} onSelectClass5={() => navigate('home')} onSelectClass6={() => navigate('home')} />;
+      case 'quizForm': 
+        return <QuizForm quizData={selectedQuiz} onCompleteQuiz={handleCompleteQuiz} />;
+      case 'worksheet': 
+        return <WorksheetPage onNavigate={navigate} chapterInfo={selectedChapterInfo} />;
+      case 'drawing': 
+        return <DrawingPage onNavigate={navigate} />;
+      case 'writing': 
+        return <WritingPage onNavigate={navigate} />;
+      default: 
+        return <WelcomePage onExplore={() => navigate('login')} />;
     }
   };
 

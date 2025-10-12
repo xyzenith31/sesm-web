@@ -2,11 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import LoginForm from '../components/Auth/LoginForm';
-import Logo from '../assets/logo.png'; // Path ini sudah benar
+import Logo from '../assets/logo.png';
 import Card from '../components/Card';
 
-const LoginPage = ({ onSwitchToRegister, onLoginSuccess }) => {
-  // Animasi untuk item di dalam kartu
+const LoginPage = ({ onSwitchToRegister, onNavigate }) => {
   const itemContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -29,9 +28,7 @@ const LoginPage = ({ onSwitchToRegister, onLoginSuccess }) => {
           initial="hidden"
           animate="visible"
         >
-          {/* Logo ditampilkan menggunakan tag <img> */}
           <motion.div variants={itemVariants}>
-            {/* INI BAGIAN YANG DIPERBAIKI */}
             <img 
               src={Logo} 
               alt="Sesm Logo" 
@@ -47,7 +44,8 @@ const LoginPage = ({ onSwitchToRegister, onLoginSuccess }) => {
           </motion.h1>
 
           <motion.div variants={itemVariants} className="w-full">
-            <LoginForm onLoginSuccess={onLoginSuccess} />
+            {/* PERBAIKAN: onNavigate dioper ke LoginForm */}
+            <LoginForm onNavigate={onNavigate} />
           </motion.div>
 
           <motion.p
