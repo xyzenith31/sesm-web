@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiBookOpen, FiLogOut, FiTrendingUp, FiHelpCircle, FiAward } from 'react-icons/fi';
+import { FiBookOpen, FiLogOut, FiHelpCircle } from 'react-icons/fi';
 import Logo from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -43,19 +43,7 @@ const SidebarGuru = ({ activePage, onNavigate }) => {
           isActive={activePage === 'manajemenKuis'}
           onClick={() => onNavigate('manajemenKuis')}
         />
-        {/* --- TAUTAN DIKEMBALIKAN --- */}
-        <NavLink
-          icon={<FiTrendingUp size={20} />}
-          label="Manajemen Nilai"
-          isActive={activePage === 'manajemenNilai'}
-          onClick={() => onNavigate('manajemenNilai')}
-        />
-        <NavLink
-          icon={<FiAward size={20} />}
-          label="Evaluasi Kuis"
-          isActive={activePage === 'evaluasiKuis'}
-          onClick={() => onNavigate('evaluasiKuis')}
-        />
+        {/* --- TAUTAN MANAJEMEN NILAI DIHAPUS DARI SINI --- */}
       </nav>
       <div className="p-4 border-t">
         <NavLink

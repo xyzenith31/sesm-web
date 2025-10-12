@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiPlus, FiChevronRight, FiBookOpen, FiTrash2, FiLoader, FiGrid,
-    FiCheckSquare, FiFileText, FiEdit, FiAlertCircle, FiTrendingUp
+    FiCheckSquare, FiFileText, FiEdit, FiAlertCircle, FiTrendingUp, FiArchive
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
 import AddChapterModal from '../../components/AddChapterModal';
 import QuestionFormModal from '../../components/QuestionFormModal';
 import DraftsModal from '../../components/DraftsModal';
+import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal'; // <-- Impor komponen baru
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -69,14 +70,25 @@ const ManajemenMateri = ({ onNavigate }) => {
     const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
 
-    const fetchMateriList = useCallback(() => {
+    // State baru untuk modal Bank Soal
+    const [isBankSoalOpen, setIsBankSoalOpen] = useState(false);
+
+    const fetchMateriList = useCallback((selectKeyAfterFetch = null) => {
         const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
         setIsLoading(true);
         setError(null);
-        setSelectedKey(null);
-        setSelectedMateri(null);
-        DataService.getMateriForAdmin(jenjang, kelas).then(res => setMateriList(res.data)).catch(err => setError(err.response?.data?.message || "Gagal memuat data.")).finally(() => setIsLoading(false));
+        if (!selectKeyAfterFetch) {
+            setSelectedKey(null);
+            setSelectedMateri(null);
+        }
+        DataService.getMateriForAdmin(jenjang, kelas).then(res => {
+            setMateriList(res.data)
+            if (selectKeyAfterFetch) {
+                setSelectedKey(selectKeyAfterFetch);
+            }
+        }).catch(err => setError(err.response?.data?.message || "Gagal memuat data.")).finally(() => setIsLoading(false));
     }, [selectedFilterKey]);
+
 
     useEffect(() => { fetchMateriList(); }, [fetchMateriList]);
 
@@ -97,6 +109,14 @@ const ManajemenMateri = ({ onNavigate }) => {
 
     const handleAddChapterSubmit = async (data) => {
         try { await DataService.addChapter(data); fetchMateriList(); } catch (e) { alert("Gagal: " + e.message); }
+    };
+    
+    // Handler baru untuk soal dari bank
+    const handleQuestionsFromBankAdded = (targetMateriKey) => {
+        setIsBankSoalOpen(false);
+        alert("Soal berhasil ditambahkan dari bank!");
+        // Muat ulang daftar materi dan langsung pilih materi yang baru diupdate
+        fetchMateriList(targetMateriKey);
     };
 
     const handleDeleteChapter = async (materiKey) => {
@@ -134,14 +154,12 @@ const ManajemenMateri = ({ onNavigate }) => {
         }
     };
 
-    // --- FUNGSI YANG DIPERBAIKI ---
     const handleGradingModeChange = async (chapterId, currentMode) => {
         const newMode = currentMode === 'otomatis' ? 'manual' : 'otomatis';
         try {
             await DataService.updateGradingMode(chapterId, newMode);
-            // Update state secara lokal tanpa memuat ulang semua data
             setMateriList(prevList => {
-                const newList = JSON.parse(JSON.stringify(prevList)); // Deep copy
+                const newList = JSON.parse(JSON.stringify(prevList));
                 for (const mapel in newList) {
                     const chapterIndex = newList[mapel].chapters.findIndex(chap => chap.chapter_id === chapterId);
                     if (chapterIndex > -1) {
@@ -169,6 +187,8 @@ const ManajemenMateri = ({ onNavigate }) => {
             <AnimatePresence>
                 {isAddChapterModalOpen && <AddChapterModal isOpen onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
                 {isDraftsModalOpen && <DraftsModal isOpen onClose={() => setIsDraftsModalOpen(false)} allData={materiList} onContinue={handleContinueDraft} onDelete={handleDeleteDraft} />}
+                {/* --- Panggil Modal Bank Soal yang baru --- */}
+                {isBankSoalOpen && <BankSoalMateriModal isOpen onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
             </AnimatePresence>
             {isQuestionModalOpen && <QuestionFormModal isOpen onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
 
@@ -206,6 +226,10 @@ const ManajemenMateri = ({ onNavigate }) => {
                                 <p className="text-gray-500 mt-1">Buat materi baru, kelola soal, dan lihat hasil pengerjaan siswa.</p>
                                 <div className="flex items-center gap-3 my-6">
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsDraftsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-white rounded-lg font-semibold shadow-sm"><FiFileText /> Draf</motion.button>
+                                    
+                                    {/* --- Tombol Bank Soal Baru --- */}
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 shadow-sm"><FiArchive /> Bank Soal</motion.button>
+                                    
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsAddChapterModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold shadow-sm"><FiPlus /> Buat Materi</motion.button>
                                 </div>

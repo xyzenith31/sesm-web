@@ -37,6 +37,15 @@ import EvaluasiKuis from './pages/admin/EvaluasiKuis';
 import MainLayout from './layouts/MainLayout';
 import QuizForm from './components/QuizForm';
 
+// Halaman-halaman baru dari Zona Kreatif dan Profil
+import DailyChallengePage from './pages/DailyChallengePage';
+import CreativeZonePage from './pages/CreativeZonePage';
+import InteractiveStoryPage from './pages/InteractiveStoryPage';
+import DrawingPage from './pages/DrawingPage';
+import WritingPage from './pages/WritingPage';
+import DiaryPage from './pages/DiaryPage';
+import StudyReportPage from './pages/StudyReportPage';
+
 const pageVariants = {
   initial: { opacity: 0, scale: 0.98 },
   in: { opacity: 1, scale: 1 },
@@ -79,7 +88,8 @@ function App() {
       'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz',
       'matematika', 'membaca', 'menulis', 'berhitung', 'pai',
       'bahasaIndonesia', 'bahasaInggris', 'pkn', 'ipa', 'ips',
-      'accountSettings'
+      'accountSettings', 'dailyChallenge', 'creativeZone', 'interactiveStory',
+      'diary', 'studyReport'
     ];
 
     const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis'];
@@ -103,6 +113,11 @@ function App() {
         pkn: <PKNPage {...subjectPageProps} />,
         ipa: <IPAPage {...subjectPageProps} />,
         ips: <IPSPage {...subjectPageProps} />,
+        dailyChallenge: <DailyChallengePage onNavigate={navigate} />,
+        creativeZone: <CreativeZonePage onNavigate={navigate} />,
+        interactiveStory: <InteractiveStoryPage onNavigate={navigate} />,
+        diary: <DiaryPage onNavigate={navigate} />,
+        studyReport: <StudyReportPage onNavigate={navigate} />,
       };
       const pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
 
@@ -119,9 +134,13 @@ function App() {
       let pageComponent;
       if (currentView === 'dashboardGuru') pageComponent = <DashboardGuru />;
       if (currentView === 'manajemenMateri') pageComponent = <ManajemenMateri onNavigate={navigate} />;
-      if (currentView === 'manajemenNilai') pageComponent = <ManajemenNilai />;
-      if (currentView === 'manajemenKuis') pageComponent = <ManajemenKuis />;
-      if (currentView === 'evaluasiKuis') pageComponent = <EvaluasiKuis />;
+      
+      // --- ▼▼▼ INI BAGIAN PERBAIKANNYA ▼▼▼ ---
+      // Memastikan prop 'onNavigate' diteruskan ke semua komponen admin yang membutuhkannya
+      if (currentView === 'manajemenNilai') pageComponent = <ManajemenNilai onNavigate={navigate} />;
+      if (currentView === 'manajemenKuis') pageComponent = <ManajemenKuis onNavigate={navigate} />;
+      if (currentView === 'evaluasiKuis') pageComponent = <EvaluasiKuis onNavigate={navigate} />;
+      // --- ▲▲▲ BATAS PERBAIKAN ▲▲▲ ---
 
       return (
         <AdminLayout activePage={currentView} onNavigate={navigate}>
@@ -132,6 +151,7 @@ function App() {
       );
     }
 
+    // Halaman di luar layout utama
     switch (currentView) {
       case 'login': return <LoginPage onSwitchToRegister={() => navigate('register')} />;
       case 'register': return <RegisterPage onSwitchToLogin={() => navigate('login')} />;
@@ -139,6 +159,8 @@ function App() {
       case 'chooseSelection': return <ChooseSelectionPage onExit={() => navigate('login')} onSelectClass1={() => navigate('home')} onSelectClass2={() => navigate('home')} onSelectClass3_4={() => navigate('home')} onSelectClass5={() => navigate('home')} onSelectClass6={() => navigate('home')} />;
       case 'quizForm': return <QuizForm quizData={selectedQuiz} onCompleteQuiz={handleCompleteQuiz} />;
       case 'worksheet': return <WorksheetPage onNavigate={navigate} chapterInfo={selectedChapterInfo} />;
+      case 'drawing': return <DrawingPage onNavigate={navigate} />;
+      case 'writing': return <WritingPage onNavigate={navigate} />;
       default: return <WelcomePage onExplore={() => navigate('login')} />;
     }
   };

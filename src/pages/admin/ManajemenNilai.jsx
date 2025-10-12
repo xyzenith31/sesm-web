@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FiLoader, FiSearch, FiClock, FiStar, FiBarChart2, FiCheckCircle, FiEdit } from 'react-icons/fi';
+import { FiLoader, FiSearch, FiClock, FiStar, FiBarChart2, FiCheckCircle, FiEdit, FiArrowLeft } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataService from '../../services/dataService';
 import SubmissionDetailModal from '../../components/SubmissionDetailModal';
 
-// Opsi filter Jenjang & Kelas (tetap sama)
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
     'SD Kelas 1': { jenjang: 'SD', kelas: 1 },
@@ -15,7 +14,6 @@ const jenjangOptions = {
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
 
-// Komponen Kartu Statistik Baru
 const StatCard = ({ icon: Icon, value, label, color }) => (
     <div className="bg-gray-50 p-4 rounded-lg flex-1 border">
         <div className="flex items-center">
@@ -28,21 +26,19 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
     </div>
 );
 
-
-const ManajemenNilai = () => {
-    // State management yang sudah ada
+// Terima prop 'onNavigate'
+const ManajemenNilai = ({ onNavigate }) => {
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
     const [materiList, setMateriList] = useState({});
     const [selectedChapterId, setSelectedChapterId] = useState('');
+    
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submissionsLoading, setSubmissionsLoading] = useState(false);
-    const [selectedSubmission, setSelectedSubmission] = useState(null);
     
-    // State baru untuk fitur tambahan
+    const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Fetching data (logika tetap sama)
     useEffect(() => {
         const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
         setLoading(true);
@@ -57,14 +53,13 @@ const ManajemenNilai = () => {
         if (!selectedChapterId) {
             setSubmissions([]);
             return;
-        }
+        };
         setSubmissionsLoading(true);
         DataService.getAllSubmissionsForChapter(selectedChapterId)
             .then(response => setSubmissions(response.data))
             .finally(() => setSubmissionsLoading(false));
     }, [selectedChapterId]);
     
-    // Memoization (logika tetap sama, dengan tambahan)
     const chapterOptions = useMemo(() => {
         return Object.values(materiList).flatMap(mapel => mapel.chapters);
     }, [materiList]);
@@ -91,10 +86,8 @@ const ManajemenNilai = () => {
         };
     }, [submissions]);
 
-    // Handlers (logika tetap sama)
     const handleGradeSubmitted = () => {
         setSelectedSubmission(null);
-        // Re-fetch data untuk chapter yang sedang dipilih
         if (selectedChapterId) {
             setSubmissionsLoading(true);
             DataService.getAllSubmissionsForChapter(selectedChapterId)
@@ -114,15 +107,23 @@ const ManajemenNilai = () => {
                 />
             )}
             <div>
-                <h1 className="text-3xl font-bold text-sesm-deep mb-6">Manajemen Nilai Siswa</h1>
+                {/* --- HEADER BARU DENGAN TOMBOL KEMBALI --- */}
+                <div className="flex items-center gap-4 mb-6">
+                     <motion.button 
+                        onClick={() => onNavigate('manajemenMateri')} 
+                        className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                        whileTap={{ scale: 0.9 }}
+                    >
+                        <FiArrowLeft size={24} className="text-gray-700" />
+                    </motion.button>
+                    <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Nilai Siswa</h1>
+                </div>
                 
-                {/* --- KARTU UTAMA YANG BARU (SINGLE LAYOUT) --- */}
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white p-6 rounded-xl shadow-md min-h-[75vh]"
                 >
-                    {/* 1. Area Filter di Atas */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pb-6 border-b border-gray-200">
                         <div>
                             <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Jenjang & Kelas</label>
@@ -153,14 +154,12 @@ const ManajemenNilai = () => {
                         </div>
                     </div>
 
-                    {/* 2. Area Konten Utama */}
                     {submissionsLoading ? (
                         <div className="flex justify-center items-center h-64"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>
                     ) : !selectedChapterId ? (
                         <div className="text-center text-gray-400 py-24"><p>Silakan pilih jenjang dan materi terlebih dahulu untuk melihat hasil pengerjaan.</p></div>
                     ) : (
                         <>
-                            {/* 2a. Kartu Statistik */}
                             <div className="mb-6">
                                 <h3 className="font-bold text-gray-700 mb-3">Ringkasan Statistik</h3>
                                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
@@ -170,7 +169,6 @@ const ManajemenNilai = () => {
                                 </div>
                             </div>
                         
-                            {/* 2b. Tabel Hasil Pengerjaan */}
                             <h2 className="text-xl font-bold text-sesm-deep mb-4">Daftar Hasil Pengerjaan</h2>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left text-gray-500">

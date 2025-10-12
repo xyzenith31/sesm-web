@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { FiLoader, FiCalendar } from 'react-icons/fi';
+import { FiLoader, FiCalendar, FiArrowLeft } from 'react-icons/fi'; // Impor FiArrowLeft
 import { FaTrophy } from 'react-icons/fa';
 import DataService from '../../services/dataService';
 
-const EvaluasiKuis = () => {
+// Terima prop 'onNavigate' untuk fungsi kembali
+const EvaluasiKuis = ({ onNavigate }) => {
     const [quizzes, setQuizzes] = useState([]);
     const [selectedQuizId, setSelectedQuizId] = useState('');
     const [submissions, setSubmissions] = useState([]);
@@ -30,7 +31,6 @@ const EvaluasiKuis = () => {
                 setSubmissions(res.data);
             })
             .catch(err => {
-                // Log ini akan muncul di console browser
                 console.error("Gagal memuat hasil kuis:", err); 
             })
             .finally(() => {
@@ -51,7 +51,18 @@ const EvaluasiKuis = () => {
 
     return (
         <div>
-            <h1 className="text-3xl font-bold text-sesm-deep mb-6">Evaluasi Kuis Pengetahuan</h1>
+            {/* --- HEADER BARU DENGAN TOMBOL KEMBALI --- */}
+            <div className="flex items-center gap-4 mb-6">
+                 <motion.button 
+                    onClick={() => onNavigate('manajemenKuis')} 
+                    className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                    whileTap={{ scale: 0.9 }}
+                >
+                    <FiArrowLeft size={24} className="text-gray-700" />
+                </motion.button>
+                <h1 className="text-3xl font-bold text-sesm-deep">Evaluasi Kuis Pengetahuan</h1>
+            </div>
+
 
             <div className="bg-white p-6 rounded-xl shadow-md">
                 <div className="mb-6">

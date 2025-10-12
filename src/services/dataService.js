@@ -70,6 +70,10 @@ const deleteQuiz = (quizId) => {
   return apiClient.delete(`/admin/quizzes/${quizId}`);
 };
 
+const deleteAllQuestionsFromQuiz = (quizId) => {
+    return apiClient.delete(`/admin/quizzes/${quizId}/questions`);
+};
+
 const addQuestionToQuiz = (quizId, formData) => {
   return apiClient.post(`/admin/quizzes/${quizId}/questions`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -123,6 +127,10 @@ const submitQuizAnswers = (quizId, answers) => {
     return apiClient.post(`/quizzes/${quizId}/submit`, { answers });
 };
 
+// --- FUNGSI BARU UNTUK MENAMBAHKAN SOAL DARI BANK KE MATERI ---
+const addQuestionsFromBankToChapter = (materiKey, questionIds) => {
+    return apiClient.post(`/admin/materi/${materiKey}/add-from-bank`, { questionIds });
+};
 
 // --- EXPORT SEMUA FUNGSI ---
 const DataService = {
@@ -143,6 +151,7 @@ const DataService = {
   deleteChapter,
   deleteQuestion,
   getChaptersForSubject,
+  addQuestionsFromBankToChapter,
   
   // Guru / Admin Kuis
   getAllQuizzes,
@@ -150,6 +159,7 @@ const DataService = {
   createQuiz,
   getSubmissionsForQuiz,
   deleteQuiz,
+  deleteAllQuestionsFromQuiz,
   addQuestionToQuiz,
   updateQuestionInQuiz, // <-- Export fungsi edit
   deleteQuestionFromQuiz, // <-- Export fungsi hapus
