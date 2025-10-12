@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FiLoader, FiAlertCircle, FiClock } from 'react-icons/fi';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FiLoader, FiSearch, FiClock, FiStar, FiBarChart2, FiCheckCircle, FiEdit } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataService from '../../services/dataService';
 import SubmissionDetailModal from '../../components/SubmissionDetailModal';
 
+// Opsi filter Jenjang & Kelas (tetap sama)
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
     'SD Kelas 1': { jenjang: 'SD', kelas: 1 },
@@ -14,17 +15,34 @@ const jenjangOptions = {
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
 
+// Komponen Kartu Statistik Baru
+const StatCard = ({ icon: Icon, value, label, color }) => (
+    <div className="bg-gray-50 p-4 rounded-lg flex-1 border">
+        <div className="flex items-center">
+            <Icon className={`text-xl mr-3 ${color}`} />
+            <div>
+                <p className="text-xl font-bold text-sesm-deep">{value}</p>
+                <p className="text-xs text-gray-500 font-semibold">{label}</p>
+            </div>
+        </div>
+    </div>
+);
+
+
 const ManajemenNilai = () => {
+    // State management yang sudah ada
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
     const [materiList, setMateriList] = useState({});
     const [selectedChapterId, setSelectedChapterId] = useState('');
-    
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submissionsLoading, setSubmissionsLoading] = useState(false);
-    
     const [selectedSubmission, setSelectedSubmission] = useState(null);
+    
+    // State baru untuk fitur tambahan
+    const [searchTerm, setSearchTerm] = useState('');
 
+    // Fetching data (logika tetap sama)
     useEffect(() => {
         const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
         setLoading(true);
@@ -35,28 +53,54 @@ const ManajemenNilai = () => {
             .finally(() => setLoading(false));
     }, [selectedFilterKey]);
 
-    const fetchSubmissions = useCallback(() => {
+    useEffect(() => {
         if (!selectedChapterId) {
             setSubmissions([]);
             return;
-        };
+        }
         setSubmissionsLoading(true);
         DataService.getAllSubmissionsForChapter(selectedChapterId)
             .then(response => setSubmissions(response.data))
             .finally(() => setSubmissionsLoading(false));
     }, [selectedChapterId]);
-
-    useEffect(() => {
-        fetchSubmissions();
-    }, [fetchSubmissions]);
     
+    // Memoization (logika tetap sama, dengan tambahan)
     const chapterOptions = useMemo(() => {
         return Object.values(materiList).flatMap(mapel => mapel.chapters);
     }, [materiList]);
 
+    const filteredSubmissions = useMemo(() => {
+        if (!searchTerm) return submissions;
+        return submissions.filter(sub => 
+            sub.student_name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [submissions, searchTerm]);
+    
+    const summaryStats = useMemo(() => {
+        const gradedSubmissions = submissions.filter(s => s.status === 'dinilai' && s.score !== null);
+        if (gradedSubmissions.length === 0) {
+            return { count: submissions.length, avgScore: 'N/A', highScore: 'N/A' };
+        }
+        const totalScore = gradedSubmissions.reduce((sum, s) => sum + s.score, 0);
+        const avgScore = Math.round(totalScore / gradedSubmissions.length);
+        const highScore = Math.max(...gradedSubmissions.map(s => s.score));
+        return {
+            count: submissions.length,
+            avgScore,
+            highScore,
+        };
+    }, [submissions]);
+
+    // Handlers (logika tetap sama)
     const handleGradeSubmitted = () => {
         setSelectedSubmission(null);
-        fetchSubmissions();
+        // Re-fetch data untuk chapter yang sedang dipilih
+        if (selectedChapterId) {
+            setSubmissionsLoading(true);
+            DataService.getAllSubmissionsForChapter(selectedChapterId)
+                .then(response => setSubmissions(response.data))
+                .finally(() => setSubmissionsLoading(false));
+        }
     };
     
     return (
@@ -72,8 +116,14 @@ const ManajemenNilai = () => {
             <div>
                 <h1 className="text-3xl font-bold text-sesm-deep mb-6">Manajemen Nilai Siswa</h1>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                    <div className="md:col-span-1 bg-white p-4 rounded-xl shadow-md space-y-4">
+                {/* --- KARTU UTAMA YANG BARU (SINGLE LAYOUT) --- */}
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white p-6 rounded-xl shadow-md min-h-[75vh]"
+                >
+                    {/* 1. Area Filter di Atas */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pb-6 border-b border-gray-200">
                         <div>
                             <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Jenjang & Kelas</label>
                             <select value={selectedFilterKey} onChange={(e) => setSelectedFilterKey(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal">
@@ -83,60 +133,99 @@ const ManajemenNilai = () => {
                          <div>
                             <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Materi</label>
                             <select value={selectedChapterId} onChange={(e) => setSelectedChapterId(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal" disabled={loading}>
-                                <option value="">-- Harap Pilih Materi --</option>
+                                <option value="">-- {loading ? 'Memuat...' : 'Pilih Materi'} --</option>
                                 {chapterOptions.map(chap => (
                                     <option key={chap.chapter_id} value={chap.chapter_id}>{chap.judul}</option>
                                 ))}
                             </select>
                         </div>
+                        <div className="relative">
+                             <label className="block text-sm font-bold text-gray-600 mb-1">Cari Nama Siswa</label>
+                             <FiSearch className="absolute top-9 left-3 text-gray-400"/>
+                             <input 
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Ketik nama siswa..."
+                                className="w-full p-2 pl-10 border border-gray-300 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal"
+                                disabled={!selectedChapterId}
+                             />
+                        </div>
                     </div>
 
-                    <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-md min-h-[60vh]">
-                        <h2 className="text-xl font-bold text-sesm-deep border-b pb-3 mb-4">Daftar Hasil Pengerjaan</h2>
-                        {submissionsLoading ? (
-                            <div className="flex justify-center items-center h-48"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>
-                        ) : !selectedChapterId ? (
-                            <div className="text-center text-gray-400 py-16"><p>Silakan pilih jenjang dan materi terlebih dahulu.</p></div>
-                        ) : submissions.length === 0 ? (
-                            <div className="text-center text-gray-400 py-16"><p>Belum ada siswa yang mengerjakan materi ini.</p></div>
-                        ) : (
-                            <div className="space-y-3">
-                                {submissions.map(sub => (
-                                    <motion.button 
-                                        key={sub.id} 
-                                        initial={{ opacity: 0 }} 
-                                        animate={{ opacity: 1 }}
-                                        onClick={() => setSelectedSubmission(sub)}
-                                        className="w-full text-left bg-gray-50 border rounded-lg p-4 flex justify-between items-center transition-colors hover:bg-sesm-sky/20 hover:border-sesm-teal"
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        <div>
-                                            <p className="font-bold text-gray-800">{sub.student_name}</p>
-                                            <p className="text-sm text-gray-500">
-                                                Mengumpulkan: {new Date(sub.submission_date).toLocaleString('id-ID')}
-                                            </p>
-                                        </div>
-                                        
-                                        <div>
-                                            {sub.status === 'dinilai' ? (
-                                                <div className="text-right">
-                                                    <p className="text-2xl font-bold text-sesm-teal">{sub.score}</p>
-                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sub.is_graded_by_system ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-                                                        {sub.is_graded_by_system ? 'Otomatis' : 'Manual'}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <div className="px-4 py-2 text-sm bg-orange-500 text-white font-semibold rounded-md flex items-center gap-2">
-                                                    <FiClock size={14}/> Beri Nilai
-                                                </div>
-                                            )}
-                                        </div>
-                                    </motion.button>
-                                ))}
+                    {/* 2. Area Konten Utama */}
+                    {submissionsLoading ? (
+                        <div className="flex justify-center items-center h-64"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>
+                    ) : !selectedChapterId ? (
+                        <div className="text-center text-gray-400 py-24"><p>Silakan pilih jenjang dan materi terlebih dahulu untuk melihat hasil pengerjaan.</p></div>
+                    ) : (
+                        <>
+                            {/* 2a. Kartu Statistik */}
+                            <div className="mb-6">
+                                <h3 className="font-bold text-gray-700 mb-3">Ringkasan Statistik</h3>
+                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                                    <StatCard icon={FiCheckCircle} value={summaryStats.count} label="Total Pengerjaan" color="text-blue-500" />
+                                    <StatCard icon={FiBarChart2} value={summaryStats.avgScore} label="Rata-rata Nilai" color="text-green-500" />
+                                    <StatCard icon={FiStar} value={summaryStats.highScore} label="Nilai Tertinggi" color="text-orange-500" />
+                                </div>
                             </div>
-                        )}
-                    </div>
-                </div>
+                        
+                            {/* 2b. Tabel Hasil Pengerjaan */}
+                            <h2 className="text-xl font-bold text-sesm-deep mb-4">Daftar Hasil Pengerjaan</h2>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left text-gray-500">
+                                    <thead className="text-xs text-gray-700 uppercase bg-gray-100">
+                                        <tr>
+                                            <th scope="col" className="px-6 py-3">No</th>
+                                            <th scope="col" className="px-6 py-3">Nama Siswa</th>
+                                            <th scope="col" className="px-6 py-3">Tanggal</th>
+                                            <th scope="col" className="px-6 py-3">Status</th>
+                                            <th scope="col" className="px-6 py-3 text-right">Skor</th>
+                                            <th scope="col" className="px-6 py-3 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredSubmissions.length > 0 ? filteredSubmissions.map((sub, index) => (
+                                            <motion.tr 
+                                                key={sub.id} 
+                                                initial={{ opacity: 0 }} 
+                                                animate={{ opacity: 1 }}
+                                                className="bg-white border-b hover:bg-gray-50"
+                                            >
+                                                <td className="px-6 py-4 font-medium text-gray-900">{index + 1}</td>
+                                                <td className="px-6 py-4 font-bold text-gray-800">{sub.student_name}</td>
+                                                <td className="px-6 py-4">{new Date(sub.submission_date).toLocaleString('id-ID')}</td>
+                                                <td className="px-6 py-4">
+                                                    {sub.status === 'dinilai' ? (
+                                                        <span className="flex items-center gap-2 text-green-700">
+                                                            <div className="h-2.5 w-2.5 rounded-full bg-green-500"></div> Selesai
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-2 text-orange-700">
+                                                            <div className="h-2.5 w-2.5 rounded-full bg-orange-500"></div> Menunggu
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 font-bold text-lg text-sesm-teal text-right">{sub.score ?? '--'}</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <button onClick={() => setSelectedSubmission(sub)} className="font-medium text-sesm-deep hover:underline flex items-center gap-1 mx-auto">
+                                                        <FiEdit size={14}/> {sub.status === 'dinilai' ? 'Lihat/Ubah' : 'Beri Nilai'}
+                                                    </button>
+                                                </td>
+                                            </motion.tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan="6" className="text-center text-gray-400 py-16">
+                                                    <p>Tidak ada siswa yang cocok dengan pencarian Anda.</p>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
+                </motion.div>
             </div>
         </>
     );

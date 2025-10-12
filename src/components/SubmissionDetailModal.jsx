@@ -1,15 +1,18 @@
 // contoh-sesm-web/components/SubmissionDetailModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiX, FiCheckCircle, FiXCircle, FiLoader, FiSave, FiThumbsUp, FiThumbsDown } from 'react-icons/fi';
+import { FiX, FiCheckCircle, FiXCircle, FiLoader, FiSave, FiThumbsUp, FiThumbsDown, FiEdit } from 'react-icons/fi';
 import DataService from '../services/dataService';
 
 const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitted }) => {
     const [details, setDetails] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [score, setScore] = useState(submission.score || '');
+    const [score, setScore] = useState(submission.score ?? '');
     const [isSaving, setIsSaving] = useState(false);
-    const [overridingId, setOverridingId] = useState(null); // State untuk loading per tombol
+    const [overridingId, setOverridingId] = useState(null);
+
+    // State baru untuk form koreksi
+    const [correctionText, setCorrectionText] = useState({});
 
     useEffect(() => {
         if (submission) {
@@ -17,6 +20,12 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
             DataService.getSubmissionDetails(submission.id)
                 .then(response => {
                     setDetails(response.data);
+                    // Inisialisasi state untuk teks koreksi
+                    const initialCorrections = {};
+                    response.data.forEach(item => {
+                        initialCorrections[item.answerId] = ''; // Setiap jawaban punya field koreksi sendiri
+                    });
+                    setCorrectionText(initialCorrections);
                 })
                 .catch(err => {
                     console.error(err);
@@ -30,9 +39,7 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
         setOverridingId(answerId);
         try {
             const response = await DataService.overrideAnswer(answerId, newStatus);
-            // Perbarui skor di footer
             setScore(response.data.newScore);
-            // Perbarui tampilan detail secara lokal
             setDetails(prevDetails => 
                 prevDetails.map(d => d.answerId === answerId ? { ...d, is_correct: newStatus } : d)
             );
@@ -42,10 +49,20 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
             setOverridingId(null);
         }
     };
+    
+    // Fungsi untuk menangani perubahan pada textarea koreksi
+    const handleCorrectionChange = (answerId, text) => {
+        setCorrectionText(prev => ({ ...prev, [answerId]: text }));
+    };
+
+    // Fungsi untuk menyimpan koreksi (saat ini hanya simulasi di frontend)
+    const handleSaveCorrection = (answerId) => {
+        // Di aplikasi nyata, Anda akan memanggil API untuk menyimpan `correctionText[answerId]` ke database
+        alert(`Koreksi untuk jawaban #${answerId} disimpan:\n"${correctionText[answerId]}"`);
+    };
 
     const handleClose = () => {
-        // Jika skor berubah, panggil onGradeSubmitted untuk refresh daftar di belakang
-        if (score !== submission.score) {
+        if (String(score) !== String(submission.score)) {
             onGradeSubmitted();
         } else {
             onClose();
@@ -53,7 +70,6 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
     };
 
     const handleSubmitGrade = async () => {
-        // Fungsi ini tetap untuk penilaian manual pertama kali
         if (score === '' || isNaN(score)) {
             alert("Harap masukkan nilai yang valid."); return;
         }
@@ -69,19 +85,11 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
         }
     };
 
-
     if (!submission) return null;
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-        >
-            <motion.div
-                initial={{ scale: 0.9 }} animate={{ scale: 1 }}
-                className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col h-[85vh]"
-                onClick={(e) => e.stopPropagation()}
-            >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col h-[85vh]">
                 <header className="p-5 border-b">
                     <div className="flex justify-between items-center">
                         <div>
@@ -115,26 +123,37 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
                                     </div>
                                     {correctAnswer && (
                                         <div className="mt-2 bg-green-50 border-l-4 border-green-400 p-3 rounded-r-lg">
-                                            <p className="text-xs font-semibold text-green-800">Kunci Jawaban:</p>
+                                            <p className="text-xs font-semibold text-green-800">Kunci Jawaban Sistem:</p>
                                             <p className="text-sm text-green-900">{correctAnswer}</p>
                                         </div>
                                     )}
-                                    {/* --- Tombol Override --- */}
-                                    {isViewOnly && (
-                                        <div className="mt-3 pt-3 border-t flex items-center justify-end gap-2">
+
+                                    {/* --- AREA KOREKSI & PEMBENARAN GURU (BARU) --- */}
+                                    <div className="mt-4 pt-4 border-t">
+                                         <label className="text-sm font-bold text-gray-600 mb-2 block">Umpan Balik / Pembenaran (Opsional)</label>
+                                         <textarea
+                                            value={correctionText[item.answerId] || ''}
+                                            onChange={(e) => handleCorrectionChange(item.answerId, e.target.value)}
+                                            placeholder="Tuliskan jawaban yang benar atau berikan umpan balik..."
+                                            className="w-full h-24 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal"
+                                         />
+                                        <div className="mt-3 flex items-center justify-end gap-2">
+                                             <button onClick={() => handleSaveCorrection(item.answerId)} className="flex items-center gap-2 text-xs font-semibold text-blue-600 bg-blue-100 px-3 py-2 rounded-md hover:bg-blue-200">
+                                                <FiSave size={14}/> Simpan Koreksi
+                                             </button>
                                             {overridingId === item.answerId ? <FiLoader className="animate-spin"/> : (
                                                 item.is_correct ? (
-                                                    <button onClick={() => handleOverride(item.answerId, false)} className="flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-md hover:bg-red-200">
-                                                        <FiThumbsDown size={14}/> Batalkan (Salah)
+                                                    <button onClick={() => handleOverride(item.answerId, false)} className="flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-100 px-3 py-2 rounded-md hover:bg-red-200">
+                                                        <FiThumbsDown size={14}/> Tandai Salah
                                                     </button>
                                                 ) : (
-                                                    <button onClick={() => handleOverride(item.answerId, true)} className="flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-100 px-2 py-1 rounded-md hover:bg-green-200">
+                                                    <button onClick={() => handleOverride(item.answerId, true)} className="flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-100 px-3 py-2 rounded-md hover:bg-green-200">
                                                         <FiThumbsUp size={14}/> Benarkan Jawaban
                                                     </button>
                                                 )
                                             )}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             )})}
                         </div>
