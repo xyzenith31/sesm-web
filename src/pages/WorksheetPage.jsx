@@ -1,7 +1,7 @@
 // contoh-sesm-web/pages/WorksheetPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiDownload } from 'react-icons/fi';
+import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiDownload, FiLink, FiType } from 'react-icons/fi';
 import DataService from '../services/dataService';
 import ConfirmationModal from '../components/ConfirmationModal';
 
@@ -27,7 +27,7 @@ const ImageLightbox = ({ imageUrl, onClose }) => {
     );
 };
 
-// --- MODIFIKASI: Tambahkan penanganan untuk audio ---
+// --- KOMPONEN MEDIAVIEWER YANG DIPERBARUI TOTAL ---
 const MediaViewer = ({ mediaUrls, onImageClick }) => {
     if (!mediaUrls || mediaUrls.length === 0) {
         return null;
@@ -35,45 +35,65 @@ const MediaViewer = ({ mediaUrls, onImageClick }) => {
 
     const API_URL = 'http://localhost:8080';
 
+    // Fungsi untuk mengubah URL YouTube biasa menjadi URL embed
+    const getYouTubeEmbedUrl = (url) => {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
+    };
+
     return (
         <div className="mb-6 space-y-4">
-            {mediaUrls.map((url, index) => {
-                const fullUrl = `${API_URL}/${url}`;
-                const fileExtension = url.split('.').pop().toLowerCase();
+            {mediaUrls.map((item, index) => {
+                // Periksa tipe lampiran
+                switch (item.type) {
+                    case 'file':
+                        const fullUrl = `${API_URL}/${item.url}`;
+                        const fileExtension = item.url.split('.').pop().toLowerCase();
 
-                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
-                    return (
-                        <img 
-                            key={index} 
-                            src={fullUrl} 
-                            alt={`Lampiran soal ${index + 1}`} 
-                            className="max-w-full mx-auto rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105"
-                            onClick={() => onImageClick(fullUrl)}
-                        />
-                    );
-                }
-                
-                if (['mp4', 'webm'].includes(fileExtension)) {
-                    return <video key={index} src={fullUrl} controls className="w-full rounded-lg shadow-md" />;
-                }
+                        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+                            return <img key={index} src={fullUrl} alt={`Lampiran ${index + 1}`} className="max-w-full mx-auto rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105" onClick={() => onImageClick(fullUrl)} />;
+                        }
+                        if (['mp4', 'webm'].includes(fileExtension)) {
+                            return <video key={index} src={fullUrl} controls className="w-full rounded-lg shadow-md" />;
+                        }
+                        if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
+                            return <audio key={index} src={fullUrl} controls className="w-full" />;
+                        }
+                        // Fallback untuk file lain (PDF, DOCX)
+                        return <a key={index} href={fullUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-sesm-deep font-semibold hover:bg-gray-200 transition-colors"><FiDownload /><span>Lihat/Unduh Lampiran ({fileExtension.toUpperCase()})</span></a>;
 
-                // --- BARIS BARU UNTUK AUDIO ---
-                if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
-                    return <audio key={index} src={fullUrl} controls className="w-full" />;
-                }
+                    case 'link':
+                        const embedUrl = getYouTubeEmbedUrl(item.url);
+                        if (embedUrl) {
+                            // Jika ini link YouTube, tampilkan sebagai video embed
+                            return (
+                                <div key={index} className="aspect-video bg-black rounded-lg overflow-hidden shadow-md">
+                                    <iframe src={embedUrl} title={`YouTube video player ${index}`} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full"></iframe>
+                                </div>
+                            );
+                        }
+                        // Jika link biasa, tampilkan sebagai tautan
+                        return <a key={index} href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-blue-600 font-semibold hover:bg-gray-200 transition-colors"><FiLink /><span>Buka Tautan Eksternal</span></a>;
+                    
+                    case 'text':
+                        // Tampilkan lampiran teks
+                        return (
+                           <div key={index} className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg text-left">
+                               <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.content}</p>
+                           </div>
+                        );
 
-                return (
-                    <a key={index} href={fullUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-sesm-deep font-semibold hover:bg-gray-200 transition-colors">
-                        <FiDownload />
-                        <span>Lihat/Unduh Lampiran {index + 1} ({fileExtension.toUpperCase()})</span>
-                    </a>
-                );
+                    default:
+                        return null;
+                }
             })}
         </div>
     );
 };
 
-// ... (sisa kode komponen WorksheetPage tidak ada yang berubah, jadi saya ringkas)
+
+// ... (Sisa kode komponen WorksheetPage tidak ada yang berubah)
 const OptionButton = ({ option, userAnswer, onClick }) => {
     const isSelected = userAnswer === option;
     return (

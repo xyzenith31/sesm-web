@@ -18,20 +18,46 @@ const getMateriForAdmin = (jenjang, kelas) => { return apiClient.get('/admin/mat
 const getDetailMateriForAdmin = (materiKey) => { return apiClient.get(`/admin/materi/${materiKey}`); };
 const addChapter = (chapterData) => { return apiClient.post('/admin/materi/chapters', chapterData); };
 
+// --- FUNGSI TAMBAH SOAL (DIPERBAIKI) ---
 const addQuestion = (materiKey, questionData) => {
   const formData = new FormData();
+  
+  // Data dasar
   formData.append('type', questionData.type);
   formData.append('question', questionData.question);
   formData.append('correctAnswer', questionData.correctAnswer);
   formData.append('essayAnswer', questionData.essayAnswer || '');
-  if (questionData.options) { formData.append('options', JSON.stringify(questionData.options)); }
-  if (questionData.media && questionData.media.length > 0) { questionData.media.forEach(file => { formData.append('media', file); }); }
-  return apiClient.post(`/admin/materi/${materiKey}/questions`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  if (questionData.options) { 
+    formData.append('options', JSON.stringify(questionData.options)); 
+  }
+  
+  // Lampiran File (yang baru diupload)
+  if (questionData.media && questionData.media.length > 0) { 
+    questionData.media.forEach(file => { 
+      formData.append('media', file); // 'media' harus cocok dengan nama di middleware `upload.array('media')`
+    }); 
+  }
+
+  // Lampiran Link (dikirim sebagai string JSON)
+  if (questionData.links && questionData.links.length > 0) {
+    formData.append('links', JSON.stringify(questionData.links));
+  }
+
+  // Lampiran Teks (dikirim sebagai string JSON)
+  if (questionData.texts && questionData.texts.length > 0) {
+    formData.append('texts', JSON.stringify(questionData.texts));
+  }
+
+  return apiClient.post(`/admin/materi/${materiKey}/questions`, formData, { 
+    headers: { 'Content-Type': 'multipart/form-data' } 
+  });
 };
 
-// --- FUNGSI BARU UNTUK EDIT SOAL (DIPERBARUI) ---
+// --- FUNGSI EDIT SOAL (DIPERBARUI) ---
 const updateQuestion = (questionId, questionData) => {
     const formData = new FormData();
+
+    // Data dasar
     formData.append('type', questionData.type);
     formData.append('question', questionData.question);
     formData.append('correctAnswer', questionData.correctAnswer);
@@ -39,21 +65,23 @@ const updateQuestion = (questionId, questionData) => {
     if (questionData.options) {
         formData.append('options', JSON.stringify(questionData.options));
     }
-    // Kirim data lampiran yang sudah ada (link, text, file lama) sebagai JSON
+    
+    // Kirim data lampiran yang sudah ada (link, text, file lama) sebagai string JSON
     if (questionData.attachments) {
         formData.append('attachments', JSON.stringify(questionData.attachments));
     }
-    // Kirim file baru yang akan di-upload
+
+    // Kirim HANYA file baru yang akan di-upload
     if (questionData.newMedia && questionData.newMedia.length > 0) {
         questionData.newMedia.forEach(file => {
-            formData.append('media', file);
+            formData.append('media', file); // 'media' harus cocok dengan nama di middleware `upload.array('media')`
         });
     }
+
     return apiClient.put(`/admin/materi/questions/${questionId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 };
-
 
 const deleteChapter = (materiKey) => { return apiClient.delete(`/admin/materi/chapters/${materiKey}`); };
 const deleteQuestion = (questionId) => { return apiClient.delete(`/admin/materi/questions/${questionId}`); };
@@ -112,7 +140,7 @@ const DataService = {
   getDetailMateriForAdmin,
   addChapter,
   addQuestion,
-  updateQuestion, // <-- Export fungsi baru
+  updateQuestion,
   deleteChapter,
   deleteQuestion,
   getChaptersForSubject,
