@@ -11,12 +11,17 @@ const VerifyCodePage = ({ onNavigate, onVerified, identifier }) => {
   const [message, setMessage] = useState('');
   const [successful, setSuccessful] = useState(false);
 
-  // State baru untuk tombol kirim ulang
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
 
-  const itemContainerVariants = { /* ... */ };
-  const itemVariants = { /* ... */ };
+  const itemContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+  };
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+  };
   const inputStyles = "w-full px-5 py-3 text-sesm-deep bg-white rounded-xl focus:outline-none focus:ring-4 focus:ring-sesm-sky/50 transition-shadow duration-300 placeholder:text-gray-500 text-center tracking-[1em]";
 
   const handleSubmit = (e) => {
@@ -25,13 +30,15 @@ const VerifyCodePage = ({ onNavigate, onVerified, identifier }) => {
     setMessage('');
     setSuccessful(false);
 
-    AuthService.verifyCode(code)
+    // Kirim kode dan identifier ke service
+    AuthService.verifyCode(code, identifier)
       .then(response => {
         setMessage(response.data.message);
         setSuccessful(true);
         setLoading(false);
         setTimeout(() => {
-          onVerified(code);
+          // Kirim keduanya ke App.jsx untuk halaman selanjutnya
+          onVerified(code, identifier);
         }, 1500);
       })
       .catch(error => {
@@ -42,11 +49,9 @@ const VerifyCodePage = ({ onNavigate, onVerified, identifier }) => {
       });
   };
 
-  // Fungsi untuk handle kirim ulang
   const handleResend = () => {
     setResendLoading(true);
     setResendMessage('');
-
     AuthService.resendCode(identifier)
         .then(response => {
             setResendMessage(response.data.message);

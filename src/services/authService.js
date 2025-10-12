@@ -20,16 +20,23 @@ const forgotPassword = (identifier) => {
   return apiClient.post('/auth/forgot-password', { identifier });
 };
 
-const verifyCode = (code) => {
-  return apiClient.post('/auth/verify-code', { code });
+// Diperbarui: menerima identifier
+const verifyCode = (code, identifier) => {
+  return apiClient.post('/auth/verify-code', { code, identifier });
 };
 
-const resetPassword = (code, password, konfirmasi_password) => {
-  return apiClient.post('/auth/reset-password', { code, password, konfirmasi_password });
+// Diperbarui: menerima identifier
+const resetPassword = (code, identifier, password, konfirmasi_password) => {
+  return apiClient.post('/auth/reset-password', { code, identifier, password, konfirmasi_password });
 };
 
 const resendCode = (identifier) => {
   return apiClient.post('/auth/resend-code', { identifier });
+};
+
+// --- FUNGSI BARU ---
+const loginWithCode = (code, identifier) => {
+    return apiClient.post('/auth/login-with-code', { code, identifier });
 };
 
 const AuthService = {
@@ -41,6 +48,7 @@ const AuthService = {
   verifyCode,
   resetPassword,
   resendCode,
+  loginWithCode, // diekspor
 };
 
 export default AuthService;

@@ -65,6 +65,7 @@ function App() {
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [selectedChapterInfo, setSelectedChapterInfo] = useState(null);
 
+  // --- State Diperbarui ---
   const [resetIdentifier, setResetIdentifier] = useState('');
   const [resetCode, setResetCode] = useState(null);
 
@@ -171,18 +172,20 @@ function App() {
         return <VerifyCodePage 
           onNavigate={navigate} 
           identifier={resetIdentifier}
-          onVerified={(code) => {
+          onVerified={(code, identifier) => { // Terima identifier juga
             setResetCode(code);
+            setResetIdentifier(identifier); // Simpan lagi untuk halaman berikutnya
             navigate('resetPassword');
           }} 
         />;
       case 'resetPassword':
         return <ResetPasswordPage 
           code={resetCode}
+          identifier={resetIdentifier} // Kirim identifier
           onPasswordReset={() => {
             setResetIdentifier('');
             setResetCode(null);
-            navigate('home');
+            // Navigasi sudah ditangani oleh useNavigation context
           }} 
         />;
       
