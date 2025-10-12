@@ -17,6 +17,7 @@ const submitAnswers = (materiKey, answers) => { return apiClient.post(`/materi/$
 const getMateriForAdmin = (jenjang, kelas) => { return apiClient.get('/admin/materi', { params: { jenjang, kelas } }); };
 const getDetailMateriForAdmin = (materiKey) => { return apiClient.get(`/admin/materi/${materiKey}`); };
 const addChapter = (chapterData) => { return apiClient.post('/admin/materi/chapters', chapterData); };
+
 const addQuestion = (materiKey, questionData) => {
   const formData = new FormData();
   formData.append('type', questionData.type);
@@ -27,6 +28,33 @@ const addQuestion = (materiKey, questionData) => {
   if (questionData.media && questionData.media.length > 0) { questionData.media.forEach(file => { formData.append('media', file); }); }
   return apiClient.post(`/admin/materi/${materiKey}/questions`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 };
+
+// --- FUNGSI BARU UNTUK EDIT SOAL (DIPERBARUI) ---
+const updateQuestion = (questionId, questionData) => {
+    const formData = new FormData();
+    formData.append('type', questionData.type);
+    formData.append('question', questionData.question);
+    formData.append('correctAnswer', questionData.correctAnswer);
+    formData.append('essayAnswer', questionData.essayAnswer || '');
+    if (questionData.options) {
+        formData.append('options', JSON.stringify(questionData.options));
+    }
+    // Kirim data lampiran yang sudah ada (link, text, file lama) sebagai JSON
+    if (questionData.attachments) {
+        formData.append('attachments', JSON.stringify(questionData.attachments));
+    }
+    // Kirim file baru yang akan di-upload
+    if (questionData.newMedia && questionData.newMedia.length > 0) {
+        questionData.newMedia.forEach(file => {
+            formData.append('media', file);
+        });
+    }
+    return apiClient.put(`/admin/materi/questions/${questionId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+};
+
+
 const deleteChapter = (materiKey) => { return apiClient.delete(`/admin/materi/chapters/${materiKey}`); };
 const deleteQuestion = (questionId) => { return apiClient.delete(`/admin/materi/questions/${questionId}`); };
 const getChaptersForSubject = (jenjang, kelas, subjectName) => {
@@ -45,92 +73,28 @@ const overrideAnswer = (answerId, isCorrect) => { return apiClient.patch(`/admin
 
 
 // --- FUNGSI MANAJEMEN KUIS & BANK SOAL ---
-
-// === FUNGSI UMUM ===
-const getAllQuizzes = () => {
-    return apiClient.get('/quizzes');
-};
-
-// === FUNGSI KHUSUS GURU / ADMIN ===
-const getQuizDetailsForAdmin = (quizId) => {
-    return apiClient.get(`/admin/quizzes/${quizId}/details`);
-};
-
-const createQuiz = (formData) => {
-  return apiClient.post('/admin/quizzes', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-};
-
-const getSubmissionsForQuiz = (quizId) => {
-    return apiClient.get(`/admin/quizzes/${quizId}/submissions`);
-};
-
-const deleteQuiz = (quizId) => {
-  return apiClient.delete(`/admin/quizzes/${quizId}`);
-};
-
-const deleteAllQuestionsFromQuiz = (quizId) => {
-    return apiClient.delete(`/admin/quizzes/${quizId}/questions`);
-};
-
-const addQuestionToQuiz = (quizId, formData) => {
-  return apiClient.post(`/admin/quizzes/${quizId}/questions`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-};
-
-// --- ▼▼▼ FUNGSI BARU UNTUK EDIT & HAPUS SOAL SPESIFIK DI KUIS ▼▼▼ ---
+const getAllQuizzes = () => { return apiClient.get('/quizzes'); };
+const getQuizDetailsForAdmin = (quizId) => { return apiClient.get(`/admin/quizzes/${quizId}/details`); };
+const createQuiz = (formData) => { return apiClient.post('/admin/quizzes', formData, { headers: { 'Content-Type': 'multipart/form-data' } }); };
+const getSubmissionsForQuiz = (quizId) => { return apiClient.get(`/admin/quizzes/${quizId}/submissions`); };
+const deleteQuiz = (quizId) => { return apiClient.delete(`/admin/quizzes/${quizId}`); };
+const deleteAllQuestionsFromQuiz = (quizId) => { return apiClient.delete(`/admin/quizzes/${quizId}/questions`); };
+const addQuestionToQuiz = (quizId, formData) => { return apiClient.post(`/admin/quizzes/${quizId}/questions`, formData, { headers: { 'Content-Type': 'multipart/form-data' }, }); };
 const updateQuestionInQuiz = (questionId, questionData) => {
     const formData = new FormData();
     formData.append('question_text', questionData.question);
     formData.append('question_type', questionData.type);
-    
-    const formattedOptions = questionData.options.map(opt => ({
-        text: opt,
-        isCorrect: opt === questionData.correctAnswer
-    }));
+    const formattedOptions = questionData.options.map(opt => ({ text: opt, isCorrect: opt === questionData.correctAnswer }));
     formData.append('options', JSON.stringify(formattedOptions));
-
-    // Kirim media yang sudah ada untuk disimpan kembali oleh backend
     formData.append('existingMedia', JSON.stringify(questionData.media));
-
-    // Di sini kita tidak mengirim file baru, karena logic edit hanya untuk teks
-    // Jika ingin ada fitur ganti file, logic-nya harus ditambahkan di sini
-
-    return apiClient.put(`/admin/quizzes/questions/${questionId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return apiClient.put(`/admin/quizzes/questions/${questionId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }, });
 };
-
-const deleteQuestionFromQuiz = (questionId) => {
-    return apiClient.delete(`/admin/quizzes/questions/${questionId}`);
-};
-// --- ▲▲▲ BATAS FUNGSI BARU ▲▲▲ ---
-
-// Bank Soal
-const getAllQuestionsForBank = (jenjang, kelas) => {
-    return apiClient.get('/admin/all-questions', { params: { jenjang, kelas } });
-};
-
-const addQuestionsFromBank = (quizId, questionIds) => {
-    return apiClient.post(`/admin/quizzes/${quizId}/add-from-bank`, { questionIds });
-};
-
-
-// === FUNGSI KHUSUS SISWA ===
-const getQuizForStudent = (quizId) => {
-    return apiClient.get(`/quizzes/${quizId}`);
-};
-
-const submitQuizAnswers = (quizId, answers) => {
-    return apiClient.post(`/quizzes/${quizId}/submit`, { answers });
-};
-
-// --- FUNGSI BARU UNTUK MENAMBAHKAN SOAL DARI BANK KE MATERI ---
-const addQuestionsFromBankToChapter = (materiKey, questionIds) => {
-    return apiClient.post(`/admin/materi/${materiKey}/add-from-bank`, { questionIds });
-};
+const deleteQuestionFromQuiz = (questionId) => { return apiClient.delete(`/admin/quizzes/questions/${questionId}`); };
+const getAllQuestionsForBank = (jenjang, kelas) => { return apiClient.get('/admin/all-questions', { params: { jenjang, kelas } }); };
+const addQuestionsFromBank = (quizId, questionIds) => { return apiClient.post(`/admin/quizzes/${quizId}/add-from-bank`, { questionIds }); };
+const getQuizForStudent = (quizId) => { return apiClient.get(`/quizzes/${quizId}`); };
+const submitQuizAnswers = (quizId, answers) => { return apiClient.post(`/quizzes/${quizId}/submit`, { answers }); };
+const addQuestionsFromBankToChapter = (materiKey, questionIds) => { return apiClient.post(`/admin/materi/${materiKey}/add-from-bank`, { questionIds }); };
 
 // --- EXPORT SEMUA FUNGSI ---
 const DataService = {
@@ -148,6 +112,7 @@ const DataService = {
   getDetailMateriForAdmin,
   addChapter,
   addQuestion,
+  updateQuestion, // <-- Export fungsi baru
   deleteChapter,
   deleteQuestion,
   getChaptersForSubject,
@@ -161,8 +126,8 @@ const DataService = {
   deleteQuiz,
   deleteAllQuestionsFromQuiz,
   addQuestionToQuiz,
-  updateQuestionInQuiz, // <-- Export fungsi edit
-  deleteQuestionFromQuiz, // <-- Export fungsi hapus
+  updateQuestionInQuiz,
+  deleteQuestionFromQuiz,
   
   // Guru / Admin Bank Soal
   getAllQuestionsForBank,

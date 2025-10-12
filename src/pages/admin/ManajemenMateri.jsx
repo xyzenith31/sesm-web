@@ -9,7 +9,10 @@ import DataService from '../../services/dataService';
 import AddChapterModal from '../../components/AddChapterModal';
 import QuestionFormModal from '../../components/QuestionFormModal';
 import DraftsModal from '../../components/DraftsModal';
-import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal'; // <-- Impor komponen baru
+import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal';
+// --- 1. Impor Modal Edit yang Baru ---
+import EditQuestionModal from '../../components/admin/EditQuestionModal';
+
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -69,9 +72,12 @@ const ManajemenMateri = ({ onNavigate }) => {
     const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
     const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
-
-    // State baru untuk modal Bank Soal
     const [isBankSoalOpen, setIsBankSoalOpen] = useState(false);
+
+    // --- 2. State untuk Modal Edit ---
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingQuestion, setEditingQuestion] = useState(null);
+
 
     const fetchMateriList = useCallback((selectKeyAfterFetch = null) => {
         const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
@@ -111,11 +117,9 @@ const ManajemenMateri = ({ onNavigate }) => {
         try { await DataService.addChapter(data); fetchMateriList(); } catch (e) { alert("Gagal: " + e.message); }
     };
     
-    // Handler baru untuk soal dari bank
     const handleQuestionsFromBankAdded = (targetMateriKey) => {
         setIsBankSoalOpen(false);
         alert("Soal berhasil ditambahkan dari bank!");
-        // Muat ulang daftar materi dan langsung pilih materi yang baru diupdate
         fetchMateriList(targetMateriKey);
     };
 
@@ -129,10 +133,33 @@ const ManajemenMateri = ({ onNavigate }) => {
         if (!selectedKey) return;
         setIsDetailLoading(true);
         try {
-            await Promise.all(newQuestions.map(q => DataService.addQuestion(selectedKey, q)));
+            for (const q of newQuestions) {
+                await DataService.addQuestion(selectedKey, q);
+            }
             alert(`${newQuestions.length} soal berhasil dipublikasikan!`);
-            fetchDetailMateri(); fetchMateriList();
+            fetchDetailMateri(); 
+            fetchMateriList();
         } catch (e) { alert("Gagal publikasi."); } finally { setIsDetailLoading(false); }
+    };
+
+    // --- 3. Handler untuk membuka modal edit ---
+    const handleOpenEditModal = (question) => {
+        setEditingQuestion(question);
+        setIsEditModalOpen(true);
+    };
+
+    // --- 4. Handler untuk submit hasil edit ---
+    const handleUpdateQuestion = async (questionId, updatedData) => {
+        try {
+            await DataService.updateQuestion(questionId, updatedData);
+            setIsEditModalOpen(false);
+            setEditingQuestion(null);
+            alert("Soal berhasil diperbarui!");
+            fetchDetailMateri(); // Refresh detail materi
+        } catch (error) {
+            alert("Gagal memperbarui soal.");
+            console.error(error);
+        }
     };
 
     const handleDeleteQuestion = async (questionId) => {
@@ -187,8 +214,9 @@ const ManajemenMateri = ({ onNavigate }) => {
             <AnimatePresence>
                 {isAddChapterModalOpen && <AddChapterModal isOpen onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
                 {isDraftsModalOpen && <DraftsModal isOpen onClose={() => setIsDraftsModalOpen(false)} allData={materiList} onContinue={handleContinueDraft} onDelete={handleDeleteDraft} />}
-                {/* --- Panggil Modal Bank Soal yang baru --- */}
                 {isBankSoalOpen && <BankSoalMateriModal isOpen onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
+                {/* --- 5. Render Modal Edit --- */}
+                {isEditModalOpen && <EditQuestionModal isOpen onClose={() => setIsEditModalOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
             </AnimatePresence>
             {isQuestionModalOpen && <QuestionFormModal isOpen onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
 
@@ -226,10 +254,7 @@ const ManajemenMateri = ({ onNavigate }) => {
                                 <p className="text-gray-500 mt-1">Buat materi baru, kelola soal, dan lihat hasil pengerjaan siswa.</p>
                                 <div className="flex items-center gap-3 my-6">
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsDraftsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-white rounded-lg font-semibold shadow-sm"><FiFileText /> Draf</motion.button>
-                                    
-                                    {/* --- Tombol Bank Soal Baru --- */}
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 shadow-sm"><FiArchive /> Bank Soal</motion.button>
-                                    
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsAddChapterModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold shadow-sm"><FiPlus /> Buat Materi</motion.button>
                                 </div>
@@ -258,10 +283,17 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                 </div>
                                                 <div className="space-y-3 max-h-[calc(100vh-35rem)] overflow-y-auto pr-2">
                                                     {selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, i) => (
-                                                        <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="group bg-gray-50 p-3 rounded-lg">
+                                                        <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-3 rounded-lg">
                                                             <div className="flex justify-between items-start">
-                                                                <div className="flex-grow"><p className="font-semibold">{i + 1}. {q.pertanyaan}</p><p className="text-sm text-green-600 font-bold mt-1">Jawaban: {q.correctAnswer || q.jawaban_esai || "N/A"}</p></div>
-                                                                <div className="opacity-0 group-hover:opacity-100"><button onClick={() => handleDeleteQuestion(q.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><FiTrash2 size={16} /></button></div>
+                                                                <div className="flex-grow">
+                                                                    <p className="font-semibold">{i + 1}. {q.pertanyaan}</p>
+                                                                    <p className="text-sm text-green-600 font-bold mt-1">Jawaban: {q.correctAnswer || q.jawaban_esai || "N/A"}</p>
+                                                                </div>
+                                                                {/* --- 6. Tombol Edit dan Hapus --- */}
+                                                                <div className="flex-shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button onClick={() => handleOpenEditModal(q)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg" title="Edit Soal"><FiEdit size={16}/></button>
+                                                                    <button onClick={() => handleDeleteQuestion(q.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg" title="Hapus Soal"><FiTrash2 size={16} /></button>
+                                                                </div>
                                                             </div>
                                                         </motion.div>
                                                     )) : <p className="text-center text-gray-500 py-8">Belum ada soal.</p>}
