@@ -1,11 +1,16 @@
-// src/pages/ForgotPasswordPage.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import Card from '../components/Card';
 import { FiArrowLeft } from 'react-icons/fi';
+import AuthService from '../services/authService';
 
 const ForgotPasswordPage = ({ onNavigate, onCodeSent }) => {
+  const [identifier, setIdentifier] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [successful, setSuccessful] = useState(false);
+
   const itemContainerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
@@ -20,9 +25,26 @@ const ForgotPasswordPage = ({ onNavigate, onCodeSent }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Di sini nanti logika untuk mengirim kode ke backend
-    console.log('Mengirim kode verifikasi...');
-    onCodeSent(); // Pindah ke halaman verifikasi kode
+    setLoading(true);
+    setMessage('');
+    setSuccessful(false);
+
+    AuthService.forgotPassword(identifier)
+      .then(response => {
+        setMessage(response.data.message);
+        setSuccessful(true);
+        setLoading(false);
+        setTimeout(() => {
+          // PERBAIKAN: Kirim 'identifier' ke App.jsx saat pindah halaman
+          onCodeSent(identifier);
+        }, 2000);
+      })
+      .catch(error => {
+        const resMessage = (error.response?.data?.message) || error.message || error.toString();
+        setMessage(resMessage);
+        setSuccessful(false);
+        setLoading(false);
+      });
   };
 
   return (
@@ -46,17 +68,29 @@ const ForgotPasswordPage = ({ onNavigate, onCodeSent }) => {
               type="text"
               placeholder="Username atau Email"
               className={inputStyles}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
             />
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95"
+                className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95 disabled:bg-gray-400"
+                disabled={loading}
               >
-                Kirim Kode
+                {loading ? 'Mengirim...' : 'Kirim Kode'}
               </button>
             </div>
           </motion.form>
+
+          {message && (
+            <motion.div 
+              variants={itemVariants} 
+              className={`p-3 mt-4 rounded-lg text-center font-bold w-full ${successful ? 'bg-green-500/80' : 'bg-red-500/80'} text-white`}
+            >
+              {message}
+            </motion.div>
+          )}
 
           <motion.button
             variants={itemVariants}

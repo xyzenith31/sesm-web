@@ -6,13 +6,17 @@ import DataService from '../services/dataService';
 export const useAuth = () => {
   const { user, setUser, loading, refreshUser } = useContext(AuthContext);
 
-  const login = async (identifier, password) => {
-    const response = await AuthService.login(identifier, password);
-    if (response.data.accessToken) {
-      const userData = response.data;
+  // --- FUNGSI BARU UNTUK SENTRALISASI LOGIN ---
+  const handleAuthentication = (userData) => {
+    if (userData && userData.accessToken) {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
     }
+  };
+
+  const login = async (identifier, password) => {
+    const response = await AuthService.login(identifier, password);
+    handleAuthentication(response.data); // Gunakan fungsi baru
     return response.data;
   };
 
@@ -37,17 +41,11 @@ export const useAuth = () => {
     }
   };
 
-  // --- TAMBAHKAN FUNGSI INI ---
-  // Fungsi ini hanya untuk memperbarui data user di local storage dan state,
-  // tanpa mengirim data lagi ke server.
   const updateUserLocally = (newData) => {
     const currentUser = AuthService.getCurrentUser();
     if (currentUser) {
-      // Gabungkan data user lama dengan data baru
       const updatedUser = { ...currentUser, ...newData };
-      // Simpan kembali ke local storage
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      // Refresh state global
       refreshUser();
     }
   };
@@ -59,6 +57,7 @@ export const useAuth = () => {
     logout,
     register: AuthService.register,
     updateProfile,
-    updateUserLocally, // <-- PASTIKAN FUNGSI INI DI-EXPORT DI SINI
+    updateUserLocally,
+    handleAuthentication, // Ekspor fungsi baru
   };
 };

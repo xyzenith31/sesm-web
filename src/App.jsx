@@ -17,6 +17,7 @@ import RankPage from './pages/RankPage';
 import ExplorePage from './pages/ExplorePage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
 import BookmarkPage from './pages/BookmarkPage';
+
 import MatematikaPage from './pages/mapel/MatematikaPage';
 import MembacaPage from './pages/mapel/MembacaPage';
 import MenulisPage from './pages/mapel/MenulisPage';
@@ -28,14 +29,17 @@ import PKNPage from './pages/mapel/PKNPage';
 import IPAPage from './pages/mapel/IPAPage';
 import IPSPage from './pages/mapel/IPSPage';
 import WorksheetPage from './pages/WorksheetPage';
+
 import AdminLayout from './layouts/AdminLayout';
 import DashboardGuru from './pages/admin/DashboardGuru';
 import ManajemenMateri from './pages/admin/ManajemenMateri';
 import ManajemenNilai from './pages/admin/ManajemenNilai';
 import ManajemenKuis from './pages/admin/ManajemenKuis';
 import EvaluasiKuis from './pages/admin/EvaluasiKuis';
+
 import MainLayout from './layouts/MainLayout';
 import QuizForm from './components/QuizForm';
+
 import DailyChallengePage from './pages/DailyChallengePage';
 import CreativeZonePage from './pages/CreativeZonePage';
 import InteractiveStoryPage from './pages/InteractiveStoryPage';
@@ -60,6 +64,9 @@ function App() {
   const { currentView, navigate } = useNavigation();
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [selectedChapterInfo, setSelectedChapterInfo] = useState(null);
+
+  const [resetIdentifier, setResetIdentifier] = useState('');
+  const [resetCode, setResetCode] = useState(null);
 
   const handleSelectQuiz = (quizData) => {
     setSelectedQuiz(quizData);
@@ -152,13 +159,32 @@ function App() {
       case 'register': 
         return <RegisterPage onSwitchToLogin={() => navigate('login')} />;
       
-      // Alur Lupa Password
       case 'forgotPassword':
-        return <ForgotPasswordPage onNavigate={navigate} onCodeSent={() => navigate('verifyCode')} />;
+        return <ForgotPasswordPage 
+          onNavigate={navigate} 
+          onCodeSent={(identifier) => {
+            setResetIdentifier(identifier);
+            navigate('verifyCode');
+          }} 
+        />;
       case 'verifyCode':
-        return <VerifyCodePage onNavigate={navigate} onVerified={() => navigate('resetPassword')} />;
+        return <VerifyCodePage 
+          onNavigate={navigate} 
+          identifier={resetIdentifier}
+          onVerified={(code) => {
+            setResetCode(code);
+            navigate('resetPassword');
+          }} 
+        />;
       case 'resetPassword':
-        return <ResetPasswordPage onPasswordReset={() => navigate('home')} />;
+        return <ResetPasswordPage 
+          code={resetCode}
+          onPasswordReset={() => {
+            setResetIdentifier('');
+            setResetCode(null);
+            navigate('home');
+          }} 
+        />;
       
       case 'levelSelection': 
         return <LevelSelectionPage onSelectSD={() => navigate('chooseSelection')} onSelectTK={() => navigate('home')} onExit={() => navigate('login')} />;
