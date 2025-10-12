@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink } from 'react-icons/fi';
 
-// Hook Debounce untuk autosave
+// Hook Debounce (tidak berubah)
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -13,17 +13,165 @@ const useDebounce = (value, delay) => {
     return debouncedValue;
 };
 
-// --- Komponen-komponen kecil (MediaPreview, getNewQuestion, QuestionForm) tetap sama seperti sebelumnya ---
-const MediaPreview = ({ item, onRemove }) => { const getIcon = (file) => { if (file.type.startsWith('image/')) return <FiImage className="text-blue-500" size={24} />; if (file.type.startsWith('video/')) return <FiFilm className="text-purple-500" size={24} />; if (file.type.startsWith('audio/')) return <FiMusic className="text-pink-500" size={24} />; return <FiFile className="text-gray-500" size={24} />; }; return (<div className="bg-white border rounded-lg p-2 flex items-center gap-3">{item.type === 'link' ? <FiLink className="text-green-500" size={24} /> : getIcon(item.file)}<div className="flex-grow overflow-hidden"><p className="text-sm font-medium text-gray-800 truncate">{item.type === 'link' ? item.url : item.file.name}</p>{item.type === 'file' && <p className="text-xs text-gray-500">{(item.file.size / 1024).toFixed(1)} KB</p>}</div><button type="button" onClick={onRemove} className="p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100"><FiX size={16} /></button></div>);};
-const getNewQuestion = () => ({ id: Date.now() + Math.random(), question: '', type: 'pilihan-ganda', options: ['', ''], correctAnswer: '', essayAnswer: '', media: [], });
-const QuestionForm = ({ question, index, onUpdate, onRemove }) => { const [isLinkInputVisible, setLinkInputVisible] = useState(false); const [linkValue, setLinkValue] = useState(''); const handleInputChange = (field, value) => onUpdate(index, { ...question, [field]: value }); const handleOptionChange = (optIndex, value) => { const newOptions = [...question.options]; newOptions[optIndex] = value; onUpdate(index, { ...question, options: newOptions }); }; const addOption = () => onUpdate(index, { ...question, options: [...question.options, ''] }); const removeOption = (optIndex) => { const newOptions = question.options.filter((_, i) => i !== optIndex); onUpdate(index, { ...question, options: newOptions }); }; const handleMediaUpload = (e) => { const files = Array.from(e.target.files); const newMedia = files.map(file => ({ type: 'file', file, id: Math.random() })); onUpdate(index, { ...question, media: [...question.media, ...newMedia] }); }; const handleAddLink = () => { if (linkValue.trim() === '' || !linkValue.startsWith('http')) { alert('URL tidak valid.'); return; } const newLink = { type: 'link', url: linkValue, id: Math.random() }; onUpdate(index, { ...question, media: [...question.media, newLink] }); setLinkValue(''); setLinkInputVisible(false); }; const removeMediaItem = (itemId) => { const newMedia = question.media.filter(item => item.id !== itemId); onUpdate(index, { ...question, media: newMedia }); }; return ( <div className="bg-white p-5 rounded-xl border shadow-sm relative"><button type="button" onClick={() => onRemove(index)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-700" title="Hapus Soal Ini"><FiX size={16} /></button><div className="flex-grow space-y-4"><div className="flex items-center gap-4"><span className="font-bold text-lg text-gray-700">{index + 1}.</span><select value={question.type} onChange={(e) => handleInputChange('type', e.target.value)} className="p-2 border rounded-md bg-gray-50"><option value="pilihan-ganda">Pilihan Ganda</option></select></div><textarea value={question.question} onChange={(e) => handleInputChange('question', e.target.value)} placeholder="Tulis pertanyaan..." className="w-full p-2 border rounded-md h-24" required /> <div className="space-y-2"><div className="flex flex-wrap items-center gap-2"><label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 cursor-pointer"><FiPaperclip/> Lampirkan File<input type="file" multiple onChange={handleMediaUpload} className="hidden" /></label><button type="button" onClick={() => setLinkInputVisible(v => !v)} className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300"><FiLink/> Lampirkan Link</button></div><AnimatePresence>{isLinkInputVisible && (<motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="flex gap-2 items-center"><input type="url" placeholder="https://..." value={linkValue} onChange={(e) => setLinkValue(e.target.value)} className="w-full p-2 border rounded-md" /><button type="button" onClick={handleAddLink} className="px-3 py-2 bg-sesm-teal text-white rounded-md text-sm font-semibold">Simpan</button></motion.div>)}</AnimatePresence>{question.media.length > 0 && (<div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2 border rounded-md bg-gray-100">{question.media.map(item => <MediaPreview key={item.id} item={item} onRemove={() => removeMediaItem(item.id)} />)}</div>)}</div><fieldset className="border p-3 rounded-md space-y-2"><legend className="text-sm font-semibold text-gray-600 px-1">Opsi Pilihan Ganda</legend>{question.options.map((opt, oIndex) => (<div key={oIndex} className="flex items-center gap-2"><input type="text" value={opt} onChange={(e) => handleOptionChange(oIndex, e.target.value)} placeholder={`Pilihan ${oIndex + 1}`} className="w-full p-2 border rounded-md" required/><button type="button" onClick={() => removeOption(oIndex)} disabled={question.options.length <= 2} className="p-2 text-gray-400 hover:text-red-600 disabled:text-gray-300"><FiTrash2/></button></div>))}<button type="button" onClick={addOption} className="text-sm font-semibold flex items-center gap-1 px-3 py-1 bg-gray-100 border rounded-md hover:bg-gray-200"><FiPlus size={16}/> Tambah Opsi</button><select value={question.correctAnswer} onChange={(e) => handleInputChange('correctAnswer', e.target.value)} className="w-full p-2 border rounded-md mt-2 bg-white" required><option value="" disabled>-- Pilih Jawaban Benar --</option>{question.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (<option key={oIndex} value={opt}>{opt}</option>))}</select></fieldset></div></div> );};
+// MediaPreview (tidak berubah)
+const MediaPreview = ({ item, onRemove }) => {
+    const getIcon = (file) => {
+        if (file.type.startsWith('image/')) return <FiImage className="text-blue-500" size={24} />;
+        if (file.type.startsWith('video/')) return <FiFilm className="text-purple-500" size={24} />;
+        if (file.type.startsWith('audio/')) return <FiMusic className="text-pink-500" size={24} />;
+        return <FiFile className="text-gray-500" size={24} />;
+    };
+    return (
+        <div className="bg-white border rounded-lg p-2 flex items-center gap-3">
+            {item.type === 'link' ? <FiLink className="text-green-500" size={24} /> : getIcon(item.file)}
+            <div className="flex-grow overflow-hidden">
+                <p className="text-sm font-medium text-gray-800 truncate">{item.type === 'link' ? item.url : item.file.name}</p>
+                {item.type === 'file' && <p className="text-xs text-gray-500">{(item.file.size / 1024).toFixed(1)} KB</p>}
+            </div>
+            <button type="button" onClick={onRemove} className="p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100">
+                <FiX size={16} />
+            </button>
+        </div>
+    );
+};
 
+// getNewQuestion diperbarui
+const getNewQuestion = () => ({
+    id: Date.now() + Math.random(),
+    question: '',
+    type: 'pilihan-ganda',
+    options: ['', ''],
+    correctAnswer: '',
+    essayAnswer: '', // Ditambahkan
+    media: [],
+});
+
+// QuestionForm diperbarui
+const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
+    const [isLinkInputVisible, setLinkInputVisible] = useState(false);
+    const [linkValue, setLinkValue] = useState('');
+
+    const handleInputChange = (field, value) => onUpdate(index, { ...question, [field]: value });
+    const handleOptionChange = (optIndex, value) => {
+        const newOptions = [...question.options];
+        newOptions[optIndex] = value;
+        onUpdate(index, { ...question, options: newOptions });
+    };
+    const addOption = () => onUpdate(index, { ...question, options: [...question.options, ''] });
+    const removeOption = (optIndex) => {
+        const newOptions = question.options.filter((_, i) => i !== optIndex);
+        onUpdate(index, { ...question, options: newOptions });
+    };
+    const handleMediaUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const newMedia = files.map(file => ({ type: 'file', file, id: Math.random() }));
+        onUpdate(index, { ...question, media: [...question.media, ...newMedia] });
+    };
+    const handleAddLink = () => {
+        if (linkValue.trim() === '' || !linkValue.startsWith('http')) {
+            alert('URL tidak valid. Pastikan dimulai dengan http:// atau https://');
+            return;
+        }
+        const newLink = { type: 'link', url: linkValue, id: Math.random() };
+        onUpdate(index, { ...question, media: [...question.media, newLink] });
+        setLinkValue('');
+        setLinkInputVisible(false);
+    };
+    const removeMediaItem = (itemId) => {
+        const newMedia = question.media.filter(item => item.id !== itemId);
+        onUpdate(index, { ...question, media: newMedia });
+    };
+
+    return (
+        <div className="bg-white p-5 rounded-xl border shadow-sm relative">
+            <button type="button" onClick={() => onRemove(index)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-700" title="Hapus Soal Ini">
+                <FiX size={16} />
+            </button>
+            <div className="flex-grow space-y-4">
+                <div className="flex items-center gap-4">
+                    <span className="font-bold text-lg text-gray-700">{index + 1}.</span>
+                    {/* --- PERBAIKAN: Tambahkan opsi baru di select --- */}
+                    <select value={question.type} onChange={(e) => handleInputChange('type', e.target.value)} className="p-2 border rounded-md bg-gray-50">
+                        <option value="pilihan-ganda">Pilihan Ganda</option>
+                        <option value="esai">Esai</option>
+                        <option value="pilihan-ganda-esai">Pilihan Ganda & Esai</option>
+                    </select>
+                </div>
+                <textarea value={question.question} onChange={(e) => handleInputChange('question', e.target.value)} placeholder="Tulis pertanyaan..." className="w-full p-2 border rounded-md h-24" required />
+                <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 cursor-pointer">
+                            <FiPaperclip /> Lampirkan File
+                            <input type="file" multiple onChange={handleMediaUpload} className="hidden" />
+                        </label>
+                        <button type="button" onClick={() => setLinkInputVisible(v => !v)} className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300">
+                            <FiLink /> Lampirkan Link
+                        </button>
+                    </div>
+                    <AnimatePresence>
+                        {isLinkInputVisible && (
+                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="flex gap-2 items-center">
+                                <input type="url" placeholder="https://www.youtube.com/..." value={linkValue} onChange={(e) => setLinkValue(e.target.value)} className="w-full p-2 border rounded-md" />
+                                <button type="button" onClick={handleAddLink} className="px-3 py-2 bg-sesm-teal text-white rounded-md text-sm font-semibold">Simpan</button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                    {question.media.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2 border rounded-md bg-gray-100">
+                            {question.media.map(item => <MediaPreview key={item.id} item={item} onRemove={() => removeMediaItem(item.id)} />)}
+                        </div>
+                    )}
+                </div>
+
+                {/* --- PERBAIKAN: Tampilkan fieldset ini secara kondisional --- */}
+                {(question.type === 'pilihan-ganda' || question.type === 'pilihan-ganda-esai') && (
+                    <fieldset className="border p-3 rounded-md space-y-2">
+                        <legend className="text-sm font-semibold text-gray-600 px-1">Opsi Pilihan Ganda</legend>
+                        {question.options.map((opt, oIndex) => (
+                            <div key={oIndex} className="flex items-center gap-2">
+                                <input type="text" value={opt} onChange={(e) => handleOptionChange(oIndex, e.target.value)} placeholder={`Pilihan ${oIndex + 1}`} className="w-full p-2 border rounded-md" required />
+                                <button type="button" onClick={() => removeOption(oIndex)} disabled={question.options.length <= 2} className="p-2 text-gray-400 hover:text-red-600 disabled:text-gray-300">
+                                    <FiTrash2 />
+                                </button>
+                            </div>
+                        ))}
+                        <button type="button" onClick={addOption} className="text-sm font-semibold flex items-center gap-1 px-3 py-1 bg-gray-100 border rounded-md hover:bg-gray-200">
+                            <FiPlus size={16} /> Tambah Opsi
+                        </button>
+                        <select value={question.correctAnswer} onChange={(e) => handleInputChange('correctAnswer', e.target.value)} className="w-full p-2 border rounded-md mt-2 bg-white" required>
+                            <option value="" disabled>-- Pilih Jawaban Benar --</option>
+                            {question.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (
+                                <option key={oIndex} value={opt}>{opt}</option>
+                            ))}
+                        </select>
+                    </fieldset>
+                )}
+
+                {/* --- PERBAIKAN: Tampilkan fieldset ini secara kondisional --- */}
+                {(question.type === 'esai' || question.type === 'pilihan-ganda-esai') && (
+                    <fieldset className="border p-3 rounded-md">
+                        <legend className="text-sm font-semibold text-gray-600 px-1">Kunci Jawaban Esai</legend>
+                        <input
+                            type="text"
+                            value={question.essayAnswer}
+                            onChange={(e) => handleInputChange('essayAnswer', e.target.value)}
+                            placeholder="Kunci Jawaban Esai (opsional)"
+                            className="w-full p-2 border rounded-md"
+                        />
+                    </fieldset>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+// ... (Sisa komponen AddQuestionToQuizModal tidak berubah)
 const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
     const DRAFT_KEY = `quiz_question_draft_${quizId}`;
     const [questions, setQuestions] = useState([getNewQuestion()]);
     const debouncedQuestions = useDebounce(questions, 1500);
 
-    // Autosave Logic
     useEffect(() => {
         if (isOpen && debouncedQuestions.length > 0 && debouncedQuestions.some(q => q.question.trim() !== '')) {
             const draftToSave = debouncedQuestions.map(({ media, ...rest }) => rest);
@@ -31,7 +179,6 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         }
     }, [debouncedQuestions, DRAFT_KEY, isOpen]);
 
-    // Load draft from localStorage when modal opens
     useEffect(() => {
         if (isOpen) {
             try {
@@ -49,7 +196,7 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
                 setQuestions([getNewQuestion()]);
             }
         }
-    }, [isOpen, quizId, DRAFT_KEY]);
+    }, [isOpen, quizId]);
     
     const handleUpdateQuestion = (index, updatedQuestion) => {
         setQuestions(prev => prev.map((q, i) => i === index ? updatedQuestion : q));
@@ -93,7 +240,9 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
                         {questions.map((q, qIndex) => (
                             <QuestionForm key={q.id} question={q} index={qIndex} onUpdate={handleUpdateQuestion} onRemove={handleRemoveQuestionField} />
                         ))}
-                        <button type="button" onClick={handleAddQuestionField} className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed rounded-lg text-sesm-deep hover:bg-sesm-teal/10"><FiPlus/> Tambah Soal Lagi</button>
+                        <button type="button" onClick={handleAddQuestionField} className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed rounded-lg text-sesm-deep hover:bg-sesm-teal/10">
+                            <FiPlus/> Tambah Soal Lagi
+                        </button>
                     </div>
                     <div className="bg-gray-50 p-4 flex justify-between items-center rounded-b-2xl border-t">
                         <span className="text-sm text-gray-600 font-semibold">Total: {questions.length} soal</span>

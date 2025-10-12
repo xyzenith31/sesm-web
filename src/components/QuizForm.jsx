@@ -1,7 +1,7 @@
 // contoh-sesm-web/components/QuizForm.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiArrowLeft, FiClock, FiAward, FiCheck, FiX, FiLoader, FiAlertCircle, FiDownload, FiLink } from 'react-icons/fi'; // Added FiLink
+import { FiArrowLeft, FiClock, FiAward, FiCheck, FiX, FiLoader, FiAlertCircle, FiDownload, FiLink } from 'react-icons/fi';
 import AnswerFeedback from '../components/AnswerFeedback';
 import thankYouMeme from '../assets/meme/terima-kasih.jpeg';
 import DataService from '../services/dataService';
@@ -12,20 +12,15 @@ const QuizLeaderboard = ({ score, results, onCompleteQuiz }) => { const correctA
 
 const QUIZ_DURATION = 20;
 
-// --- KOMPONEN BARU UNTUK MENAMPILKAN MEDIA ---
+// --- KOMPONEN MEDIAVIEWER YANG DIPERBARUI TOTAL ---
 const MediaViewer = ({ attachments }) => {
     const API_URL = 'http://localhost:8080';
 
-    const getEmbedUrl = (url) => {
-        // YouTube
-        const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/;
-        const youtubeMatch = url.match(youtubeRegex);
-        if (youtubeMatch) return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
-        // TikTok
-        const tiktokRegex = /tiktok\.com\/.*\/video\/(\d+)/;
-        const tiktokMatch = url.match(tiktokRegex);
-        if (tiktokMatch) return `https://www.tiktok.com/embed/v2/${tiktokMatch[1]}`;
-        return null;
+    // Fungsi untuk mengubah URL YouTube biasa menjadi URL embed
+    const getYouTubeEmbedUrl = (url) => {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
     };
 
     if (!attachments || attachments.length === 0) return null;
@@ -33,16 +28,9 @@ const MediaViewer = ({ attachments }) => {
     return (
         <div className="mb-6 space-y-4 max-w-lg mx-auto">
             {attachments.map((item, index) => {
-                const embedUrl = item.type === 'link' ? getEmbedUrl(item.url) : null;
-                const fullFileUrl = item.type === 'file' ? `${API_URL}/${item.url}` : null;
-                const fileExtension = item.type === 'file' ? item.url.split('.').pop().toLowerCase() : '';
-
-                // Render iFrame untuk link embed
-                if (embedUrl) {
-                    return <div key={index} className="aspect-video bg-black rounded-lg overflow-hidden"><iframe src={embedUrl} className="w-full h-full" frameBorder="0" allowFullScreen allow="encrypted-media; autoplay"></iframe></div>;
-                }
-                // Render file dari server
-                if (fullFileUrl) {
+                if (item.type === 'file') {
+                    const fullFileUrl = `${API_URL}/${item.url}`;
+                    const fileExtension = item.url.split('.').pop().toLowerCase();
                     if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
                         return <img key={index} src={fullFileUrl} alt={`Lampiran ${index+1}`} className="max-w-full mx-auto rounded-lg shadow-md" />;
                     }
@@ -54,10 +42,19 @@ const MediaViewer = ({ attachments }) => {
                     }
                     return <a key={index} href={fullFileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-sesm-deep font-semibold hover:bg-gray-200"><FiDownload /><span>Lihat/Unduh Lampiran ({fileExtension.toUpperCase()})</span></a>;
                 }
-                // Fallback untuk link biasa
+                
                 if (item.type === 'link') {
-                    return <a key={index} href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-blue-600 font-semibold hover:bg-gray-200"><FiLink /><span>Buka Tautan</span></a>
+                    const embedUrl = getYouTubeEmbedUrl(item.url);
+                    if (embedUrl) {
+                        return (
+                            <div key={index} className="aspect-video bg-black rounded-lg overflow-hidden shadow-md">
+                                <iframe src={embedUrl} title={`YouTube video ${index}`} className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                            </div>
+                        );
+                    }
+                    return <a key={index} href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-blue-600 font-semibold hover:bg-gray-200"><FiLink /><span>Buka Tautan</span></a>;
                 }
+                
                 return null;
             })}
         </div>
@@ -129,12 +126,10 @@ const QuizForm = ({ quizData: initialQuizData, onCompleteQuiz }) => {
                                 <motion.div key={currentQuestionIndex} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}>
                                     <p className="text-sm font-semibold text-gray-500">Pertanyaan {currentQuestionIndex + 1} dari {fullQuizData.questions.length}</p>
                                     
-                                    {/* --- TAMPILKAN MEDIA DI SINI --- */}
                                     <MediaViewer attachments={currentQuestion.media_attachments} />
 
                                     <h2 className="text-2xl md:text-3xl font-bold text-sesm-deep mt-2 mb-8">{currentQuestion.question_text}</h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* --- PERBAIKAN DI SINI --- */}
                                         {currentQuestion && currentQuestion.options && currentQuestion.options.map((option) => (
                                             <motion.button key={option.id} onClick={() => setSelectedAnswer(option.option_text)} className={`p-4 rounded-lg font-semibold text-lg shadow-md transition-colors ${getButtonClass(option.option_text)}`} whileHover={{ scale: gameState === 'playing' ? 1.03 : 1 }} whileTap={{ scale: gameState === 'playing' ? 0.98 : 1 }} disabled={gameState !== 'playing'}>
                                                 {option.option_text}
