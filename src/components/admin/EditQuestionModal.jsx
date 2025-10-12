@@ -1,40 +1,49 @@
 // contoh-sesm-web/components/admin/EditQuestionModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    FiPlus, FiTrash2, FiPaperclip, FiX, FiLink, FiType, FiSave, 
-    FiImage, FiFilm, FiMusic, FiFile 
+import {
+    FiPlus, FiTrash2, FiPaperclip, FiX, FiLink, FiType, FiSave,
+    FiImage, FiFilm, FiMusic, FiFile
 } from 'react-icons/fi';
 
-const API_URL = 'http://localhost:8080';
-
 const MediaPreview = ({ item, onRemove }) => {
-    const getIcon = (url) => {
-        if (!url) return <FiFile className="text-gray-500" size={24} />;
-        const ext = url.split('.').pop().toLowerCase();
+    // Fungsi untuk mendapatkan ikon berdasarkan tipe atau ekstensi file
+    const getIcon = () => {
+        // Jika item adalah link
+        if (item.type === 'link') return <FiLink className="text-green-500" size={24} />;
+        // Jika item adalah teks
+        if (item.type === 'text') return <FiType className="text-gray-600" size={24} />;
+        
+        // Dapatkan nama file atau url untuk menentukan ekstensi
+        const nameOrUrl = item.type === 'new-file' ? item.file.name : item.url;
+        
+        // **PERBAIKAN UTAMA: Tambahkan pengecekan jika nameOrUrl tidak ada**
+        if (!nameOrUrl) return <FiFile className="text-gray-500" size={24} />;
+
+        const ext = nameOrUrl.split('.').pop().toLowerCase();
         if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return <FiImage className="text-blue-500" size={24} />;
         if (['mp4', 'webm'].includes(ext)) return <FiFilm className="text-purple-500" size={24} />;
         if (['mp3', 'wav', 'ogg'].includes(ext)) return <FiMusic className="text-pink-500" size={24} />;
+        
         return <FiFile className="text-gray-500" size={24} />;
     };
-    
-    const getItemDisplay = () => {
+
+    // Fungsi untuk mendapatkan teks tampilan
+    const getDisplayText = () => {
         switch (item.type) {
-            case 'link': return { icon: <FiLink className="text-green-500" size={24} />, text: item.url };
-            case 'text': return { icon: <FiType className="text-gray-600" size={24} />, text: item.content };
-            case 'new-file': return { icon: <FiPaperclip className="text-indigo-500" size={24} />, text: item.file.name };
-            default: // Existing file from URL
-                return { icon: getIcon(item.url), text: item.url.split('/').pop() };
+            case 'link': return item.url;
+            case 'text': return item.content;
+            case 'new-file': return item.file.name;
+            default: // File yang sudah ada dari server
+                return item.url ? item.url.split('/').pop() : 'File tidak dikenal';
         }
     };
 
-    const { icon, text } = getItemDisplay();
-
     return (
         <div className="bg-white border rounded-lg p-2 flex items-center gap-3">
-            {icon}
+            {getIcon()}
             <div className="flex-grow overflow-hidden">
-                <p className="text-sm font-medium text-gray-800 truncate">{text}</p>
+                <p className="text-sm font-medium text-gray-800 truncate">{getDisplayText()}</p>
             </div>
             <button type="button" onClick={onRemove} className="p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100"><FiX size={16} /></button>
         </div>
@@ -51,7 +60,6 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
 
     useEffect(() => {
         if (questionData) {
-            // Mengubah format media_urls dari backend menjadi state 'attachments'
             const initialAttachments = (questionData.media_urls || []).map(item => ({
                 id: Math.random(),
                 ...item
@@ -64,10 +72,9 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
                 options: questionData.options || ['', ''],
                 correctAnswer: questionData.correctAnswer || '',
                 essayAnswer: questionData.jawaban_esai || '',
-                attachments: initialAttachments // Gunakan state attachments
+                attachments: initialAttachments
             });
             
-            // Reset input fields
             setLinkValue('');
             setTextValue('');
             setLinkInputVisible(false);
@@ -77,7 +84,6 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
 
     if (!isOpen || !question) return null;
 
-    // Fungsi-fungsi handler (tidak ada perubahan signifikan)
     const handleUpdate = (field, value) => setQuestion(prev => ({ ...prev, [field]: value }));
     const handleOptionChange = (index, value) => {
         const newOptions = [...question.options];
@@ -120,27 +126,23 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
         handleUpdate('attachments', question.attachments.filter(att => att.id !== id));
     };
 
-    // --- FUNGSI INILAH YANG DIPERBAIKI ---
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // 1. Pisahkan file baru dari lampiran yang sudah ada
         const newMediaFiles = question.attachments
             .filter(att => att.type === 'new-file')
             .map(att => att.file);
 
-        // 2. Format ulang lampiran yang tersisa untuk dikirim ke backend
         const existingAttachmentsForBackend = question.attachments
             .filter(att => att.type !== 'new-file')
-            .map(({ id, ...rest }) => rest); // Hapus ID sementara
+            .map(({ id, ...rest }) => rest); 
 
         const finalQuestionData = {
             ...question,
-            newMedia: newMediaFiles, // File baru untuk di-upload
-            attachments: existingAttachmentsForBackend // Data JSON untuk disimpan di database
+            newMedia: newMediaFiles,
+            attachments: existingAttachmentsForBackend
         };
         
-        // 3. Panggil fungsi submit dari parent
         onSubmit(question.id, finalQuestionData);
     };
 
