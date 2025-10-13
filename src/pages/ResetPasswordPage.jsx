@@ -6,7 +6,6 @@ import { FiEye, FiEyeOff, FiAlertTriangle } from 'react-icons/fi';
 import AuthService from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
 
-// Komponen Modal Konfirmasi untuk fitur "Lanjutkan"
 const SkipConfirmationModal = ({ isOpen, onClose, onConfirm, loading }) => {
     if (!isOpen) return null;
     return (
@@ -30,148 +29,64 @@ const SkipConfirmationModal = ({ isOpen, onClose, onConfirm, loading }) => {
     );
 };
 
+// --- Komponen Form Internal ---
+const ResetPasswordForm = ({ code, identifier, onPasswordReset }) => {
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState('');
+    const [successful, setSuccessful] = useState(false);
+    const { handleAuthentication } = useAuth();
 
-const ResetPasswordPage = ({ code, identifier, onPasswordReset }) => {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [successful, setSuccessful] = useState(false);
-  
-  // State untuk mengontrol tampilan
-  const [view, setView] = useState('choice'); // 'choice' | 'form'
-  const [isSkipModalOpen, setSkipModalOpen] = useState(false);
-  
-  const { handleAuthentication } = useAuth();
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: { y: 0, opacity: 1 }
+    };
+    const inputStyles = "w-full px-5 py-3 text-sesm-deep bg-white rounded-xl focus:outline-none focus:ring-4 focus:ring-sesm-sky/50 transition-shadow duration-300 placeholder:text-gray-500";
 
-  const itemContainerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
-  };
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
-  };
-  const inputStyles = "w-full px-5 py-3 text-sesm-deep bg-white rounded-xl focus:outline-none focus:ring-4 focus:ring-sesm-sky/50 transition-shadow duration-300 placeholder:text-gray-500";
-
-  // Handler untuk form ganti password
-  const handlePasswordChangeSubmit = (e) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setMessage("Password dan Konfirmasi Password tidak cocok.");
-      setSuccessful(false);
-      return;
-    }
-    setLoading(true);
-    setMessage('');
-    setSuccessful(false);
-
-    AuthService.resetPassword(code, identifier, password, confirmPassword)
-      .then(response => {
-        setMessage(response.data.message);
-        setSuccessful(true);
-        setLoading(false);
-        handleAuthentication(response.data); 
-        setTimeout(() => {
-          onPasswordReset();
-        }, 2000);
-      })
-      .catch(error => {
-        const resMessage = (error.response?.data?.message) || error.message || error.toString();
-        setMessage(resMessage);
+    const handlePasswordChangeSubmit = (e) => {
+        e.preventDefault();
+        if (password !== confirmPassword) {
+            setMessage("Password dan Konfirmasi Password tidak cocok.");
+            setSuccessful(false);
+            return;
+        }
+        setLoading(true);
+        setMessage('');
         setSuccessful(false);
-        setLoading(false);
-      });
-  };
 
-  // Handler untuk tombol "Lanjutkan tanpa ganti"
-  const handleSkipAndLogin = () => {
-    setLoading(true);
-    AuthService.loginWithCode(code, identifier)
-        .then(response => {
-            handleAuthentication(response.data);
-            setSkipModalOpen(false);
-            setLoading(false);
-            onPasswordReset(); // Ini akan memicu navigasi ke home/dashboard
-        })
-        .catch(error => {
-            const resMessage = (error.response?.data?.message) || "Gagal melanjutkan.";
-            setLoading(false);
-            alert(resMessage); // Tampilkan error jika gagal
-        });
-  };
+        AuthService.resetPassword(code, identifier, password, confirmPassword)
+            .then(response => {
+                setMessage(response.data.message);
+                setSuccessful(true);
+                setLoading(false);
+                handleAuthentication(response.data);
+                setTimeout(() => {
+                    onPasswordReset();
+                }, 2000);
+            })
+            .catch(error => {
+                const resMessage = (error.response?.data?.message) || error.message || error.toString();
+                setMessage(resMessage);
+                setSuccessful(false);
+                setLoading(false);
+            });
+    };
 
-  return (
-    <AuthLayout>
-      <AnimatePresence>
-        <SkipConfirmationModal 
-            isOpen={isSkipModalOpen}
-            onClose={() => setSkipModalOpen(false)}
-            onConfirm={handleSkipAndLogin}
-            loading={loading}
-        />
-      </AnimatePresence>
-      <Card>
-        <motion.div
-          className="flex flex-col items-center"
-          initial="hidden"
-          animate="visible"
-          variants={itemContainerVariants}
-        >
-          <AnimatePresence mode="wait">
-            {view === 'choice' && (
-              <motion.div
-                key="choice"
-                variants={itemVariants}
-                initial="hidden" animate="visible" exit="hidden"
-                className="w-full flex flex-col items-center text-center"
-              >
-                <h1 className="text-3xl font-bold text-white mb-2">Verifikasi Berhasil</h1>
-                <p className="text-white/80 text-sm max-w-xs mb-8">
-                  Apa yang ingin Anda lakukan selanjutnya?
-                </p>
-                <div className="w-full space-y-4">
-                    <button
-                        onClick={() => setView('form')}
-                        className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95"
-                    >
-                        Ganti Password
-                    </button>
-                    <button
-                        onClick={() => setSkipModalOpen(true)}
-                        className="w-full px-5 py-3 text-base font-bold text-white bg-transparent border-2 border-white rounded-full shadow-lg transition-all duration-300 hover:bg-white/20 active:scale-95"
-                    >
-                        Lanjutkan & Login
-                    </button>
-                </div>
-              </motion.div>
-            )}
-
-            {view === 'form' && (
-              <motion.div
-                key="form"
-                variants={itemVariants}
-                initial="hidden" animate="visible" exit="hidden"
-                className="w-full flex flex-col items-center"
-              >
-                <h1 className="text-3xl font-bold text-white text-center mb-2">
-                    Atur Password Baru
-                </h1>
-                <p className="text-white/80 text-center mb-6 text-sm max-w-xs">
-                    Pastikan password baru Anda kuat dan mudah diingat.
-                </p>
-                <form className="w-full space-y-4" onSubmit={handlePasswordChangeSubmit}>
-                    <div className="relative">
+    return (
+        <>
+            <form className="w-full space-y-4" onSubmit={handlePasswordChangeSubmit}>
+                <div className="relative">
                     <input type={showPassword ? "text" : "password"} placeholder="Password Baru" className={inputStyles} value={password} onChange={(e) => setPassword(e.target.value)} required />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">{showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}</button>
-                    </div>
-                    <div className="relative">
+                </div>
+                <div className="relative">
                     <input type={showConfirmPassword ? "text" : "password"} placeholder="Konfirmasi Password Baru" className={inputStyles} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                     <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">{showConfirmPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}</button>
-                    </div>
-                    <div className="pt-2">
+                </div>
+                <div className="pt-2">
                     <button
                         type="submit"
                         className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95 disabled:bg-gray-400"
@@ -179,24 +94,118 @@ const ResetPasswordPage = ({ code, identifier, onPasswordReset }) => {
                     >
                         {loading ? 'Menyimpan...' : 'Ganti Password & Login'}
                     </button>
-                    </div>
-                </form>
-                {message && (
-                    <motion.div 
-                    variants={itemVariants} 
+                </div>
+            </form>
+            {message && (
+                <motion.div
+                    variants={itemVariants}
                     className={`p-3 mt-4 rounded-lg text-center font-bold w-full ${successful ? 'bg-green-500/80' : 'bg-red-500/80'} text-white`}
-                    >
+                >
                     {message}
-                    </motion.div>
-                )}
-                 <button onClick={() => setView('choice')} className="mt-6 text-sm text-white/80 font-semibold hover:text-white">Kembali</button>
-              </motion.div>
+                </motion.div>
             )}
-          </AnimatePresence>
-        </motion.div>
-      </Card>
-    </AuthLayout>
-  );
+        </>
+    );
+};
+
+// --- Komponen Halaman Utama ---
+const ResetPasswordPage = ({ code, identifier, onPasswordReset }) => {
+    const [loading, setLoading] = useState(false);
+    const [view, setView] = useState('choice'); // 'choice' | 'form'
+    const [isSkipModalOpen, setSkipModalOpen] = useState(false);
+    const { handleAuthentication } = useAuth();
+
+    const itemContainerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.15 } } };
+    const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
+
+    const handleSkipAndLogin = () => {
+        setLoading(true);
+        AuthService.loginWithCode(code, identifier)
+            .then(response => {
+                handleAuthentication(response.data);
+                setSkipModalOpen(false);
+                setLoading(false);
+                onPasswordReset();
+            })
+            .catch(error => {
+                const resMessage = (error.response?.data?.message) || "Gagal melanjutkan.";
+                setLoading(false);
+                alert(resMessage);
+            });
+    };
+
+    return (
+        <AuthLayout>
+            <AnimatePresence>
+                <SkipConfirmationModal
+                    isOpen={isSkipModalOpen}
+                    onClose={() => setSkipModalOpen(false)}
+                    onConfirm={handleSkipAndLogin}
+                    loading={loading}
+                />
+            </AnimatePresence>
+            <Card>
+                <motion.div
+                    className="flex flex-col items-center"
+                    initial="hidden"
+                    animate="visible"
+                    variants={itemContainerVariants}
+                >
+                    <AnimatePresence mode="wait">
+                        {view === 'choice' && (
+                            <motion.div
+                                key="choice"
+                                variants={itemVariants}
+                                initial="hidden" animate="visible" exit="hidden"
+                                className="w-full flex flex-col items-center text-center"
+                            >
+                                <h1 className="text-3xl font-bold text-white mb-2">Verifikasi Berhasil</h1>
+                                <p className="text-white/80 text-sm max-w-xs mb-8">
+                                    Apa yang ingin Anda lakukan selanjutnya?
+                                </p>
+                                <div className="w-full space-y-4">
+                                    <button
+                                        onClick={() => setView('form')}
+                                        className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95"
+                                    >
+                                        Ganti Password
+                                    </button>
+                                    <button
+                                        onClick={() => setSkipModalOpen(true)}
+                                        className="w-full px-5 py-3 text-base font-bold text-white bg-transparent border-2 border-white rounded-full shadow-lg transition-all duration-300 hover:bg-white/20 active:scale-95"
+                                    >
+                                        Lanjutkan & Login
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {view === 'form' && (
+                            <motion.div
+                                key="form"
+                                variants={itemVariants}
+                                initial="hidden" animate="visible" exit="hidden"
+                                className="w-full flex flex-col items-center"
+                            >
+                                <h1 className="text-3xl font-bold text-white text-center mb-2">
+                                    Atur Password Baru
+                                </h1>
+                                <p className="text-white/80 text-center mb-6 text-sm max-w-xs">
+                                    Pastikan password baru Anda kuat dan mudah diingat.
+                                </p>
+                                <ResetPasswordForm
+                                    code={code}
+                                    identifier={identifier}
+                                    onPasswordReset={onPasswordReset}
+                                />
+                                <button onClick={() => setView('choice')} className="mt-6 text-sm text-white/80 font-semibold hover:text-white">Kembali</button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+            </Card>
+        </AuthLayout>
+    );
 };
 
 export default ResetPasswordPage;

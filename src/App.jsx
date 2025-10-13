@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react'; // Impor useMemo
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from './hooks/useNavigation';
 
+// --- Impor semua halaman ---
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -17,7 +18,6 @@ import RankPage from './pages/RankPage';
 import ExplorePage from './pages/ExplorePage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
 import BookmarkPage from './pages/BookmarkPage';
-
 import MatematikaPage from './pages/mapel/MatematikaPage';
 import MembacaPage from './pages/mapel/MembacaPage';
 import MenulisPage from './pages/mapel/MenulisPage';
@@ -29,17 +29,14 @@ import PKNPage from './pages/mapel/PKNPage';
 import IPAPage from './pages/mapel/IPAPage';
 import IPSPage from './pages/mapel/IPSPage';
 import WorksheetPage from './pages/WorksheetPage';
-
 import AdminLayout from './layouts/AdminLayout';
 import DashboardGuru from './pages/admin/DashboardGuru';
 import ManajemenMateri from './pages/admin/ManajemenMateri';
 import ManajemenNilai from './pages/admin/ManajemenNilai';
 import ManajemenKuis from './pages/admin/ManajemenKuis';
 import EvaluasiKuis from './pages/admin/EvaluasiKuis';
-
 import MainLayout from './layouts/MainLayout';
 import QuizForm from './components/QuizForm';
-
 import DailyChallengePage from './pages/DailyChallengePage';
 import CreativeZonePage from './pages/CreativeZonePage';
 import InteractiveStoryPage from './pages/InteractiveStoryPage';
@@ -64,8 +61,8 @@ function App() {
   const { currentView, navigate } = useNavigation();
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [selectedChapterInfo, setSelectedChapterInfo] = useState(null);
-
-  // --- State Diperbarui ---
+  
+  // State untuk alur reset password tetap di sini
   const [resetIdentifier, setResetIdentifier] = useState('');
   const [resetCode, setResetCode] = useState(null);
 
@@ -84,7 +81,8 @@ function App() {
     navigate('worksheet');
   };
 
-  const renderView = () => {
+  // PERBAIKAN: Gunakan useMemo untuk mencegah render ulang komponen yang tidak perlu
+  const renderedView = useMemo(() => {
     const subjectPageProps = {
         onNavigate: navigate,
         onNavigateToWorksheet: handleNavigateToWorksheet,
@@ -129,26 +127,24 @@ function App() {
 
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
-          <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-            {pageComponent}
-          </motion.div>
+          {pageComponent}
         </MainLayout>
       );
     }
 
     if (viewsInAdminLayout.includes(currentView)) {
-      let pageComponent;
-      if (currentView === 'dashboardGuru') pageComponent = <DashboardGuru />;
-      if (currentView === 'manajemenMateri') pageComponent = <ManajemenMateri onNavigate={navigate} />;
-      if (currentView === 'manajemenNilai') pageComponent = <ManajemenNilai onNavigate={navigate} />;
-      if (currentView === 'manajemenKuis') pageComponent = <ManajemenKuis onNavigate={navigate} />;
-      if (currentView === 'evaluasiKuis') pageComponent = <EvaluasiKuis onNavigate={navigate} />;
+      const pageMap = {
+          dashboardGuru: <DashboardGuru />,
+          manajemenMateri: <ManajemenMateri onNavigate={navigate} />,
+          manajemenNilai: <ManajemenNilai onNavigate={navigate} />,
+          manajemenKuis: <ManajemenKuis onNavigate={navigate} />,
+          evaluasiKuis: <EvaluasiKuis onNavigate={navigate} />
+      };
+      const pageComponent = pageMap[currentView];
 
       return (
         <AdminLayout activePage={currentView} onNavigate={navigate}>
-          <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
             {pageComponent}
-          </motion.div>
         </AdminLayout>
       );
     }
@@ -172,20 +168,19 @@ function App() {
         return <VerifyCodePage 
           onNavigate={navigate} 
           identifier={resetIdentifier}
-          onVerified={(code, identifier) => { // Terima identifier juga
+          onVerified={(code, identifier) => {
             setResetCode(code);
-            setResetIdentifier(identifier); // Simpan lagi untuk halaman berikutnya
+            setResetIdentifier(identifier);
             navigate('resetPassword');
           }} 
         />;
       case 'resetPassword':
         return <ResetPasswordPage 
           code={resetCode}
-          identifier={resetIdentifier} // Kirim identifier
+          identifier={resetIdentifier}
           onPasswordReset={() => {
             setResetIdentifier('');
             setResetCode(null);
-            // Navigasi sudah ditangani oleh useNavigation context
           }} 
         />;
       
@@ -204,9 +199,23 @@ function App() {
       default: 
         return <WelcomePage onExplore={() => navigate('login')} />;
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentView, navigate, resetIdentifier, resetCode, selectedQuiz, selectedChapterInfo]);
 
-  return <AnimatePresence mode="wait">{renderView()}</AnimatePresence>;
+  return (
+      <AnimatePresence mode="wait">
+          <motion.div 
+              key={currentView} 
+              variants={pageVariants} 
+              initial="initial" 
+              animate="in" 
+              exit="out" 
+              transition={pageTransition}
+          >
+              {renderedView}
+          </motion.div>
+      </AnimatePresence>
+  );
 }
 
 export default App;
