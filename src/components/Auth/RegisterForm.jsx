@@ -1,34 +1,102 @@
-import React, { useState } from 'react';
-import { FiEye, FiEyeOff } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigation } from '../../hooks/useNavigation'; // Impor useNavigation
+import { useNavigation } from '../../hooks/useNavigation';
 
-const RegisterForm = () => { // Hapus prop onSwitchToLogin
+// Hook untuk debounce (menunda eksekusi fungsi)
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+    return debouncedValue;
+};
+
+const RegisterForm = () => {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    nama: '',
-    umur: '',
-    password: '',
-    konfirmasi_password: '',
+    username: '', email: '', nama: '', umur: '',
+    password: '', konfirmasi_password: '',
   });
 
+  // State untuk UI dan validasi
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [successful, setSuccessful] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // State baru untuk error real-time
+  const [usernameError, setUsernameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+
   const { register } = useAuth();
-  const { navigate } = useNavigation(); // Dapatkan fungsi navigate
+  const { navigate } = useNavigation();
+
+  // Nilai input yang sudah di-debounce
+  const debouncedUsername = useDebounce(formData.username, 500);
+  const debouncedEmail = useDebounce(formData.email, 500);
+
+  const allowedDomains = [
+    '@gmail.com', '@yahoo.com', '@outlook.com', '@icloud.com', '@hotmail.com', 
+    '@aol.com', '@protonmail.com', '@zoho.com', '@mail.com', '@gmx.com', 
+    '@yandex.com', '@tutanota.com', '@me.com', '@fastmail.com', '@hushmail.com', 
+    '@inbox.com', '@rocketmail.com', '@live.com', '@ovi.com', '@telkom.net', 
+    '@cbn.net.id', '@indo.net.id', '@plasa.com'
+  ];
+
+  // Validasi username secara real-time
+  useEffect(() => {
+    if (debouncedUsername) {
+      const usernameRegex = /^[a-z0-9_.-]+$/;
+      if (!usernameRegex.test(debouncedUsername)) {
+        setUsernameError("Username tidak boleh ada spasi atau huruf besar.");
+      } else {
+        setUsernameError('');
+      }
+    } else {
+      setUsernameError('');
+    }
+  }, [debouncedUsername]);
+
+  // Validasi email secara real-time
+  useEffect(() => {
+    if (debouncedEmail) {
+      const emailDomain = debouncedEmail.substring(debouncedEmail.lastIndexOf('@'));
+      if (debouncedEmail.includes('@') && !allowedDomains.includes(emailDomain.toLowerCase())) {
+        setEmailError("Domain email tidak didukung.");
+      } else {
+        setEmailError('');
+      }
+    } else {
+        setEmailError('');
+    }
+  }, [debouncedEmail]);
+
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    // Langsung hapus spasi saat diketik di username
+    if (name === 'username') {
+        value = value.replace(/\s/g, '');
+    }
     setFormData({ ...formData, [name]: value });
   };
 
   const handleRegister = (e) => {
     e.preventDefault();
+    // Cek lagi error sebelum submit
+    if (usernameError || emailError) {
+        setMessage("Perbaiki dulu error pada formulir.");
+        setSuccessful(false);
+        return;
+    }
+
     setMessage('');
     setLoading(true);
 
@@ -38,7 +106,6 @@ const RegisterForm = () => { // Hapus prop onSwitchToLogin
         setSuccessful(true);
         setLoading(false);
         setTimeout(() => {
-          // Arahkan ke halaman verifikasi dengan membawa email sebagai identifier
           navigate('verifyCode', { identifier: formData.email });
         }, 2000);
       })
@@ -49,22 +116,47 @@ const RegisterForm = () => { // Hapus prop onSwitchToLogin
         setLoading(false);
       });
   };
+  
+  const getInputStyle = (error) => 
+    `w-full px-5 py-3 text-sesm-deep bg-white rounded-xl focus:outline-none transition-all duration-300 placeholder:text-gray-500 ${
+        error ? 'ring-2 ring-red-400 border-red-500' : 'focus:ring-4 focus:ring-sesm-sky/50'
+    }`;
 
-  const inputStyles = "w-full px-5 py-3 text-sesm-deep bg-white rounded-xl focus:outline-none focus:ring-4 focus:ring-sesm-sky/50 transition-shadow duration-300 placeholder:text-gray-500";
+  const ErrorMessage = ({ error }) => (
+    <AnimatePresence>
+        {error && (
+            <motion.p 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-1 text-xs font-semibold text-red-200 mt-1 ml-1"
+            >
+                <FiAlertCircle /> {error}
+            </motion.p>
+        )}
+    </AnimatePresence>
+  );
 
   return (
     <form className="space-y-4 w-full" onSubmit={handleRegister}>
-      <input type="text" placeholder="Username" name="username" value={formData.username} onChange={handleInputChange} className={inputStyles} required />
-      <input type="email" placeholder="Email" name="email" value={formData.email} onChange={handleInputChange} className={inputStyles} required />
-      <input type="text" placeholder="Nama Lengkap" name="nama" value={formData.nama} onChange={handleInputChange} className={inputStyles} required />
-      <input type="number" placeholder="Umur" name="umur" value={formData.umur} onChange={handleInputChange} className={inputStyles} required />
+      <div>
+        <input type="text" placeholder="Username" name="username" value={formData.username} onChange={handleInputChange} className={getInputStyle(usernameError)} required />
+        <ErrorMessage error={usernameError} />
+      </div>
+      <div>
+        <input type="email" placeholder="Email" name="email" value={formData.email} onChange={handleInputChange} className={getInputStyle(emailError)} required />
+        <ErrorMessage error={emailError} />
+      </div>
+
+      <input type="text" placeholder="Nama Lengkap" name="nama" value={formData.nama} onChange={handleInputChange} className={getInputStyle(false)} required />
+      <input type="number" placeholder="Umur" name="umur" value={formData.umur} onChange={handleInputChange} className={getInputStyle(false)} required />
       
       <div className="relative">
-        <input type={showPassword ? "text" : "password"} placeholder="Password" name="password" value={formData.password} onChange={handleInputChange} className={inputStyles} required />
+        <input type={showPassword ? "text" : "password"} placeholder="Password" name="password" value={formData.password} onChange={handleInputChange} className={getInputStyle(false)} required />
         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">{showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}</button>
       </div>
       <div className="relative">
-        <input type={showConfirmPassword ? "text" : "password"} placeholder="Konfirmasi Password" name="konfirmasi_password" value={formData.konfirmasi_password} onChange={handleInputChange} className={inputStyles} required />
+        <input type={showConfirmPassword ? "text" : "password"} placeholder="Konfirmasi Password" name="konfirmasi_password" value={formData.konfirmasi_password} onChange={handleInputChange} className={getInputStyle(false)} required />
         <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">{showConfirmPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}</button>
       </div>
       
