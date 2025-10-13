@@ -3,9 +3,10 @@ import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import Card from '../components/Card';
 import AuthService from '../services/authService';
+import { useAuth } from '../hooks/useAuth'; // Impor useAuth
 
 // --- Komponen Form Internal ---
-const VerifyCodeForm = ({ identifier, onVerified }) => {
+const VerifyCodeForm = ({ identifier }) => { // Hapus onVerified
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
@@ -13,6 +14,8 @@ const VerifyCodeForm = ({ identifier, onVerified }) => {
 
     const [resendLoading, setResendLoading] = useState(false);
     const [resendMessage, setResendMessage] = useState('');
+
+    const { loginWithOtp } = useAuth(); // Dapatkan fungsi loginWithOtp dari hook
 
     const itemVariants = {
         hidden: { y: 20, opacity: 0 },
@@ -26,14 +29,13 @@ const VerifyCodeForm = ({ identifier, onVerified }) => {
         setMessage('');
         setSuccessful(false);
 
-        AuthService.verifyCode(code, identifier)
+        // Panggil fungsi loginWithOtp
+        loginWithOtp(code, identifier)
             .then(response => {
-                setMessage(response.data.message);
+                setMessage("Verifikasi berhasil! Anda akan diarahkan...");
                 setSuccessful(true);
                 setLoading(false);
-                setTimeout(() => {
-                    onVerified(code, identifier);
-                }, 1500);
+                // Navigasi akan ditangani secara otomatis oleh NavigationContext
             })
             .catch(error => {
                 const resMessage = (error.response?.data?.message) || error.message || error.toString();
@@ -46,7 +48,8 @@ const VerifyCodeForm = ({ identifier, onVerified }) => {
     const handleResend = () => {
         setResendLoading(true);
         setResendMessage('');
-        AuthService.resendCode(identifier)
+        // Ganti dengan endpoint yang sesuai jika ada, atau gunakan forgotPassword untuk mengirim ulang
+        AuthService.forgotPassword(identifier) 
             .then(response => {
                 setResendMessage(response.data.message);
                 setResendLoading(false);
@@ -76,7 +79,7 @@ const VerifyCodeForm = ({ identifier, onVerified }) => {
                         className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95 disabled:bg-gray-400"
                         disabled={loading}
                     >
-                        {loading ? 'Memverifikasi...' : 'Verifikasi'}
+                        {loading ? 'Memverifikasi...' : 'Verifikasi & Login'}
                     </button>
                 </div>
             </motion.form>
@@ -104,7 +107,7 @@ const VerifyCodeForm = ({ identifier, onVerified }) => {
 
 
 // --- Komponen Halaman Utama ---
-const VerifyCodePage = ({ onVerified, identifier }) => {
+const VerifyCodePage = ({ identifier }) => { // Hapus onVerified
     const itemContainerVariants = {
         hidden: { opacity: 0 },
         visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
@@ -124,12 +127,12 @@ const VerifyCodePage = ({ onVerified, identifier }) => {
                     variants={itemContainerVariants}
                 >
                     <motion.h1 variants={itemVariants} className="text-3xl font-bold text-white text-center mb-2">
-                        Verifikasi Kode
+                        Verifikasi Akun
                     </motion.h1>
                     <motion.p variants={itemVariants} className="text-white/80 text-center mb-6 text-sm max-w-xs">
-                        Kami telah mengirimkan kode ke email Anda. Silakan masukkan di bawah ini.
+                        Kami telah mengirimkan kode 6 digit ke <strong>{identifier}</strong>. Silakan masukkan di bawah ini.
                     </motion.p>
-                    <VerifyCodeForm identifier={identifier} onVerified={onVerified} />
+                    <VerifyCodeForm identifier={identifier} />
                 </motion.div>
             </Card>
         </AuthLayout>

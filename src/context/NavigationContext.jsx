@@ -6,37 +6,24 @@ export const NavigationContext = createContext();
 export const NavigationProvider = ({ children }) => {
   const { user, loading } = useAuth();
   const [currentView, setCurrentView] = useState(null);
+  const [viewProps, setViewProps] = useState({}); // State untuk menyimpan props
 
-  // useEffect ini sekarang HANYA berjalan saat status login/loading berubah.
-  // Tugasnya adalah menentukan halaman mana yang harus ditampilkan saat aplikasi pertama dimuat,
-  // atau saat pengguna login/logout.
   useEffect(() => {
-    // Jangan lakukan apa-apa sampai status otentikasi selesai diperiksa
-    if (loading) {
-      return;
-    }
-
+    if (loading) return;
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
 
-    // Jika TIDAK ADA user (belum login)
     if (!user) {
       if (!hasSeenWelcome) {
         setCurrentView('welcome');
       } else {
         setCurrentView('login');
       }
-    }
-    // Jika ADA user (sudah login)
-    else {
-      // Pengecekan role pengguna
+    } else {
       if (user.role === 'guru') {
-        // Saat pertama kali login, arahkan guru ke dasbornya
-        // Jangan ubah view jika sudah berada di salah satu halaman admin
         if (!['dashboardGuru', 'manajemenMateri', 'manajemenKuis', 'manajemenNilai', 'evaluasiKuis'].includes(currentView)) {
            setCurrentView('dashboardGuru');
         }
       } else {
-        // Logika untuk siswa (tidak berubah)
         if (user.jenjang) {
           setCurrentView('home');
         } else {
@@ -44,31 +31,30 @@ export const NavigationProvider = ({ children }) => {
         }
       }
     }
-  }, [user, loading]); // <-- PERBAIKAN UTAMA: Hapus 'currentView' dari dependensi
+  }, [user, loading]); 
 
-  // Fungsi navigate sekarang menjadi satu-satunya cara untuk berpindah halaman
-  // setelah halaman awal ditentukan.
-  const navigate = (view) => {
+  // Fungsi navigate sekarang menerima props
+  const navigate = (view, props = {}) => {
     if (view === 'login') {
       localStorage.setItem('hasSeenWelcome', 'true');
     }
+    setViewProps(props);
     setCurrentView(view);
   };
 
   const value = {
     currentView,
     navigate,
+    viewProps, // Bagikan props
   };
 
-  // Tampilkan aplikasi hanya setelah view awal berhasil ditentukan
   return (
     <NavigationContext.Provider value={value}>
-      {currentView ? children : null /* Atau tampilkan loading screen di sini */}
+      {currentView ? children : null}
     </NavigationContext.Provider>
   );
 };
 
-// Hook kustom (tidak berubah)
 export const useNavigation = () => {
   return useContext(NavigationContext);
 };

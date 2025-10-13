@@ -1,23 +1,35 @@
 import React, { useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
+import { useNavigation } from '../../hooks/useNavigation'; // Impor useNavigation
 
-// PERBAIKAN 1: Terima prop 'onNavigate'
 const LoginForm = ({ onNavigate }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [successful, setSuccessful] = useState(false);
 
   const { login } = useAuth();
+  const { navigate } = useNavigation(); // Dapatkan fungsi navigate
 
   const handleSignIn = (event) => {
     event.preventDefault();
     setMessage('');
     setLoading(true);
+    setSuccessful(false);
 
     login(identifier, password)
+      .then(response => {
+        setMessage(response.data.message);
+        setSuccessful(true);
+        setLoading(false);
+        // Arahkan ke halaman verifikasi setelah 1.5 detik
+        setTimeout(() => {
+            navigate('verifyCode', { identifier: identifier });
+        }, 1500);
+      })
       .catch((error) => {
         const resMessage =
           (error.response && error.response.data && error.response.data.message) ||
@@ -26,6 +38,7 @@ const LoginForm = ({ onNavigate }) => {
         
         setMessage(resMessage);
         setLoading(false);
+        setSuccessful(false);
       });
   };
 
@@ -66,7 +79,6 @@ const LoginForm = ({ onNavigate }) => {
           <input type="checkbox" className="mr-2 h-4 w-4 rounded border-white/50 bg-transparent text-sesm-sky focus:ring-sesm-sky/50" />
           Remember
         </label>
-        {/* PERBAIKAN 2: Ubah dari <a> menjadi <button> dengan onClick */}
         <button
           type="button"
           onClick={() => onNavigate('forgotPassword')}
@@ -82,12 +94,12 @@ const LoginForm = ({ onNavigate }) => {
           className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95 disabled:bg-gray-400"
           disabled={loading}
         >
-          {loading ? 'Loading...' : 'SIGN IN'}
+          {loading ? 'Mengirim Kode...' : 'SIGN IN'}
         </button>
       </div>
       
       {message && (
-         <div className="p-3 mt-4 rounded-lg text-center font-bold bg-red-500/80 text-white">
+         <div className={`p-3 mt-4 rounded-lg text-center font-bold ${successful ? 'bg-green-500/80' : 'bg-red-500/80'} text-white`}>
           {message}
         </div>
       )}

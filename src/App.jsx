@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'; // Impor useMemo
+import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from './hooks/useNavigation';
 
@@ -58,12 +58,11 @@ const pageTransition = {
 };
 
 function App() {
-  const { currentView, navigate } = useNavigation();
+  const { currentView, navigate, viewProps } = useNavigation(); // Ambil viewProps
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [selectedChapterInfo, setSelectedChapterInfo] = useState(null);
   
-  // State untuk alur reset password tetap di sini
-  const [resetIdentifier, setResetIdentifier] = useState('');
+  const [resetIdentifier, setResetIdentifier] = useState(viewProps?.identifier || '');
   const [resetCode, setResetCode] = useState(null);
 
   const handleSelectQuiz = (quizData) => {
@@ -80,8 +79,7 @@ function App() {
     setSelectedChapterInfo(chapterInfo);
     navigate('worksheet');
   };
-
-  // PERBAIKAN: Gunakan useMemo untuk mencegah render ulang komponen yang tidak perlu
+  
   const renderedView = useMemo(() => {
     const subjectPageProps = {
         onNavigate: navigate,
@@ -161,17 +159,19 @@ function App() {
           onNavigate={navigate} 
           onCodeSent={(identifier) => {
             setResetIdentifier(identifier);
-            navigate('verifyCode');
+            navigate('verifyCode', { for: 'reset' }); // Tandai untuk reset password
           }} 
         />;
       case 'verifyCode':
         return <VerifyCodePage 
-          onNavigate={navigate} 
-          identifier={resetIdentifier}
+          identifier={viewProps?.identifier || resetIdentifier}
           onVerified={(code, identifier) => {
-            setResetCode(code);
-            setResetIdentifier(identifier);
-            navigate('resetPassword');
+            if(viewProps?.for === 'reset'){
+              setResetCode(code);
+              setResetIdentifier(identifier);
+              navigate('resetPassword');
+            }
+            // Untuk login/register, verifikasi sudah langsung login, jadi tidak perlu onVerified
           }} 
         />;
       case 'resetPassword':
@@ -199,8 +199,7 @@ function App() {
       default: 
         return <WelcomePage onExplore={() => navigate('login')} />;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentView, navigate, resetIdentifier, resetCode, selectedQuiz, selectedChapterInfo]);
+  }, [currentView, navigate, resetIdentifier, resetCode, selectedQuiz, selectedChapterInfo, viewProps]);
 
   return (
       <AnimatePresence mode="wait">

@@ -44,7 +44,6 @@ const LoginPage = ({ onSwitchToRegister, onNavigate }) => {
           </motion.h1>
 
           <motion.div variants={itemVariants} className="w-full">
-            {/* PERBAIKAN: onNavigate dioper ke LoginForm */}
             <LoginForm onNavigate={onNavigate} />
           </motion.div>
 

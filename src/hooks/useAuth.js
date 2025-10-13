@@ -6,19 +6,28 @@ import DataService from '../services/dataService';
 export const useAuth = () => {
   const { user, setUser, loading, refreshUser } = useContext(AuthContext);
 
-  // --- FUNGSI BARU UNTUK SENTRALISASI LOGIN ---
   const handleAuthentication = (userData) => {
     if (userData && userData.accessToken) {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
     }
   };
-
-  const login = async (identifier, password) => {
-    const response = await AuthService.login(identifier, password);
-    handleAuthentication(response.data); // Gunakan fungsi baru
-    return response.data;
+  
+  // Fungsi login & register sekarang hanya memanggil service
+  const login = (identifier, password) => {
+    return AuthService.login(identifier, password);
   };
+
+  const register = (formData) => {
+    return AuthService.register(formData);
+  }
+
+  // Fungsi baru untuk login setelah verifikasi OTP
+  const loginWithOtp = async (code, identifier) => {
+    const response = await AuthService.verifyAndLogin(code, identifier);
+    handleAuthentication(response.data);
+    return response.data;
+  }
 
   const logout = () => {
     AuthService.logout();
@@ -55,9 +64,10 @@ export const useAuth = () => {
     loading,
     login,
     logout,
-    register: AuthService.register,
+    register,
+    loginWithOtp, // Ekspor fungsi baru
     updateProfile,
     updateUserLocally,
-    handleAuthentication, // Ekspor fungsi baru
+    handleAuthentication,
   };
 };

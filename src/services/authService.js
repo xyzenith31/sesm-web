@@ -8,6 +8,11 @@ const login = (identifier, password) => {
   return apiClient.post('/auth/login', { identifier, password });
 };
 
+// --- FUNGSI BARU UNTUK VERIFIKASI & LOGIN ---
+const verifyAndLogin = (code, identifier) => {
+  return apiClient.post('/auth/verify-and-login', { code, identifier });
+};
+
 const logout = () => {
   localStorage.removeItem('user');
 };
@@ -16,28 +21,20 @@ const getCurrentUser = () => {
   return JSON.parse(localStorage.getItem('user'));
 };
 
+// Fungsionalitas Lupa Password tidak berubah
 const forgotPassword = (identifier) => {
   return apiClient.post('/auth/forgot-password', { identifier });
 };
-
-// Diperbarui: menerima identifier
 const verifyCode = (code, identifier) => {
   return apiClient.post('/auth/verify-code', { code, identifier });
 };
-
-// Diperbarui: menerima identifier
 const resetPassword = (code, identifier, password, konfirmasi_password) => {
   return apiClient.post('/auth/reset-password', { code, identifier, password, konfirmasi_password });
 };
-
 const resendCode = (identifier) => {
   return apiClient.post('/auth/resend-code', { identifier });
 };
 
-// --- FUNGSI BARU ---
-const loginWithCode = (code, identifier) => {
-    return apiClient.post('/auth/login-with-code', { code, identifier });
-};
 
 const AuthService = {
   register,
@@ -48,7 +45,7 @@ const AuthService = {
   verifyCode,
   resetPassword,
   resendCode,
-  loginWithCode, // diekspor
+  verifyAndLogin, // diekspor
 };
 
 export default AuthService;
