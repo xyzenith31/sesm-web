@@ -1,3 +1,5 @@
+// contoh-sesm-web/pages/LoginPage.jsx
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
@@ -52,12 +54,16 @@ const LoginPage = ({ onSwitchToRegister, onNavigate }) => {
             className="mt-8 text-sm text-center text-white/80"
           >
             Don't have an account?{' '}
-            <button
+            {/* --- PERBAIKAN DESAIN, EFEK & ANIMASI LINK DI SINI --- */}
+            <motion.button
               onClick={onSwitchToRegister}
-              className="font-bold underline transition hover:text-white"
+              className="font-bold text-white py-1 px-3 rounded-full"
+              whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
               Create Account
-            </button>
+            </motion.button>
           </motion.p>
         </motion.div>
       </Card>

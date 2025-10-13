@@ -1,17 +1,18 @@
+// contoh-sesm-web/pages/RegisterPage.jsx
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import RegisterForm from '../components/Auth/RegisterForm';
 import Logo from '../assets/logo.png';
-import Card from '../components/Card'; // <-- Impor komponen Card
+import Card from '../components/Card';
 
 const RegisterPage = ({ onSwitchToLogin }) => {
-  // Animasi yang konsisten dengan halaman login
   const itemContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }, // Jeda sedikit lebih cepat untuk form yang lebih panjang
+      transition: { staggerChildren: 0.1 },
     },
   };
 
@@ -43,9 +44,8 @@ const RegisterPage = ({ onSwitchToLogin }) => {
             Create Account
           </motion.h1>
 
-          {/* Perbaikan utama: meneruskan onSwitchToLogin ke RegisterForm */}
           <motion.div variants={itemVariants} className="w-full">
-            <RegisterForm onSwitchToLogin={onSwitchToLogin} />
+            <RegisterForm />
           </motion.div>
 
           <motion.p
@@ -53,12 +53,16 @@ const RegisterPage = ({ onSwitchToLogin }) => {
             className="mt-6 text-sm text-center text-white/80"
           >
             Already have an account?{' '}
-            <button
+            {/* --- PERBAIKAN DESAIN, EFEK & ANIMASI LINK DI SINI --- */}
+            <motion.button
               onClick={onSwitchToLogin}
-              className="font-bold underline transition hover:text-white"
+              className="font-bold text-white py-1 px-3 rounded-full"
+              whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
               Sign In
-            </button>
+            </motion.button>
           </motion.p>
         </motion.div>
       </Card>
