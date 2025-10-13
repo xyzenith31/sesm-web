@@ -20,8 +20,8 @@ const AccountSettingsPage = ({ onNavigate }) => {
         nama: '',
         umur: '',
     });
-    // --- (PERBAIKAN 1) --- Inisialisasi state avatar dengan null
-    const [avatar, setAvatar] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(null);
+    const [avatarFile, setAvatarFile] = useState(null); // State untuk file yang akan di-upload
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     
@@ -29,6 +29,7 @@ const AccountSettingsPage = ({ onNavigate }) => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const fileInputRef = useRef(null);
     const [isSaving, setIsSaving] = useState(false);
+    const API_URL = 'http://localhost:8080';
 
     useEffect(() => {
         if (user) {
@@ -38,7 +39,18 @@ const AccountSettingsPage = ({ onNavigate }) => {
                 nama: user.nama || '',
                 umur: user.umur || user.age || '',
             });
-            setAvatar(user.avatar || defaultAvatars[0]);
+
+            // Logika untuk menampilkan avatar yang sudah ada
+            if (user.avatar) {
+                // Cek apakah avatar adalah URL lengkap atau path dari server
+                if (user.avatar.startsWith('http')) {
+                    setAvatarPreview(user.avatar);
+                } else {
+                    setAvatarPreview(`${API_URL}/${user.avatar}`);
+                }
+            } else {
+                setAvatarPreview(defaultAvatars[0]);
+            }
         }
     }, [user]);
 
@@ -56,12 +68,13 @@ const AccountSettingsPage = ({ onNavigate }) => {
         
         setIsSaving(true);
         
-        const dataToUpdate = { ...formData, avatar };
+        const dataToUpdate = { ...formData };
         if (password) {
             dataToUpdate.password = password;
         }
 
-        const result = await updateProfile(dataToUpdate);
+        // Kirim data teks dan file avatar secara terpisah
+        const result = await updateProfile(dataToUpdate, avatarFile);
         
         setIsSaving(false);
 
@@ -74,13 +87,26 @@ const AccountSettingsPage = ({ onNavigate }) => {
     };
 
     const handleUploadClick = () => { fileInputRef.current.click(); };
-    const handleFileChange = (event) => { const file = event.target.files[0]; if (file) { setAvatar(URL.createObjectURL(file)); }};
-    const handleDeleteAvatar = () => { setAvatar(defaultAvatars[0]); };
+    
+    const handleFileChange = (event) => { 
+        const file = event.target.files[0]; 
+        if (file) { 
+            setAvatarPreview(URL.createObjectURL(file)); // Buat URL preview untuk ditampilkan
+            setAvatarFile(file); // Simpan objek File untuk dikirim ke server
+        }
+    };
+
+    const handleDeleteAvatar = () => { 
+        setAvatarPreview(defaultAvatars[0]);
+        setAvatarFile(null);
+        // Kirim nilai 'DELETE' agar backend bisa menghapus path avatar dari database
+        setFormData(prev => ({...prev, avatar: 'DELETE'}));
+    };
 
     const inputStyle = "w-full px-4 py-3 bg-gray-100 border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal focus:bg-white transition";
-    const isDefaultAvatar = defaultAvatars.includes(avatar);
+    const isDefaultAvatar = defaultAvatars.includes(avatarPreview);
 
-    if (!user || !avatar) { // Tambahkan pengecekan !avatar
+    if (!user || !avatarPreview) {
         return <div className="min-h-screen bg-gray-100 flex justify-center items-center">Loading settings...</div>;
     }
 
@@ -97,8 +123,7 @@ const AccountSettingsPage = ({ onNavigate }) => {
                     <div className="bg-white p-6 md:p-8 rounded-2xl shadow-md">
                         <div className="flex flex-col items-center mb-6">
                             <div className="relative mb-4">
-                                {/* --- (PERBAIKAN 2) --- Pastikan src tidak pernah kosong */}
-                                {avatar && <img src={avatar} alt="User Avatar" className="w-32 h-32 rounded-full border-4 border-sesm-sky object-cover" />}
+                                {avatarPreview && <img src={avatarPreview} alt="User Avatar" className="w-32 h-32 rounded-full border-4 border-sesm-sky object-cover" />}
                                 <button onClick={handleUploadClick} className="absolute -right-2 bottom-0 bg-sesm-teal text-white p-2 rounded-full border-2 border-white shadow-md hover:bg-sesm-deep transition-colors" title="Unggah foto profil"><FiCamera size={18} /></button>
                                 <button onClick={handleDeleteAvatar} disabled={isDefaultAvatar} className={`absolute -left-2 bottom-0 p-2 rounded-full border-2 border-white shadow-md transition-colors ${ isDefaultAvatar ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-500 text-white hover:bg-red-700' }`} title="Hapus foto profil"><FiTrash2 size={18} /></button>
                             </div>
@@ -106,7 +131,7 @@ const AccountSettingsPage = ({ onNavigate }) => {
                             <h3 className="font-bold text-gray-700 mb-3">Pilih Avatar Bawaan</h3>
                             <div className="flex justify-center items-center flex-wrap gap-3">
                                 {defaultAvatars.map((avatarUrl, index) => (
-                                    <motion.img key={index} src={avatarUrl} alt={`Avatar ${index + 1}`} className={`w-12 h-12 rounded-full cursor-pointer border-2 transition-all ${avatar === avatarUrl ? 'border-sesm-teal scale-110' : 'border-gray-200'}`} onClick={() => setAvatar(avatarUrl)} whileHover={{ scale: 1.1 }}/>
+                                    <motion.img key={index} src={avatarUrl} alt={`Avatar ${index + 1}`} className={`w-12 h-12 rounded-full cursor-pointer border-2 transition-all ${avatarPreview === avatarUrl ? 'border-sesm-teal scale-110' : 'border-gray-200'}`} onClick={() => { setAvatarPreview(avatarUrl); setAvatarFile(null); }} whileHover={{ scale: 1.1 }}/>
                                 ))}
                             </div>
                             <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} accept="image/png, image/jpeg"/>

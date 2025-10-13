@@ -1,9 +1,11 @@
-import React from 'react';
+// contoh-sesm-web/pages/RankPage.jsx
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiStar, FiZap, FiChevronUp, FiChevronDown } from 'react-icons/fi';
+import { FiArrowLeft, FiStar, FiZap, FiLoader } from 'react-icons/fi';
 import { FaTrophy } from 'react-icons/fa';
+import { useData } from '../hooks/useData';
 
-// --- DATA PERINGKAT ---
+// --- DATA PERINGKAT (tetap) ---
 const ranks = [
   { name: 'Murid Baru', points: 0, color: '#CD7F32', icon: 'bronze' },
   { name: 'Siswa Rajin', points: 5000, color: '#C0C0C0', icon: 'silver' },
@@ -12,16 +14,6 @@ const ranks = [
   { name: 'Cendekiawan Muda', points: 50000, color: '#9370DB', icon: 'diamond' },
   { name: 'Legenda Sekolah', points: 100000, color: '#FF4500', icon: 'master' },
 ];
-
-// --- DATA DUMMY UNTUK LEADERBOARD ---
-const leaderboardData = [
-    { id: 1, name: 'Yanto Kopling', points: 125500, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Budi' },
-    { id: 2, name: 'Citra Aselole', points: 95200, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Citra' },
-    { id: 3, name: 'Pahmi Stang', points: 78900, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Adi' },
-    { id: 4, name: 'Dian Carkecor', points: 45100, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Dian' },
-    { id: 5, name: 'Ekarso', points: 22500, avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Eka' },
-];
-
 
 // --- Komponen Ikon Peringkat Kustom (SVG) ---
 const RankIcon = ({ rank, size = "w-24 h-24" }) => {
@@ -37,7 +29,6 @@ const RankIcon = ({ rank, size = "w-24 h-24" }) => {
   }
 };
 
-// --- Fungsi Helper untuk Menghitung Peringkat ---
 const getRankInfo = (points) => {
     const currentRankIndex = ranks.slice().reverse().findIndex(r => points >= r.points);
     const currentRank = ranks[ranks.length - 1 - currentRankIndex];
@@ -45,12 +36,37 @@ const getRankInfo = (points) => {
     return { currentRank, nextRank };
 }
 
-
 const RankPage = ({ onNavigate }) => {
-  const currentUserPoints = 15500;
+  const [currentUserPoints, setCurrentUserPoints] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  
+  const { getPointsSummary, getLeaderboard } = useData();
+
+  useEffect(() => {
+    setLoading(true);
+    setLeaderboardLoading(true);
+    
+    // Ambil data poin user saat ini
+    getPointsSummary()
+      .then(response => {
+        setCurrentUserPoints(response.data.totalPoints);
+      })
+      .catch(error => console.error("Gagal memuat poin:", error))
+      .finally(() => setLoading(false));
+
+    // Ambil data leaderboard
+    getLeaderboard()
+      .then(response => {
+        setLeaderboard(response.data);
+      })
+      .catch(error => console.error("Gagal memuat leaderboard:", error))
+      .finally(() => setLeaderboardLoading(false));
+
+  }, [getPointsSummary, getLeaderboard]);
 
   const { currentRank, nextRank } = getRankInfo(currentUserPoints);
-  
   const pointsForNextRank = nextRank ? nextRank.points - currentRank.points : 0;
   const pointsProgress = currentUserPoints - currentRank.points;
   const progressPercentage = nextRank ? (pointsProgress / pointsForNextRank) * 100 : 100;
@@ -58,81 +74,63 @@ const RankPage = ({ onNavigate }) => {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 flex flex-col font-sans">
       <header className="bg-white p-4 pt-8 flex items-center sticky top-0 z-10 shadow-sm">
-        <button onClick={() => onNavigate('profile')} className="p-2 rounded-full hover:bg-gray-100">
-          <FiArrowLeft size={24} />
-        </button>
+        <button onClick={() => onNavigate('profile')} className="p-2 rounded-full hover:bg-gray-100"><FiArrowLeft size={24} /></button>
         <h1 className="text-xl font-bold text-center flex-grow text-sesm-deep">Peringkat Saya</h1>
         <div className="w-10"></div>
       </header>
 
       <main className="flex-grow overflow-y-auto p-6 space-y-8">
-        
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 100 }}
-          className="bg-white p-6 rounded-2xl shadow-md text-center"
-        >
-          <div className="flex justify-center items-center mb-4" style={{ color: currentRank.color }}>
-            <RankIcon rank={currentRank.icon} />
-          </div>
-          <h2 className="text-3xl font-bold" style={{ color: currentRank.color }}>{currentRank.name}</h2>
-          <p className="text-gray-500">Total Poin: <span className="font-bold text-gray-800">{currentUserPoints.toLocaleString()}</span></p>
-
-          {nextRank && (
-            <div className="mt-6">
-              <div className="flex justify-between text-sm font-semibold text-gray-600 mb-1">
-                <span>{currentRank.points.toLocaleString()}</span>
-                <span>{nextRank.points.toLocaleString()}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                <motion.div
-                  className="h-4 rounded-full"
-                  style={{ background: `linear-gradient(90deg, ${currentRank.color}, ${nextRank.color})` }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPercentage}%` }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                {`${(nextRank.points - currentUserPoints).toLocaleString()}`} poin lagi untuk <span className="font-bold" style={{color: nextRank.color}}>{nextRank.name}</span>!
-              </p>
-            </div>
-          )}
-        </motion.div>
+        {loading ? (
+            <div className="w-full h-64 bg-gray-200 rounded-2xl animate-pulse flex justify-center items-center"><FiLoader className="text-3xl text-sesm-teal animate-spin"/></div>
+        ) : (
+            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 100 }} className="bg-white p-6 rounded-2xl shadow-md text-center">
+                <div className="flex justify-center items-center mb-4" style={{ color: currentRank.color }}><RankIcon rank={currentRank.icon} /></div>
+                <h2 className="text-3xl font-bold" style={{ color: currentRank.color }}>{currentRank.name}</h2>
+                <p className="text-gray-500">Total Poin: <span className="font-bold text-gray-800">{currentUserPoints.toLocaleString()}</span></p>
+                {nextRank && (
+                    <div className="mt-6">
+                        <div className="flex justify-between text-sm font-semibold text-gray-600 mb-1"><span>{currentRank.points.toLocaleString()}</span><span>{nextRank.points.toLocaleString()}</span></div>
+                        <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                            <motion.div className="h-4 rounded-full" style={{ background: `linear-gradient(90deg, ${currentRank.color}, ${nextRank.color})` }} initial={{ width: 0 }} animate={{ width: `${progressPercentage}%` }} transition={{ duration: 1.5, ease: "easeOut" }}/>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">{`${(nextRank.points - currentUserPoints).toLocaleString()}`} poin lagi untuk <span className="font-bold" style={{color: nextRank.color}}>{nextRank.name}</span>!</p>
+                    </div>
+                )}
+            </motion.div>
+        )}
 
         <div>
             <h3 className="text-lg font-bold text-gray-700 mb-4 px-2 flex items-center"><FaTrophy className="mr-2 text-yellow-500"/> Papan Peringkat</h3>
-            <div className="space-y-2">
-                {leaderboardData.map((user, index) => {
-                    const { currentRank: userRank } = getRankInfo(user.points);
-                    const position = index + 1;
-                    let positionColor = 'bg-gray-400';
-                    if (position === 1) positionColor = 'bg-yellow-400';
-                    if (position === 2) positionColor = 'bg-slate-300';
-                    if (position === 3) positionColor = 'bg-yellow-600';
-
-                    return (
-                        <motion.div
-                            key={user.id}
-                            initial={{ opacity: 0, x: -30 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.1 * index }}
-                            className="bg-white flex items-center p-3 rounded-xl shadow-sm space-x-4"
-                        >
-                            <span className={`flex-shrink-0 w-8 h-8 rounded-full text-white font-bold text-lg flex items-center justify-center ${positionColor}`}>{position}</span>
-                            <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full flex-shrink-0" />
-                            <div className="flex-grow overflow-hidden">
-                                <p className="font-bold truncate">{user.name}</p>
-                                <p className="text-sm text-gray-500">{user.points.toLocaleString()} Poin</p>
-                            </div>
-                            <div className="flex-shrink-0" style={{ color: userRank.color }}>
-                                <RankIcon rank={userRank.icon} size="w-10 h-10" />
-                            </div>
-                        </motion.div>
-                    );
-                })}
-            </div>
+            {leaderboardLoading ? (
+                 <div className="space-y-2">
+                    {[...Array(5)].map((_, i) => <div key={i} className="bg-gray-200 h-20 w-full rounded-xl animate-pulse"></div>)}
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    {leaderboard.map((user, index) => {
+                        const { currentRank: userRank } = getRankInfo(user.points);
+                        const position = index + 1;
+                        let positionColor = 'bg-gray-400';
+                        if (position === 1) positionColor = 'bg-yellow-400';
+                        if (position === 2) positionColor = 'bg-slate-300';
+                        if (position === 3) positionColor = 'bg-yellow-600';
+                        const avatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.username}`;
+                        return (
+                            <motion.div key={user.id} initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 * index }} className="bg-white flex items-center p-3 rounded-xl shadow-sm space-x-4">
+                                <span className={`flex-shrink-0 w-8 h-8 rounded-full text-white font-bold text-lg flex items-center justify-center ${positionColor}`}>{position}</span>
+                                <img src={avatar} alt={user.nama} className="w-12 h-12 rounded-full flex-shrink-0" />
+                                <div className="flex-grow overflow-hidden">
+                                    <p className="font-bold truncate">{user.nama}</p>
+                                    <p className="text-sm text-gray-500">{user.points.toLocaleString()} Poin</p>
+                                </div>
+                                <div className="flex-shrink-0" style={{ color: userRank.color }}>
+                                    <RankIcon rank={userRank.icon} size="w-10 h-10" />
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
 
         <div>
@@ -141,21 +139,11 @@ const RankPage = ({ onNavigate }) => {
             {ranks.map((rank, index) => {
               const isUnlocked = currentUserPoints >= rank.points;
               return (
-                <motion.div
-                  key={rank.name}
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                  className={`flex items-center space-x-4 p-4 rounded-xl transition-all ${isUnlocked ? 'bg-white shadow-sm' : 'bg-gray-200'}`}
-                >
-                  <div style={{ color: isUnlocked ? rank.color : '#9CA3AF' }}>
-                    <RankIcon rank={rank.icon} size="w-12 h-12" />
-                  </div>
+                <motion.div key={rank.name} initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + index * 0.1 }} className={`flex items-center space-x-4 p-4 rounded-xl transition-all ${isUnlocked ? 'bg-white shadow-sm' : 'bg-gray-200'}`}>
+                  <div style={{ color: isUnlocked ? rank.color : '#9CA3AF' }}><RankIcon rank={rank.icon} size="w-12 h-12" /></div>
                   <div className="flex-grow">
                     <h4 className={`font-bold text-lg ${isUnlocked ? 'text-gray-800' : 'text-gray-400'}`}>{rank.name}</h4>
-                    <p className={`text-sm ${isUnlocked ? 'text-gray-600' : 'text-gray-500'}`}>
-                      <FiZap className="inline -mt-1 mr-1" /> {rank.points.toLocaleString()} Poin
-                    </p>
+                    <p className={`text-sm ${isUnlocked ? 'text-gray-600' : 'text-gray-500'}`}><FiZap className="inline -mt-1 mr-1" /> {rank.points.toLocaleString()} Poin</p>
                   </div>
                   {isUnlocked && <FiStar className="text-yellow-400 text-2xl flex-shrink-0" fill="currentColor"/>}
                 </motion.div>
