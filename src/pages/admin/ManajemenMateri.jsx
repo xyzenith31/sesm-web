@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiPlus, FiChevronRight, FiBookOpen, FiTrash2, FiLoader, FiGrid,
-    FiCheckSquare, FiFileText, FiEdit, FiAlertCircle, FiTrendingUp, FiArchive
+    FiCheckSquare, FiFileText, FiEdit, FiAlertCircle, FiTrendingUp, FiArchive, FiSettings
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
@@ -10,9 +10,8 @@ import AddChapterModal from '../../components/AddChapterModal';
 import QuestionFormModal from '../../components/QuestionFormModal';
 import DraftsModal from '../../components/DraftsModal';
 import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal';
-// --- 1. Impor Modal Edit yang Baru ---
 import EditQuestionModal from '../../components/admin/EditQuestionModal';
-
+import ChapterSettingsModal from '../../components/admin/ChapterSettingsModal'; // 1. Impor Modal Baru
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -73,11 +72,12 @@ const ManajemenMateri = ({ onNavigate }) => {
     const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
     const [isBankSoalOpen, setIsBankSoalOpen] = useState(false);
-
-    // --- 2. State untuk Modal Edit ---
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null);
-
+    
+    // 2. State untuk modal pengaturan
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [selectedChapterForSettings, setSelectedChapterForSettings] = useState(null);
 
     const fetchMateriList = useCallback((selectKeyAfterFetch = null) => {
         const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
@@ -138,24 +138,22 @@ const ManajemenMateri = ({ onNavigate }) => {
             }
             alert(`${newQuestions.length} soal berhasil dipublikasikan!`);
             fetchDetailMateri(); 
-            fetchMateriList();
+            fetchMateriList(selectedKey);
         } catch (e) { alert("Gagal publikasi."); } finally { setIsDetailLoading(false); }
     };
 
-    // --- 3. Handler untuk membuka modal edit ---
     const handleOpenEditModal = (question) => {
         setEditingQuestion(question);
         setIsEditModalOpen(true);
     };
 
-    // --- 4. Handler untuk submit hasil edit ---
     const handleUpdateQuestion = async (questionId, updatedData) => {
         try {
             await DataService.updateQuestion(questionId, updatedData);
             setIsEditModalOpen(false);
             setEditingQuestion(null);
             alert("Soal berhasil diperbarui!");
-            fetchDetailMateri(); // Refresh detail materi
+            fetchDetailMateri();
         } catch (error) {
             alert("Gagal memperbarui soal.");
             console.error(error);
@@ -164,7 +162,7 @@ const ManajemenMateri = ({ onNavigate }) => {
 
     const handleDeleteQuestion = async (questionId) => {
         if (!window.confirm("Yakin ingin menghapus soal ini?")) return;
-        try { await DataService.deleteQuestion(questionId); fetchDetailMateri(); fetchMateriList(); } catch (e) { alert("Gagal menghapus."); }
+        try { await DataService.deleteQuestion(questionId); fetchDetailMateri(); fetchMateriList(selectedKey); } catch (e) { alert("Gagal menghapus."); }
     };
 
     const handleDeleteAllQuestions = async () => {
@@ -176,7 +174,7 @@ const ManajemenMateri = ({ onNavigate }) => {
             try {
                 await Promise.all(selectedMateri.questions.map(q => DataService.deleteQuestion(q.id)));
                 alert("Semua soal berhasil dihapus.");
-                fetchDetailMateri(); fetchMateriList();
+                fetchDetailMateri(); fetchMateriList(selectedKey);
             } catch (e) { alert("Terjadi kesalahan."); } finally { setIsDetailLoading(false); }
         }
     };
@@ -185,27 +183,34 @@ const ManajemenMateri = ({ onNavigate }) => {
         const newMode = currentMode === 'otomatis' ? 'manual' : 'otomatis';
         try {
             await DataService.updateGradingMode(chapterId, newMode);
-            setMateriList(prevList => {
-                const newList = JSON.parse(JSON.stringify(prevList));
-                for (const mapel in newList) {
-                    const chapterIndex = newList[mapel].chapters.findIndex(chap => chap.chapter_id === chapterId);
-                    if (chapterIndex > -1) {
-                        newList[mapel].chapters[chapterIndex].grading_mode = newMode;
-                        break;
-                    }
-                }
-                return newList;
-            });
-            if (selectedMateri && selectedMateri.chapter_id === chapterId) {
-                setSelectedMateri(prev => ({ ...prev, grading_mode: newMode }));
-            }
+            fetchMateriList(selectedKey);
         } catch (err) {
             alert(`Gagal mengubah mode penilaian: ${err.response?.data?.message || err.message}`);
         }
     };
+    
+    // 3. Fungsi untuk membuka modal pengaturan
+    const handleOpenSettingsModal = (chapter) => {
+        setSelectedChapterForSettings(chapter);
+        setIsSettingsModalOpen(true);
+    };
 
-    const handleDeleteDraft = (key) => { if (window.confirm("Hapus draf ini?")) { localStorage.removeItem(key); setIsDraftsModalOpen(false); }};
-    const handleContinueDraft = (key) => { setSelectedKey(key); setIsQuestionModalOpen(true); setIsDraftsModalOpen(false); };
+    // 4. Fungsi untuk menyimpan perubahan pengaturan
+    const handleSaveSettings = async (chapterId, newSettings) => {
+        try {
+            await DataService.updateChapterSettings(chapterId, newSettings);
+            alert("Pengaturan berhasil disimpan!");
+            setIsSettingsModalOpen(false);
+            // Refresh data untuk mendapatkan pengaturan terbaru
+            fetchMateriList(selectedKey); 
+        } catch (error) {
+            alert("Gagal menyimpan pengaturan.");
+            console.error(error);
+        }
+    };
+
+    const handleDeleteDraft = (key) => { if (window.confirm("Hapus draf ini?")) { localStorage.removeItem(key); setIsDraftsModalOpen(false); setTimeout(() => setIsDraftsModalOpen(true), 100); }};
+    const handleContinueDraft = (key) => { setSelectedKey(key); setIsDraftsModalOpen(false); setIsQuestionModalOpen(true); };
 
     const currentMapelList = useMemo(() => Object.entries(materiList).map(([nama, data]) => ({ id: data.subject_id, nama_mapel: nama })).filter(m => m.id), [materiList]);
 
@@ -215,8 +220,15 @@ const ManajemenMateri = ({ onNavigate }) => {
                 {isAddChapterModalOpen && <AddChapterModal isOpen onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
                 {isDraftsModalOpen && <DraftsModal isOpen onClose={() => setIsDraftsModalOpen(false)} allData={materiList} onContinue={handleContinueDraft} onDelete={handleDeleteDraft} />}
                 {isBankSoalOpen && <BankSoalMateriModal isOpen onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
-                {/* --- 5. Render Modal Edit --- */}
                 {isEditModalOpen && <EditQuestionModal isOpen onClose={() => setIsEditModalOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
+                {isSettingsModalOpen && (
+                    <ChapterSettingsModal
+                        isOpen={isSettingsModalOpen}
+                        onClose={() => setIsSettingsModalOpen(false)}
+                        onSave={handleSaveSettings}
+                        chapterData={selectedChapterForSettings}
+                    />
+                )}
             </AnimatePresence>
             {isQuestionModalOpen && <QuestionFormModal isOpen onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
 
@@ -270,7 +282,14 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                 <div className="pb-4 mb-4">
                                                     <div className="flex justify-between items-start gap-4 mb-4">
                                                         <h2 className="text-2xl font-bold text-sesm-deep">{selectedMateri.judul}</h2>
-                                                        <button onClick={() => setIsQuestionModalOpen(true)} className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm"><FiPlus /> Tambah Soal</button>
+                                                        <div className="flex-shrink-0 flex gap-2">
+                                                            <button onClick={() => handleOpenSettingsModal(selectedMateri)} className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold text-sm hover:bg-gray-300">
+                                                                <FiSettings/> Pengaturan
+                                                            </button>
+                                                            <button onClick={() => setIsQuestionModalOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm">
+                                                                <FiPlus /> Tambah Soal
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                     <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
                                                         <div><p className="font-semibold text-sm">Penilaian Manual {selectedMateri.grading_mode === 'manual' ? 'Aktif' : 'Nonaktif'}</p><p className="text-xs text-gray-500">{selectedMateri.grading_mode === 'manual' ? 'Guru akan menilai jawaban esai.' : 'Sistem menilai otomatis (hanya PG).'}</p></div>
@@ -289,7 +308,6 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                                     <p className="font-semibold">{i + 1}. {q.pertanyaan}</p>
                                                                     <p className="text-sm text-green-600 font-bold mt-1">Jawaban: {q.correctAnswer || q.jawaban_esai || "N/A"}</p>
                                                                 </div>
-                                                                {/* --- 6. Tombol Edit dan Hapus --- */}
                                                                 <div className="flex-shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                     <button onClick={() => handleOpenEditModal(q)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg" title="Edit Soal"><FiEdit size={16}/></button>
                                                                     <button onClick={() => handleDeleteQuestion(q.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg" title="Hapus Soal"><FiTrash2 size={16} /></button>

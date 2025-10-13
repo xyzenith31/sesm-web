@@ -2,24 +2,46 @@ import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import AuthService from '../services/authService';
 import DataService from '../services/dataService';
+// Hapus 'useNavigation' dari sini
 
 export const useAuth = () => {
   const { user, setUser, loading, refreshUser } = useContext(AuthContext);
+  // Hapus pemanggilan 'useNavigation' dari sini
 
-  const handleAuthentication = (userData) => { /* ... (tidak berubah) */ };
-  const login = (identifier, password) => { /* ... (tidak berubah) */ };
-  const register = (formData) => { /* ... (tidak berubah) */ };
-  const loginWithOtp = async (code, identifier) => { /* ... (tidak berubah) */ };
-  const logout = () => { /* ... (tidak berubah) */ };
+  const handleAuthentication = (userData) => {
+    if (userData && userData.accessToken) {
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+    }
+  };
+  
+  const login = (identifier, password) => {
+    return AuthService.login(identifier, password);
+  };
 
+  const register = (formData) => {
+    return AuthService.register(formData);
+  }
+
+  const loginWithOtp = async (code, identifier) => {
+    const response = await AuthService.verifyAndLogin(code, identifier);
+    handleAuthentication(response.data);
+    return response.data;
+  }
+
+  // --- FUNGSI LOGOUT KEMBALI SEPERTI SEMULA ---
+  const logout = () => {
+    AuthService.logout(); // Hapus data dari local storage
+    setUser(null); // Set state user menjadi null
+    // Perintah 'navigate' dihapus dari sini
+  };
+  
   const updateProfile = async (profileData, avatarFile) => {
     try {
       const response = await DataService.updateUserProfile(profileData, avatarFile);
-      
       const currentUser = AuthService.getCurrentUser();
       const updatedUser = { ...currentUser, ...profileData };
 
-      // Jika backend mengirim path avatar baru, update di local storage
       if (response.data.avatar) {
           updatedUser.avatar = response.data.avatar;
       }
