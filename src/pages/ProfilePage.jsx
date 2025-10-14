@@ -50,12 +50,13 @@ const ProfilePage = ({ onNavigate }) => {
   
   const userLevel = user.jenjang && user.kelas ? `${user.jenjang} - Kelas ${user.kelas}` : (user.jenjang || 'Belum diatur');
   
+  // Logika untuk menampilkan avatar
   let userAvatar = `https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=${user.username}`;
   if (user.avatar) {
       if (user.avatar.startsWith('http')) {
-          userAvatar = user.avatar;
+          userAvatar = user.avatar; // Langsung gunakan jika sudah URL lengkap
       } else {
-          userAvatar = `${API_URL}/${user.avatar}`;
+          userAvatar = `${API_URL}/${user.avatar}`; // Tambahkan base URL jika hanya path
       }
   }
   

@@ -9,20 +9,28 @@ const getSubjects = (jenjang, kelas) => {
   return apiClient.get(url);
 };
 const updateLevelAndClass = (levelData) => { return apiClient.put('/user/profile/level', levelData); };
+
 const updateUserProfile = (profileData, avatarFile) => {
   const formData = new FormData();
+
+  // Lampirkan semua data teks ke formData
   for (const key in profileData) {
     if (profileData[key] !== undefined && profileData[key] !== null) {
         formData.append(key, profileData[key]);
     }
   }
+
+  // Jika ada file avatar baru yang dipilih, lampirkan juga
   if (avatarFile) {
     formData.append('avatar', avatarFile);
   }
+
+  // Kirim sebagai multipart/form-data
   return apiClient.put('/user', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 };
+
 const getDetailMateriForSiswa = (materiKey) => { return apiClient.get(`/materi/${materiKey}`); };
 const submitAnswers = (materiKey, answers) => { return apiClient.post(`/materi/${materiKey}/submit`, { answers }); };
 
