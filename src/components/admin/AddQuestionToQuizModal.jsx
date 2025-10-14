@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink } from 'react-icons/fi';
 
-// Hook Debounce (tidak berubah)
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -13,7 +12,6 @@ const useDebounce = (value, delay) => {
     return debouncedValue;
 };
 
-// MediaPreview (tidak berubah)
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (file) => {
         if (file.type.startsWith('image/')) return <FiImage className="text-blue-500" size={24} />;
@@ -35,18 +33,16 @@ const MediaPreview = ({ item, onRemove }) => {
     );
 };
 
-// getNewQuestion diperbarui
 const getNewQuestion = () => ({
     id: Date.now() + Math.random(),
     question: '',
     type: 'pilihan-ganda',
     options: ['', ''],
     correctAnswer: '',
-    essayAnswer: '', // Ditambahkan
+    essayAnswer: '',
     media: [],
 });
 
-// QuestionForm diperbarui
 const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
     const [isLinkInputVisible, setLinkInputVisible] = useState(false);
     const [linkValue, setLinkValue] = useState('');
@@ -90,7 +86,6 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
             <div className="flex-grow space-y-4">
                 <div className="flex items-center gap-4">
                     <span className="font-bold text-lg text-gray-700">{index + 1}.</span>
-                    {/* --- PERBAIKAN: Tambahkan opsi baru di select --- */}
                     <select value={question.type} onChange={(e) => handleInputChange('type', e.target.value)} className="p-2 border rounded-md bg-gray-50">
                         <option value="pilihan-ganda">Pilihan Ganda</option>
                         <option value="esai">Esai</option>
@@ -123,7 +118,6 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
                     )}
                 </div>
 
-                {/* --- PERBAIKAN: Tampilkan fieldset ini secara kondisional --- */}
                 {(question.type === 'pilihan-ganda' || question.type === 'pilihan-ganda-esai') && (
                     <fieldset className="border p-3 rounded-md space-y-2">
                         <legend className="text-sm font-semibold text-gray-600 px-1">Opsi Pilihan Ganda</legend>
@@ -147,7 +141,6 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
                     </fieldset>
                 )}
 
-                {/* --- PERBAIKAN: Tampilkan fieldset ini secara kondisional --- */}
                 {(question.type === 'esai' || question.type === 'pilihan-ganda-esai') && (
                     <fieldset className="border p-3 rounded-md">
                         <legend className="text-sm font-semibold text-gray-600 px-1">Kunci Jawaban Esai</legend>
@@ -166,27 +159,38 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
 };
 
 
-// ... (Sisa komponen AddQuestionToQuizModal tidak berubah)
 const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
     const DRAFT_KEY = `quiz_question_draft_${quizId}`;
     const [questions, setQuestions] = useState([getNewQuestion()]);
+    
+    // Fungsi untuk menyimpan draft
+    const saveDraft = (data) => {
+        const draftToSave = {
+            lastSaved: new Date().toISOString(),
+            questions: data.map(({ media, ...rest }) => rest)
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
+    };
+    
+    // Debounce untuk autosave
     const debouncedQuestions = useDebounce(questions, 1500);
-
     useEffect(() => {
         if (isOpen && debouncedQuestions.length > 0 && debouncedQuestions.some(q => q.question.trim() !== '')) {
-            const draftToSave = debouncedQuestions.map(({ media, ...rest }) => rest);
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
+            saveDraft(debouncedQuestions);
         }
     }, [debouncedQuestions, DRAFT_KEY, isOpen]);
 
+    // Memuat draft saat modal dibuka
     useEffect(() => {
         if (isOpen) {
             try {
                 const savedDraft = localStorage.getItem(DRAFT_KEY);
                 if (savedDraft) {
                     const parsedDraft = JSON.parse(savedDraft);
-                    if (parsedDraft.length > 0) {
-                        setQuestions(parsedDraft.map(q => ({ ...getNewQuestion(), ...q, media: [] })));
+                    if (parsedDraft.questions && parsedDraft.questions.length > 0) {
+                        setQuestions(parsedDraft.questions.map(q => ({ ...getNewQuestion(), ...q, media: [] })));
+                    } else {
+                        setQuestions([getNewQuestion()]);
                     }
                 } else {
                     setQuestions([getNewQuestion()]);
@@ -213,8 +217,7 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
             alert('Tidak ada soal untuk disimpan.');
             return;
         }
-        const draftToSave = questions.map(({ media, ...rest }) => rest);
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
+        saveDraft(questions);
         alert('Draf berhasil disimpan!');
         onClose();
     };
@@ -243,7 +246,7 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
                         <span className="text-sm text-gray-600 font-semibold">Total: {questions.length} soal</span>
                         <div>
                             <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200 mr-2">Batal</button>
-                            <button type="button" onClick={handleSaveDraft} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 mr-3">Simpan Draf</button>
+                            <button type="button" onClick={handleSaveDraft} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 mr-3">Simpan Sementara</button>
                             <button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90">Publish Soal</button>
                         </div>
                     </div>

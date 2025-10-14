@@ -6,18 +6,23 @@ import {
     FiImage, FiFilm, FiMusic, FiFile
 } from 'react-icons/fi';
 
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => { setDebouncedValue(value); }, delay);
+        return () => { clearTimeout(handler); };
+    }, [value, delay]);
+    return debouncedValue;
+};
+
+
 const MediaPreview = ({ item, onRemove }) => {
-    // Fungsi untuk mendapatkan ikon berdasarkan tipe atau ekstensi file
     const getIcon = () => {
-        // Jika item adalah link
         if (item.type === 'link') return <FiLink className="text-green-500" size={24} />;
-        // Jika item adalah teks
         if (item.type === 'text') return <FiType className="text-gray-600" size={24} />;
         
-        // Dapatkan nama file atau url untuk menentukan ekstensi
         const nameOrUrl = item.type === 'new-file' ? item.file.name : item.url;
         
-        // **PERBAIKAN UTAMA: Tambahkan pengecekan jika nameOrUrl tidak ada**
         if (!nameOrUrl) return <FiFile className="text-gray-500" size={24} />;
 
         const ext = nameOrUrl.split('.').pop().toLowerCase();
@@ -28,13 +33,12 @@ const MediaPreview = ({ item, onRemove }) => {
         return <FiFile className="text-gray-500" size={24} />;
     };
 
-    // Fungsi untuk mendapatkan teks tampilan
     const getDisplayText = () => {
         switch (item.type) {
             case 'link': return item.url;
             case 'text': return item.content;
             case 'new-file': return item.file.name;
-            default: // File yang sudah ada dari server
+            default:
                 return item.url ? item.url.split('/').pop() : 'File tidak dikenal';
         }
     };
@@ -52,43 +56,68 @@ const MediaPreview = ({ item, onRemove }) => {
 
 
 const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
+    const DRAFT_KEY = `edit_question_draft_${questionData?.id}`;
     const [question, setQuestion] = useState(null);
     const [linkInputVisible, setLinkInputVisible] = useState(false);
     const [textInputVisible, setTextInputVisible] = useState(false);
     const [linkValue, setLinkValue] = useState('');
     const [textValue, setTextValue] = useState('');
 
+    // Fungsi untuk menyimpan draft
+    const saveDraft = (data) => {
+        if (!data) return;
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+    };
+
+    // Debounce untuk autosave
+    const debouncedQuestion = useDebounce(question, 1500);
+    useEffect(() => {
+        if (isOpen) {
+            saveDraft(debouncedQuestion);
+        }
+    }, [debouncedQuestion, isOpen]);
+
     useEffect(() => {
         if (questionData) {
-            const initialAttachments = (questionData.media_urls || []).map(item => ({
-                id: Math.random(),
-                ...item
-            }));
-
-            setQuestion({
-                id: questionData.id,
-                type: questionData.tipe_soal,
-                question: questionData.pertanyaan,
-                options: questionData.options || ['', ''],
-                correctAnswer: questionData.correctAnswer || '',
-                essayAnswer: questionData.jawaban_esai || '',
-                attachments: initialAttachments
-            });
+            // Cek apakah ada draft tersimpan
+            const savedDraft = localStorage.getItem(DRAFT_KEY);
+            if (savedDraft) {
+                setQuestion(JSON.parse(savedDraft));
+            } else {
+                // Jika tidak ada draft, gunakan data dari props
+                const initialAttachments = (questionData.media_urls || []).map(item => ({
+                    id: Math.random(),
+                    ...item
+                }));
+                setQuestion({
+                    id: questionData.id,
+                    type: questionData.tipe_soal,
+                    question: questionData.pertanyaan,
+                    options: questionData.options || ['', ''],
+                    correctAnswer: questionData.correctAnswer || '',
+                    essayAnswer: questionData.jawaban_esai || '',
+                    attachments: initialAttachments
+                });
+            }
             
+            // Reset input fields
             setLinkValue('');
             setTextValue('');
             setLinkInputVisible(false);
             setTextInputVisible(false);
         }
-    }, [questionData]);
+    }, [questionData, isOpen]);
+
 
     if (!isOpen || !question) return null;
 
     const handleUpdate = (field, value) => setQuestion(prev => ({ ...prev, [field]: value }));
     const handleOptionChange = (index, value) => {
         const newOptions = [...question.options];
+        const oldOptionValue = newOptions[index];
         newOptions[index] = value;
-        if (question.correctAnswer === question.options[index]) {
+        // Jika opsi yang diubah adalah jawaban benar, update juga jawaban benarnya
+        if (question.correctAnswer === oldOptionValue) {
             handleUpdate('correctAnswer', value);
         }
         handleUpdate('options', newOptions);
@@ -96,13 +125,14 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
     const addOption = () => handleUpdate('options', [...question.options, '']);
     const removeOption = (index) => {
         if (question.options.length <= 2) return;
+        const optionToRemove = question.options[index];
         const newOptions = question.options.filter((_, i) => i !== index);
-        if (question.correctAnswer === question.options[index]) {
+        // Jika opsi yang dihapus adalah jawaban benar, kosongkan jawaban benar
+        if (question.correctAnswer === optionToRemove) {
             handleUpdate('correctAnswer', '');
         }
         handleUpdate('options', newOptions);
     };
-
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
         const newFileAttachments = files.map(file => ({ id: Math.random(), type: 'new-file', file }));
@@ -126,6 +156,13 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
         handleUpdate('attachments', question.attachments.filter(att => att.id !== id));
     };
 
+    // Tombol "Simpan Sementara"
+    const handleSaveDraft = () => {
+        saveDraft(question);
+        alert('Perubahan disimpan sebagai draf!');
+        onClose();
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -144,6 +181,7 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
         };
         
         onSubmit(question.id, finalQuestionData);
+        localStorage.removeItem(DRAFT_KEY); // Hapus draft setelah submit berhasil
     };
 
     return (
@@ -156,7 +194,7 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
                     </header>
 
                     <main className="flex-grow overflow-y-auto p-6 space-y-6">
-                        <div className="border border-gray-200 rounded-lg p-5 bg-gray-50/50 space-y-4">
+                         <div className="border border-gray-200 rounded-lg p-5 bg-gray-50/50 space-y-4">
                             <div className="flex items-center gap-4">
                                 <span className="font-bold text-lg text-sesm-deep">1.</span>
                                 <select value={question.type} onChange={(e) => handleUpdate('type', e.target.value)} className="flex-grow p-2 border rounded-md bg-white text-gray-700">
@@ -217,7 +255,7 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
                                     <button type="button" onClick={addOption} className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-sesm-deep bg-gray-100 rounded-lg hover:bg-gray-200"><FiPlus size={16} /> Tambah Opsi</button>
                                     <select value={question.correctAnswer} onChange={(e) => handleUpdate('correctAnswer', e.target.value)} className="w-full p-2 border rounded-md mt-2 bg-white text-gray-700 focus:ring-1 focus:ring-sesm-teal" required>
                                         <option value="" disabled>-- Pilih Jawaban Benar --</option>
-                                        {question.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (<option key={oIndex} value={opt}>{opt}</option>))}
+                                        {question.options.filter(opt => opt && opt.trim() !== '').map((opt, oIndex) => (<option key={oIndex} value={opt}>{opt}</option>))}
                                     </select>
                                 </fieldset>
                             )}
@@ -232,6 +270,7 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
 
                     <footer className="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t">
                         <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200">Batal</button>
+                         <button type="button" onClick={handleSaveDraft} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Simpan Sementara</button>
                         <button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 flex items-center gap-2">
                             <FiSave /> Simpan Perubahan
                         </button>

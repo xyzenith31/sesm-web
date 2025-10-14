@@ -3,6 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiSave, FiX, FiPaperclip, FiLink, FiImage, FiFilm, FiMusic, FiFile, FiTrash2, FiPlus } from 'react-icons/fi';
 
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => { setDebouncedValue(value); }, delay);
+        return () => { clearTimeout(handler); };
+    }, [value, delay]);
+    return debouncedValue;
+};
+
+
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (url) => {
         const ext = url.split('.').pop().toLowerCase();
@@ -22,41 +32,71 @@ const MediaPreview = ({ item, onRemove }) => {
 };
 
 const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) => {
+    const DRAFT_KEY = `edit_quiz_question_draft_${questionData?.id}`;
     const [question, setQuestion] = useState(null);
     const [isLinkInputVisible, setLinkInputVisible] = useState(false);
     const [linkValue, setLinkValue] = useState('');
 
+    // Fungsi untuk menyimpan draft
+    const saveDraft = (data) => {
+        if (!data) return;
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+    };
+
+    // Debounce untuk autosave
+    const debouncedQuestion = useDebounce(question, 1500);
+    useEffect(() => {
+        if (isOpen) {
+            saveDraft(debouncedQuestion);
+        }
+    }, [debouncedQuestion, isOpen]);
+
+
     useEffect(() => {
         if (questionData) {
-            // Safely access options, provide default empty array if not present
-            const options = Array.isArray(questionData.options) ? questionData.options : [];
-            const correctAnswer = options.find(opt => opt.is_correct)?.option_text || '';
+            const savedDraft = localStorage.getItem(DRAFT_KEY);
+            if (savedDraft) {
+                setQuestion(JSON.parse(savedDraft));
+            } else {
+                const options = Array.isArray(questionData.options) ? questionData.options : [];
+                const correctAnswer = options.find(opt => opt.is_correct)?.option_text || '';
 
-            setQuestion({
-                id: questionData.id,
-                question: questionData.question_text,
-                type: questionData.question_type || 'pilihan-ganda', // Default ke PG jika tipe tidak ada
-                // Map options if they exist, otherwise provide a default for the form
-                options: options.length > 0 ? options.map(opt => opt.option_text) : ['', ''],
-                correctAnswer: correctAnswer,
-                essayAnswer: questionData.correct_essay_answer || '', // Ambil dari data
-                media: questionData.media_attachments || [],
-            });
+                setQuestion({
+                    id: questionData.id,
+                    question: questionData.question_text,
+                    type: questionData.question_type || 'pilihan-ganda',
+                    options: options.length > 0 ? options.map(opt => opt.option_text) : ['', ''],
+                    correctAnswer: correctAnswer,
+                    essayAnswer: questionData.correct_essay_answer || '',
+                    media: questionData.media_attachments || [],
+                });
+            }
             setLinkInputVisible(false);
             setLinkValue('');
         }
-    }, [questionData]);
+    }, [questionData, isOpen]);
     
     if (!isOpen || !question) return null;
 
     const handleUpdate = (field, value) => setQuestion(prev => ({ ...prev, [field]: value }));
     const handleOptionChange = (index, value) => {
         const newOptions = [...question.options];
+        const oldOption = newOptions[index];
         newOptions[index] = value;
+        if(question.correctAnswer === oldOption) {
+            handleUpdate('correctAnswer', value)
+        }
         handleUpdate('options', newOptions);
     };
     const addOption = () => handleUpdate('options', [...question.options, '']);
-    const removeOption = (index) => handleUpdate('options', question.options.filter((_, i) => i !== index));
+    const removeOption = (index) => {
+        const optionToRemove = question.options[index];
+        const newOptions = question.options.filter((_, i) => i !== index)
+        if(question.correctAnswer === optionToRemove){
+             handleUpdate('correctAnswer', '');
+        }
+        handleUpdate('options', newOptions)
+    };
     
     const handleAddLink = () => {
         if (!linkValue.startsWith('http')) { alert('URL tidak valid.'); return; }
@@ -66,9 +106,16 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
         setLinkInputVisible(false);
     };
 
+    const handleSaveDraft = () => {
+        saveDraft(question);
+        alert('Perubahan disimpan sebagai draf!');
+        onClose();
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(question.id, question);
+        localStorage.removeItem(DRAFT_KEY);
     };
 
     return (
@@ -122,7 +169,7 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                                 <button type="button" onClick={addOption} className="text-sm font-semibold flex items-center gap-1 px-3 py-1 bg-gray-100 border rounded-md hover:bg-gray-200"><FiPlus size={16}/> Tambah Opsi</button>
                                 <select value={question.correctAnswer} onChange={(e) => handleUpdate('correctAnswer', e.target.value)} className="w-full p-2 border rounded-md mt-2 bg-white" required>
                                     <option value="" disabled>-- Pilih Jawaban Benar --</option>
-                                    {question.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (<option key={oIndex} value={opt}>{opt}</option>))}
+                                    {question.options.filter(opt => opt && opt.trim() !== '').map((opt, oIndex) => (<option key={oIndex} value={opt}>{opt}</option>))}
                                 </select>
                             </fieldset>
                         )}
@@ -143,6 +190,7 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                     </div>
                     <div className="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t">
                         <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200">Batal</button>
+                        <button type="button" onClick={handleSaveDraft} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Simpan Sementara</button>
                         <button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 flex items-center gap-2"><FiSave /> Simpan Perubahan</button>
                     </div>
                 </form>

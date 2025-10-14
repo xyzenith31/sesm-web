@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiFileText, FiTrash2 } from 'react-icons/fi';
 
-const DraftsModal = ({ isOpen, onClose, allData, onContinue, onDelete }) => {
+const DraftsModal = ({ isOpen, onClose, allData, onContinue }) => {
     const [drafts, setDrafts] = useState([]);
 
     useEffect(() => {
@@ -15,10 +15,11 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue, onDelete }) => {
             const loadedDrafts = draftKeys.map(key => {
                 try {
                     const chapterId = key.replace('question_draft_', '');
-                    const draftData = JSON.parse(localStorage.getItem(key));
+                    const rawDraftData = localStorage.getItem(key);
+                    if (!rawDraftData) return null;
+                    const draftData = JSON.parse(rawDraftData);
                     
                     let chapterTitle = 'Bab Tidak Ditemukan';
-                    // --- PERBAIKAN LOGIKA PENCARIAN JUDUL ---
                     if (allData) {
                         for (const mapelName in allData) {
                             const mapel = allData[mapelName];
@@ -39,13 +40,20 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue, onDelete }) => {
                     };
                 } catch (e) {
                     console.error("Gagal memuat draf:", key, e);
-                    return null; // Abaikan draf yang korup
+                    return null;
                 }
-            }).filter(Boolean); // Hapus hasil null
+            }).filter(Boolean);
 
-            setDrafts(loadedDrafts);
+            setDrafts(loadedDrafts.sort((a, b) => new Date(b.lastSaved) - new Date(a.lastSaved)));
         }
     }, [isOpen, allData]);
+
+    const handleDelete = (key, title) => {
+        if (window.confirm(`Yakin ingin menghapus draf untuk "${title}"?`)) {
+            localStorage.removeItem(key);
+            setDrafts(prevDrafts => prevDrafts.filter(d => d.key !== key));
+        }
+    };
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -63,17 +71,17 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue, onDelete }) => {
                         <div className="space-y-3">
                             {drafts.map(draft => (
                                 <div key={draft.key} className="bg-gray-50 border rounded-lg p-4 flex justify-between items-center">
-                                    <div className="flex items-center gap-4">
-                                        <FiFileText className="text-sesm-teal" size={24}/>
-                                        <div>
-                                            <p className="font-bold text-gray-800">{draft.title}</p>
+                                    <div className="flex items-center gap-4 overflow-hidden">
+                                        <FiFileText className="text-sesm-teal flex-shrink-0" size={24}/>
+                                        <div className='overflow-hidden'>
+                                            <p className="font-bold text-gray-800 truncate">{draft.title}</p>
                                             <p className="text-sm text-gray-500">
-                                                {draft.questionCount} soal tersimpan • Terakhir diubah: {draft.lastSaved}
+                                                {draft.questionCount} soal • {draft.lastSaved}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => onDelete(draft.key)} className="p-2 text-red-500 hover:bg-red-100 rounded-md" title="Hapus Draf">
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <button onClick={() => handleDelete(draft.key, draft.title)} className="p-2 text-red-500 hover:bg-red-100 rounded-md" title="Hapus Draf">
                                             <FiTrash2/>
                                         </button>
                                         <button onClick={() => onContinue(draft.chapterId)} className="px-4 py-2 text-sm bg-sesm-teal text-white font-semibold rounded-md hover:bg-sesm-deep">

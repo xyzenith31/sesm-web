@@ -1,3 +1,4 @@
+// contoh-sesm-web/pages/admin/ManajemenMateri.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -11,7 +12,7 @@ import QuestionFormModal from '../../components/QuestionFormModal';
 import DraftsModal from '../../components/DraftsModal';
 import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal';
 import EditQuestionModal from '../../components/admin/EditQuestionModal';
-import ChapterSettingsModal from '../../components/admin/ChapterSettingsModal'; // 1. Impor Modal Baru
+import ChapterSettingsModal from '../../components/admin/ChapterSettingsModal';
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -75,7 +76,6 @@ const ManajemenMateri = ({ onNavigate }) => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null);
     
-    // 2. State untuk modal pengaturan
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [selectedChapterForSettings, setSelectedChapterForSettings] = useState(null);
 
@@ -189,19 +189,16 @@ const ManajemenMateri = ({ onNavigate }) => {
         }
     };
     
-    // 3. Fungsi untuk membuka modal pengaturan
     const handleOpenSettingsModal = (chapter) => {
         setSelectedChapterForSettings(chapter);
         setIsSettingsModalOpen(true);
     };
 
-    // 4. Fungsi untuk menyimpan perubahan pengaturan
     const handleSaveSettings = async (chapterId, newSettings) => {
         try {
             await DataService.updateChapterSettings(chapterId, newSettings);
             alert("Pengaturan berhasil disimpan!");
             setIsSettingsModalOpen(false);
-            // Refresh data untuk mendapatkan pengaturan terbaru
             fetchMateriList(selectedKey); 
         } catch (error) {
             alert("Gagal menyimpan pengaturan.");
@@ -209,8 +206,11 @@ const ManajemenMateri = ({ onNavigate }) => {
         }
     };
 
-    const handleDeleteDraft = (key) => { if (window.confirm("Hapus draf ini?")) { localStorage.removeItem(key); setIsDraftsModalOpen(false); setTimeout(() => setIsDraftsModalOpen(true), 100); }};
-    const handleContinueDraft = (key) => { setSelectedKey(key); setIsDraftsModalOpen(false); setIsQuestionModalOpen(true); };
+    const handleContinueDraft = (key) => { 
+        setSelectedKey(key); 
+        setIsDraftsModalOpen(false); 
+        setTimeout(() => setIsQuestionModalOpen(true), 100);
+    };
 
     const currentMapelList = useMemo(() => Object.entries(materiList).map(([nama, data]) => ({ id: data.subject_id, nama_mapel: nama })).filter(m => m.id), [materiList]);
 
@@ -218,7 +218,7 @@ const ManajemenMateri = ({ onNavigate }) => {
         <>
             <AnimatePresence>
                 {isAddChapterModalOpen && <AddChapterModal isOpen onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
-                {isDraftsModalOpen && <DraftsModal isOpen onClose={() => setIsDraftsModalOpen(false)} allData={materiList} onContinue={handleContinueDraft} onDelete={handleDeleteDraft} />}
+                {isDraftsModalOpen && <DraftsModal isOpen onClose={() => setIsDraftsModalOpen(false)} allData={materiList} onContinue={handleContinueDraft} />}
                 {isBankSoalOpen && <BankSoalMateriModal isOpen onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
                 {isEditModalOpen && <EditQuestionModal isOpen onClose={() => setIsEditModalOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
                 {isSettingsModalOpen && (

@@ -55,31 +55,69 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
 
     const getNewQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', media: [], links: [], texts: [], subQuestions: [], id: Date.now() + Math.random() });
     const getNewSubQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', id: Date.now() + Math.random() + '_sub' });
+
+    // Fungsi untuk menyimpan draft ke localStorage
+    const saveDraftToLocalStorage = (draftData) => {
+        try {
+            const draftToSave = {
+                lastSaved: new Date().toISOString(),
+                questions: draftData.map(({ media, ...rest }) => ({ ...rest, media: media.map(f => ({ name: f.name, type: f.type, size: f.size }))}))
+            };
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
+        } catch (error) {
+            console.error("Gagal menyimpan draf:", error);
+        }
+    };
     
-    // Autosave (tetap ada sebagai backup)
+    // Autosave menggunakan debounce
     const debouncedQuestions = useDebounce(questions, 1500);
     useEffect(() => {
         if (isOpen && debouncedQuestions.length > 0 && debouncedQuestions.some(q => q.question.trim() !== '')) {
-            const draftToSave = {
-                lastSaved: new Date().toISOString(),
-                questions: debouncedQuestions.map(({ media, ...rest }) => ({ ...rest, media: media.map(f => ({ name: f.name, type: f.type, size: f.size }))}))
-            };
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
+            saveDraftToLocalStorage(debouncedQuestions);
         }
     }, [debouncedQuestions, DRAFT_KEY, isOpen]);
 
+    // Memuat draft saat modal dibuka
     useEffect(() => {
         if (isOpen) {
-            const savedDraft = localStorage.getItem(DRAFT_KEY);
-            if (savedDraft) {
-                const loadedDraft = JSON.parse(savedDraft).questions.map(q => ({ ...q, media: [], links: q.links || [], texts: q.texts || [], subQuestions: q.subQuestions || [] }));
-                setQuestions(loadedDraft);
-            } else {
-                setQuestions([getNewQuestion()]);
+            try {
+                const savedDraft = localStorage.getItem(DRAFT_KEY);
+                if (savedDraft) {
+                    const loadedDraft = JSON.parse(savedDraft);
+                    if (loadedDraft.questions && loadedDraft.questions.length > 0) {
+                        setQuestions(loadedDraft.questions.map(q => ({ ...getNewQuestion(), ...q, media: [], links: q.links || [], texts: q.texts || [], subQuestions: q.subQuestions || [] })));
+                    } else {
+                         setQuestions([getNewQuestion()]);
+                    }
+                } else {
+                    setQuestions([getNewQuestion()]);
+                }
+            } catch (error) {
+                 console.error("Gagal memuat draf:", error);
+                 setQuestions([getNewQuestion()]);
             }
         }
     }, [isOpen, chapterId]);
 
+    // Handler untuk tombol "Simpan Sementara"
+    const handleSaveDraft = () => {
+        if (questions.length === 0 || questions.every(q => q.question.trim() === '')) {
+            alert('Tidak ada soal untuk disimpan sebagai draf.');
+            return;
+        }
+        saveDraftToLocalStorage(questions);
+        alert('Draf berhasil disimpan!');
+        onClose();
+    };
+    
+    const handleSubmit = (e) => { 
+        e.preventDefault(); 
+        onSubmit(questions); 
+        localStorage.removeItem(DRAFT_KEY); 
+        onClose(); 
+    };
+
+    // Handler lainnya (tidak berubah)
     const handleQuestionChange = (index, field, value) => { const newQuestions = [...questions]; newQuestions[index][field] = value; setQuestions(newQuestions); };
     const handleOptionChange = (qIndex, oIndex, value) => { const newQuestions = [...questions]; newQuestions[qIndex].options[oIndex] = value; if (newQuestions[qIndex].correctAnswer === questions[qIndex].options[oIndex]) { newQuestions[qIndex].correctAnswer = value; } setQuestions(newQuestions); };
     const addOptionField = (qIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].options.push(''); setQuestions(newQuestions); };
@@ -98,30 +136,6 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const handleSubOptionChange = (qIndex, subQIndex, oIndex, value) => { const newQuestions = [...questions]; const subQ = newQuestions[qIndex].subQuestions[subQIndex]; subQ.options[oIndex] = value; if (subQ.correctAnswer === subQ.options[oIndex]) { subQ.correctAnswer = value; } setQuestions(newQuestions); };
     const addSubOptionField = (qIndex, subQIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions[subQIndex].options.push(''); setQuestions(newQuestions); };
     const removeSubOptionField = (qIndex, subQIndex, oIndex) => { const newQuestions = [...questions]; const subQ = newQuestions[qIndex].subQuestions[subQIndex]; const removedOption = subQ.options[oIndex]; if (subQ.correctAnswer === removedOption) { subQ.correctAnswer = ''; } subQ.options = subQ.options.filter((_, i) => i !== oIndex); setQuestions(newQuestions); };
-    
-    // --- PERBAIKAN UTAMA ADA DI FUNGSI INI ---
-    const handleSaveDraft = () => {
-        // Cek apakah ada sesuatu untuk disimpan
-        if (questions.length === 0 || questions.every(q => q.question.trim() === '')) {
-            alert('Tidak ada soal untuk disimpan sebagai draf.');
-            return;
-        }
-
-        // Buat objek draf yang akan disimpan
-        const draftToSave = {
-            lastSaved: new Date().toISOString(),
-            questions: questions.map(({ media, ...rest }) => ({ ...rest, media: media.map(f => ({ name: f.name, type: f.type, size: f.size }))}))
-        };
-        
-        // Simpan ke localStorage secara langsung
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
-        
-        // Beri notifikasi dan tutup modal
-        alert('Draf berhasil disimpan!');
-        onClose();
-    };
-    
-    const handleSubmit = (e) => { e.preventDefault(); onSubmit(questions); localStorage.removeItem(DRAFT_KEY); onClose(); };
 
     if (!isOpen) return null;
 

@@ -12,9 +12,8 @@ import { useAuth } from '../../hooks/useAuth';
 import BankSoalModal from '../../components/admin/BankSoalModal';
 import EditQuestionToQuizModal from '../../components/admin/EditQuestionToQuizModal';
 import DraftQuizModal from '../../components/admin/DraftQuizModal';
-import QuizSettingsModal from '../../components/admin/QuizSettingsModal'; // Impor modal baru
+import QuizSettingsModal from '../../components/admin/QuizSettingsModal';
 
-// Helper components (tidak berubah)
 const StatCard = ({ icon: Icon, value, label, color }) => ( <div className="bg-gray-100 p-4 rounded-lg flex-1 border hover:border-sesm-teal transition-colors"><div className="flex items-center"><Icon className={`text-xl mr-3 ${color}`} /><div><p className="text-xl font-bold text-sesm-deep">{value}</p><p className="text-xs text-gray-500 font-semibold">{label}</p></div></div></div> );
 const DashboardView = ({ userName, stats }) => ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col justify-center h-full text-center px-4"><FiBookOpen className="text-6xl text-gray-300 mx-auto mb-4" /><h2 className="text-2xl font-bold text-gray-800">Selamat Datang, {userName || 'Guru'}!</h2><p className="text-gray-500 max-w-md mx-auto mb-8">Pilih kuis dari daftar di sebelah kiri untuk melihat detail atau kelola soal. Gunakan tombol di atas untuk membuat kuis baru.</p><div className="space-y-6 text-left"><div><h3 className="font-bold text-gray-700 mb-3">Ringkasan Kuis</h3><div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4"><StatCard icon={FiGrid} value={stats.totalQuizzes} label="Total Kuis" color="text-blue-500" /><StatCard icon={FiCheckSquare} value={stats.totalQuestions} label="Total Soal" color="text-orange-500" /></div></div></div></motion.div> );
 
@@ -32,7 +31,7 @@ const ManajemenKuis = ({ onNavigate }) => {
     const [isEditQuestionOpen, setEditQuestionOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null);
     const [isDraftQuizOpen, setDraftQuizOpen] = useState(false);
-    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // State untuk modal pengaturan
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
     const fetchQuizzes = useCallback((selectIdAfterFetch = null) => { 
         setLoading(true); 
@@ -73,7 +72,6 @@ const ManajemenKuis = ({ onNavigate }) => {
         if (!selectedQuiz || questions.length === 0) return;
         if (window.confirm(`Anda yakin ingin menghapus SEMUA (${questions.length}) soal dari kuis "${selectedQuiz.title}"? Kuisnya tidak akan terhapus.`)) {
             try {
-                // Asumsi service ini ada untuk menghapus semua soal dalam satu request
                 await DataService.deleteAllQuestionsFromQuiz(quizId); 
                 alert("Semua soal berhasil dihapus.");
                 fetchQuizDetails(quizId); 
@@ -84,13 +82,12 @@ const ManajemenKuis = ({ onNavigate }) => {
         }
     };
     
-    // Fungsi untuk menyimpan pengaturan
     const handleSaveSettings = async (quizId, settings) => {
         try {
             await DataService.updateQuizSettings(quizId, settings);
             alert("Pengaturan berhasil disimpan!");
             setIsSettingsModalOpen(false);
-            fetchQuizzes(quizId); // Refresh data kuis
+            fetchQuizzes(quizId);
         } catch (error) {
             alert("Gagal menyimpan pengaturan.");
         }
@@ -101,8 +98,18 @@ const ManajemenKuis = ({ onNavigate }) => {
     const handleOpenEditModal = (question) => { setEditingQuestion(question); setEditQuestionOpen(true); };
     const handleUpdateQuestion = async (questionId, updatedData) => { try { await DataService.updateQuestionInQuiz(questionId, updatedData); setEditQuestionOpen(false); setEditingQuestion(null); alert("Soal berhasil diperbarui!"); fetchQuizDetails(selectedQuiz.id); } catch (error) { alert("Gagal memperbarui soal."); console.error(error); } };
     const handleDeleteQuestion = async (questionId) => { if (window.confirm("Anda yakin ingin menghapus soal ini?")) { try { await DataService.deleteQuestionFromQuiz(questionId); alert("Soal berhasil dihapus."); fetchQuizDetails(selectedQuiz.id); fetchQuizzes(); } catch (error) { alert("Gagal menghapus soal."); } } };
-    const handleContinueQuestionDraft = (quizId) => { const quizToSelect = quizzes.find(q => q.id === quizId); if (quizToSelect) { setSelectedQuiz(quizToSelect); setDraftQuizOpen(false); setAddQuestionOpen(true); } else { alert("Kuis untuk draf ini tidak ditemukan. Mungkin sudah dihapus."); } };
-    const handleDeleteDraft = (draftKey) => { if (window.confirm("Yakin ingin menghapus draf ini?")) { localStorage.removeItem(draftKey); setDraftQuizOpen(false); setTimeout(() => setDraftQuizOpen(true), 100); }};
+    
+    const handleContinueQuestionDraft = (quizId) => {
+        const quizToSelect = quizzes.find(q => q.id === quizId);
+        if (quizToSelect) {
+            setSelectedQuiz(quizToSelect);
+            setDraftQuizOpen(false);
+            // Buka modal tambah soal setelah memilih draf
+            setTimeout(() => setAddQuestionOpen(true), 100);
+        } else {
+            alert("Kuis untuk draf ini tidak ditemukan. Mungkin sudah dihapus.");
+        }
+    };
     
     const stats = useMemo(() => ({ totalQuizzes: quizzes.length, totalQuestions: quizzes.reduce((sum, quiz) => sum + (quiz.question_count || 0), 0) }), [quizzes]);
 
@@ -113,7 +120,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                 {isAddQuestionOpen && <AddQuestionToQuizModal isOpen={isAddQuestionOpen} onClose={() => setAddQuestionOpen(false)} onSubmit={handleBatchAddQuestions} quizId={selectedQuiz?.id} />}
                 {isBankSoalOpen && <BankSoalModal isOpen={isBankSoalOpen} onClose={() => setBankSoalOpen(false)} quizId={selectedQuiz?.id} onQuestionsAdded={handleQuestionsFromBankAdded} />}
                 {isEditQuestionOpen && <EditQuestionToQuizModal isOpen={isEditQuestionOpen} onClose={() => setEditQuestionOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
-                {isDraftQuizOpen && <DraftQuizModal isOpen={isDraftQuizOpen} onClose={() => setDraftQuizOpen(false)} allQuizzes={quizzes} onContinueQuestionDraft={handleContinueQuestionDraft} onDeleteDraft={handleDeleteDraft} />}
+                {isDraftQuizOpen && <DraftQuizModal isOpen={isDraftQuizOpen} onClose={() => setDraftQuizOpen(false)} allQuizzes={quizzes} onContinueQuestionDraft={handleContinueQuestionDraft} />}
                 {isSettingsModalOpen && <QuizSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} onSave={handleSaveSettings} quizData={selectedQuiz} />}
             </AnimatePresence>
 
@@ -148,12 +155,9 @@ const ManajemenKuis = ({ onNavigate }) => {
                                 <div className="flex items-center gap-3 my-6">
                                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setDraftQuizOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-white rounded-lg font-semibold hover:bg-yellow-500 shadow-sm"><FiFileText/> Draf</motion.button>
                                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setBankSoalOpen(true) } className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiCopy/> Bank Soal</motion.button>
-                                    
-                                    {/* --- TOMBOL MANAJEMEN NILAI --- */}
                                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => onNavigate('evaluasiKuis')} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm">
                                         <FiTrendingUp/> Manajemen Nilai
                                     </motion.button>
-                                    
                                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setCreateQuizOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-sesm-deep shadow-sm">
                                         <FiPlus/> Buat Kuis Baru
                                     </motion.button>
@@ -173,7 +177,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                     <h2 className="text-2xl font-bold text-sesm-deep">{selectedQuiz.title}</h2>
                                                     <div className="flex-shrink-0 flex gap-2">
                                                         <button onClick={() => setAddQuestionOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm hover:bg-opacity-90"><FiPlus/> Tambah Soal</button>
-                                                        {/* Tombol Pengaturan Baru */}
                                                         <button onClick={() => setIsSettingsModalOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold text-sm hover:bg-gray-300"><FiSettings/> Pengaturan</button>
                                                         <button onClick={() => handleDeleteAllQuestions(selectedQuiz.id)} disabled={questions.length === 0} className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 disabled:bg-gray-300" title="Hapus Semua Soal"><FiTrash2/></button>
                                                     </div>
