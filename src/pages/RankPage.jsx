@@ -43,12 +43,12 @@ const RankPage = ({ onNavigate }) => {
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   
   const { getPointsSummary, getLeaderboard } = useData();
+  const API_URL = 'http://localhost:8080'; // Definisikan base URL API
 
   useEffect(() => {
     setLoading(true);
     setLeaderboardLoading(true);
     
-    // Ambil data poin user saat ini
     getPointsSummary()
       .then(response => {
         setCurrentUserPoints(response.data.totalPoints);
@@ -56,7 +56,6 @@ const RankPage = ({ onNavigate }) => {
       .catch(error => console.error("Gagal memuat poin:", error))
       .finally(() => setLoading(false));
 
-    // Ambil data leaderboard
     getLeaderboard()
       .then(response => {
         setLeaderboard(response.data);
@@ -114,11 +113,21 @@ const RankPage = ({ onNavigate }) => {
                         if (position === 1) positionColor = 'bg-yellow-400';
                         if (position === 2) positionColor = 'bg-slate-300';
                         if (position === 3) positionColor = 'bg-yellow-600';
-                        const avatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.username}`;
+                        
+                        // --- PERBAIKAN LOGIKA AVATAR DI SINI ---
+                        let userAvatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.username}`;
+                        if (user.avatar) {
+                            if (user.avatar.startsWith('http')) {
+                                userAvatar = user.avatar;
+                            } else {
+                                userAvatar = `${API_URL}/${user.avatar}`;
+                            }
+                        }
+
                         return (
                             <motion.div key={user.id} initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 * index }} className="bg-white flex items-center p-3 rounded-xl shadow-sm space-x-4">
                                 <span className={`flex-shrink-0 w-8 h-8 rounded-full text-white font-bold text-lg flex items-center justify-center ${positionColor}`}>{position}</span>
-                                <img src={avatar} alt={user.nama} className="w-12 h-12 rounded-full flex-shrink-0" />
+                                <img src={userAvatar} alt={user.nama} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
                                 <div className="flex-grow overflow-hidden">
                                     <p className="font-bold truncate">{user.nama}</p>
                                     <p className="text-sm text-gray-500">{user.points.toLocaleString()} Poin</p>

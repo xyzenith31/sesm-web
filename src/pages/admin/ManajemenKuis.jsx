@@ -9,7 +9,7 @@ import DataService from '../../services/dataService';
 import CreateQuizModal from '../../components/admin/CreateQuizModal';
 import AddQuestionToQuizModal from '../../components/admin/AddQuestionToQuizModal';
 import { useAuth } from '../../hooks/useAuth';
-import BankSoalModal from '../../components/admin/BankSoalModal';
+import BankSoalQuizModal from '../../components/admin/BankSoalModal';
 import EditQuestionToQuizModal from '../../components/admin/EditQuestionToQuizModal';
 import DraftQuizModal from '../../components/admin/DraftQuizModal';
 import QuizSettingsModal from '../../components/admin/QuizSettingsModal';
@@ -95,7 +95,15 @@ const ManajemenKuis = ({ onNavigate }) => {
         }
     };
 
-    const handleQuestionsFromBankAdded = () => { setBankSoalOpen(false); if(selectedQuiz){ alert("Soal berhasil ditambahkan dari bank!"); fetchQuizDetails(selectedQuiz.id); fetchQuizzes(selectedQuiz.id); }};
+    const handleQuestionsFromBankAdded = (updatedQuizId) => { 
+        setBankSoalOpen(false); 
+        alert("Soal berhasil ditambahkan dari bank!"); 
+        fetchQuizzes(updatedQuizId); 
+        if (updatedQuizId) {
+            fetchQuizDetails(updatedQuizId);
+        }
+    };
+
     const handleBatchAddQuestions = async (quizId, questionsArray) => { setDetailLoading(true); try { for (const q of questionsArray) { const formData = new FormData(); formData.append('question_text', q.question); formData.append('question_type', q.type); if (q.type.includes('pilihan-ganda')) { const formattedOptions = q.options.map(opt => ({ text: opt, isCorrect: opt === q.correctAnswer })); if (formattedOptions.filter(opt => opt.isCorrect).length === 0 && q.options.filter(opt => opt.trim() !== '').length > 0) throw new Error(`Soal "${q.question.substring(0,20)}..." belum punya jawaban.`); formData.append('options', JSON.stringify(formattedOptions)); } const links = q.media.filter(m => m.type === 'link').map(m => m.url); const files = q.media.filter(m => m.type === 'file').map(m => m.file); if (links.length > 0) formData.append('links', JSON.stringify(links)); if (files.length > 0) files.forEach(file => formData.append('mediaFiles', file)); await DataService.addQuestionToQuiz(quizId, formData); } alert(`${questionsArray.length} soal berhasil dipublikasikan!`); } catch (error) { alert(`Gagal menambah soal: ${error.message}`); } finally { fetchQuizDetails(quizId); fetchQuizzes(quizId); } };
     const handleOpenEditModal = (question) => { setEditingQuestion(question); setEditQuestionOpen(true); };
     const handleUpdateQuestion = async (questionId, updatedData) => { try { await DataService.updateQuestionInQuiz(questionId, updatedData); setEditQuestionOpen(false); setEditingQuestion(null); alert("Soal berhasil diperbarui!"); fetchQuizDetails(selectedQuiz.id); } catch (error) { alert("Gagal memperbarui soal."); console.error(error); } };
@@ -119,15 +127,13 @@ const ManajemenKuis = ({ onNavigate }) => {
             <AnimatePresence>
                 {isCreateQuizOpen && <CreateQuizModal isOpen={isCreateQuizOpen} onClose={() => setCreateQuizOpen(false)} onSubmit={handleCreateQuiz} />}
                 {isAddQuestionOpen && <AddQuestionToQuizModal isOpen={isAddQuestionOpen} onClose={() => setAddQuestionOpen(false)} onSubmit={handleBatchAddQuestions} quizId={selectedQuiz?.id} />}
-                {isBankSoalOpen && <BankSoalModal isOpen={isBankSoalOpen} onClose={() => setBankSoalOpen(false)} quizId={selectedQuiz?.id} onQuestionsAdded={handleQuestionsFromBankAdded} />}
+                {isBankSoalOpen && <BankSoalQuizModal isOpen={isBankSoalOpen} onClose={() => setBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
                 {isEditQuestionOpen && <EditQuestionToQuizModal isOpen={isEditQuestionOpen} onClose={() => setEditQuestionOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
                 {isDraftQuizOpen && <DraftQuizModal isOpen={isDraftQuizOpen} onClose={() => setDraftQuizOpen(false)} allQuizzes={quizzes} onContinueQuestionDraft={handleContinueQuestionDraft} />}
                 {isSettingsModalOpen && <QuizSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} onSave={handleSaveSettings} quizData={selectedQuiz} />}
             </AnimatePresence>
 
-            {/* PERBAIKAN: Menambahkan 'flex flex-col flex-grow' */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-grow">
-                {/* PERBAIKAN: Menambahkan 'flex-grow' */}
                 <div className="grid md:grid-cols-12 flex-grow">
                     <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
                         <div className="p-4 border-b border-gray-200"><h2 className="font-bold text-lg text-gray-800">Daftar Kuis</h2></div>

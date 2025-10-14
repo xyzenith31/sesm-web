@@ -28,6 +28,7 @@ const CreateQuizModal = ({ isOpen, onClose, onSubmit }) => {
         }
         onSubmit(formData);
         
+        // Reset state setelah submit
         setTitle('');
         setDescription('');
         setCoverImage(null);
@@ -39,8 +40,19 @@ const CreateQuizModal = ({ isOpen, onClose, onSubmit }) => {
     if (!isOpen) return null;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            // --- PERBAIKAN DI SINI ---
+            className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"
+        >
+            <motion.div 
+                initial={{ scale: 0.9 }} 
+                animate={{ scale: 1 }} 
+                className="bg-white rounded-2xl w-full max-w-lg shadow-xl" 
+                onClick={(e) => e.stopPropagation()}
+            >
                 <form onSubmit={handleSubmit}>
                     <div className="p-6">
                         <div className="flex justify-between items-center mb-4">
