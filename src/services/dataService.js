@@ -113,10 +113,22 @@ const getPointsSummary = () => { return apiClient.get('/points/summary'); };
 const getPointsHistory = () => { return apiClient.get('/points/history'); };
 const getLeaderboard = () => { return apiClient.get('/leaderboard'); };
 const getQuizHistory = () => { return apiClient.get('/points/quiz-history'); };
-
-// --- FUNGSI BARU UNTUK RIWAYAT MATERI ---
 const getSubjectHistory = (subjectName) => {
     return apiClient.get(`/points/subject-history/${encodeURIComponent(subjectName)}`);
+};
+
+// --- FUNGSI BUKU HARIAN (DIARY) ---
+const getDiaryEntries = () => {
+    return apiClient.get('/diary');
+};
+const addDiaryEntry = (content) => {
+    return apiClient.post('/diary', { content });
+};
+const updateDiaryEntry = (id, content) => {
+    return apiClient.put(`/diary/${id}`, { content });
+};
+const deleteDiaryEntry = (id) => {
+    return apiClient.delete(`/diary/${id}`);
 };
 
 
@@ -160,7 +172,11 @@ const DataService = {
   getPointsHistory,
   getLeaderboard,
   getQuizHistory,
-  getSubjectHistory, // <-- Ekspor fungsi baru
+  getSubjectHistory,
+  getDiaryEntries,
+  addDiaryEntry,
+  updateDiaryEntry,
+  deleteDiaryEntry,
 };
 
 export default DataService;
