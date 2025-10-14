@@ -103,6 +103,11 @@ const addQuestionsFromBank = (quizId, questionIds) => { return apiClient.post(`/
 const getQuizForStudent = (quizId) => { return apiClient.get(`/quizzes/${quizId}`); };
 const submitQuizAnswers = (quizId, answers) => { return apiClient.post(`/quizzes/${quizId}/submit`, { answers }); };
 
+// --- FUNGSI BARU UNTUK PENGATURAN KUIS ---
+const updateQuizSettings = (quizId, settings) => {
+    return apiClient.put(`/admin/quizzes/${quizId}/settings`, settings);
+};
+
 // --- FUNGSI POIN & LEADERBOARD ---
 const getPointsSummary = () => { return apiClient.get('/points/summary'); };
 const getPointsHistory = () => { return apiClient.get('/points/history'); };
@@ -126,7 +131,7 @@ const DataService = {
   deleteChapter,
   deleteQuestion,
   getChaptersForSubject,
-  addQuestionsFromBankToChapter, // <-- Fungsi baru diekspor di sini
+  addQuestionsFromBankToChapter,
   updateChapterSettings,
   getAllQuizzes,
   getQuizDetailsForAdmin,
@@ -144,6 +149,7 @@ const DataService = {
   getSubmissionDetails,
   gradeSubmission,
   overrideAnswer,
+  updateQuizSettings, // <-- Fungsi baru diekspor di sini
   getPointsSummary,
   getPointsHistory,
   getLeaderboard,

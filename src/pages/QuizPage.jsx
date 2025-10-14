@@ -86,8 +86,9 @@ const QuizPage = ({ onNavigate, onSelectQuiz }) => {
                 <div>
                     <h2 className="text-lg font-bold text-gray-700 my-3">Daftar Kuis</h2>
                     <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
-                        {categories.map(cat => (
-                            <button key={cat} onClick={() => setActiveFilter(cat)} className={`px-4 py-1.5 text-sm font-semibold rounded-full flex-shrink-0 ${activeFilter === cat ? 'bg-sesm-deep text-white' : 'bg-white text-gray-600'}`}>
+                        {/* PERBAIKAN: Tambahkan index pada key untuk menjamin keunikan */}
+                        {categories.map((cat, index) => (
+                            <button key={`${cat}-${index}`} onClick={() => setActiveFilter(cat)} className={`px-4 py-1.5 text-sm font-semibold rounded-full flex-shrink-0 ${activeFilter === cat ? 'bg-sesm-deep text-white' : 'bg-white text-gray-600'}`}>
                                 {cat}
                             </button>
                         ))}

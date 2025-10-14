@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FiPlus, FiChevronRight, FiBookOpen, FiTrash2, FiLoader, FiGrid, 
-    FiCheckSquare, FiCopy, FiEdit, FiFileText, FiAlertTriangle, FiTrendingUp 
+    FiCheckSquare, FiCopy, FiEdit, FiFileText, FiAlertTriangle, FiTrendingUp, FiSettings 
 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 import CreateQuizModal from '../../components/admin/CreateQuizModal';
@@ -12,6 +12,7 @@ import { useAuth } from '../../hooks/useAuth';
 import BankSoalModal from '../../components/admin/BankSoalModal';
 import EditQuestionToQuizModal from '../../components/admin/EditQuestionToQuizModal';
 import DraftQuizModal from '../../components/admin/DraftQuizModal';
+import QuizSettingsModal from '../../components/admin/QuizSettingsModal'; // Impor modal baru
 
 // Helper components (tidak berubah)
 const StatCard = ({ icon: Icon, value, label, color }) => ( <div className="bg-gray-100 p-4 rounded-lg flex-1 border hover:border-sesm-teal transition-colors"><div className="flex items-center"><Icon className={`text-xl mr-3 ${color}`} /><div><p className="text-xl font-bold text-sesm-deep">{value}</p><p className="text-xs text-gray-500 font-semibold">{label}</p></div></div></div> );
@@ -31,8 +32,23 @@ const ManajemenKuis = ({ onNavigate }) => {
     const [isEditQuestionOpen, setEditQuestionOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null);
     const [isDraftQuizOpen, setDraftQuizOpen] = useState(false);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // State untuk modal pengaturan
 
-    const fetchQuizzes = useCallback(() => { setLoading(true); DataService.getAllQuizzes().then(res => setQuizzes(res.data)).catch(err => console.error(err)).finally(() => setLoading(false)); }, []);
+    const fetchQuizzes = useCallback((selectIdAfterFetch = null) => { 
+        setLoading(true); 
+        DataService.getAllQuizzes()
+            .then(res => {
+                setQuizzes(res.data);
+                if (selectIdAfterFetch) {
+                    const updatedQuiz = res.data.find(q => q.id === selectIdAfterFetch);
+                    if (updatedQuiz) {
+                        setSelectedQuiz(updatedQuiz);
+                    }
+                }
+            })
+            .catch(err => console.error(err))
+            .finally(() => setLoading(false)); 
+    }, []);
     const fetchQuizDetails = useCallback((quizId) => { setDetailLoading(true); DataService.getQuizDetailsForAdmin(quizId).then(res => setQuestions(res.data)).catch(err => console.error(err)).finally(() => setDetailLoading(false)); }, []);
     useEffect(() => { fetchQuizzes(); }, [fetchQuizzes]);
     useEffect(() => { if (selectedQuiz) fetchQuizDetails(selectedQuiz.id); else setQuestions([]); }, [selectedQuiz, fetchQuizDetails]);
@@ -67,6 +83,18 @@ const ManajemenKuis = ({ onNavigate }) => {
             }
         }
     };
+    
+    // Fungsi untuk menyimpan pengaturan
+    const handleSaveSettings = async (quizId, settings) => {
+        try {
+            await DataService.updateQuizSettings(quizId, settings);
+            alert("Pengaturan berhasil disimpan!");
+            setIsSettingsModalOpen(false);
+            fetchQuizzes(quizId); // Refresh data kuis
+        } catch (error) {
+            alert("Gagal menyimpan pengaturan.");
+        }
+    };
 
     const handleQuestionsFromBankAdded = () => { setBankSoalOpen(false); if(selectedQuiz){ alert("Soal berhasil ditambahkan dari bank!"); fetchQuizDetails(selectedQuiz.id); fetchQuizzes(); }};
     const handleBatchAddQuestions = async (quizId, questionsArray) => { setDetailLoading(true); try { for (const q of questionsArray) { const formData = new FormData(); formData.append('question_text', q.question); formData.append('question_type', q.type); if (q.type.includes('pilihan-ganda')) { const formattedOptions = q.options.map(opt => ({ text: opt, isCorrect: opt === q.correctAnswer })); if (formattedOptions.filter(opt => opt.isCorrect).length === 0 && q.options.filter(opt => opt.trim() !== '').length > 0) throw new Error(`Soal "${q.question.substring(0,20)}..." belum punya jawaban.`); formData.append('options', JSON.stringify(formattedOptions)); } const links = q.media.filter(m => m.type === 'link').map(m => m.url); const files = q.media.filter(m => m.type === 'file').map(m => m.file); if (links.length > 0) formData.append('links', JSON.stringify(links)); if (files.length > 0) files.forEach(file => formData.append('mediaFiles', file)); await DataService.addQuestionToQuiz(quizId, formData); } alert(`${questionsArray.length} soal berhasil dipublikasikan!`); } catch (error) { alert(`Gagal menambah soal: ${error.message}`); } finally { fetchQuizDetails(quizId); fetchQuizzes(); } };
@@ -86,6 +114,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                 {isBankSoalOpen && <BankSoalModal isOpen={isBankSoalOpen} onClose={() => setBankSoalOpen(false)} quizId={selectedQuiz?.id} onQuestionsAdded={handleQuestionsFromBankAdded} />}
                 {isEditQuestionOpen && <EditQuestionToQuizModal isOpen={isEditQuestionOpen} onClose={() => setEditQuestionOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
                 {isDraftQuizOpen && <DraftQuizModal isOpen={isDraftQuizOpen} onClose={() => setDraftQuizOpen(false)} allQuizzes={quizzes} onContinueQuestionDraft={handleContinueQuestionDraft} onDeleteDraft={handleDeleteDraft} />}
+                {isSettingsModalOpen && <QuizSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} onSave={handleSaveSettings} quizData={selectedQuiz} />}
             </AnimatePresence>
 
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -120,7 +149,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setDraftQuizOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-white rounded-lg font-semibold hover:bg-yellow-500 shadow-sm"><FiFileText/> Draf</motion.button>
                                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setBankSoalOpen(true) } className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiCopy/> Bank Soal</motion.button>
                                     
-                                    {/* --- TOMBOL MANAJEMEN NILAI DITAMBAHKAN DI SINI --- */}
+                                    {/* --- TOMBOL MANAJEMEN NILAI --- */}
                                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => onNavigate('evaluasiKuis')} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm">
                                         <FiTrendingUp/> Manajemen Nilai
                                     </motion.button>
@@ -144,6 +173,8 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                     <h2 className="text-2xl font-bold text-sesm-deep">{selectedQuiz.title}</h2>
                                                     <div className="flex-shrink-0 flex gap-2">
                                                         <button onClick={() => setAddQuestionOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm hover:bg-opacity-90"><FiPlus/> Tambah Soal</button>
+                                                        {/* Tombol Pengaturan Baru */}
+                                                        <button onClick={() => setIsSettingsModalOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold text-sm hover:bg-gray-300"><FiSettings/> Pengaturan</button>
                                                         <button onClick={() => handleDeleteAllQuestions(selectedQuiz.id)} disabled={questions.length === 0} className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 disabled:bg-gray-300" title="Hapus Semua Soal"><FiTrash2/></button>
                                                     </div>
                                                 </div>
