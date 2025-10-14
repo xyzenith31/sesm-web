@@ -1,19 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiCheck, FiAward, FiTarget } from 'react-icons/fi';
+import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiAward, FiTarget, FiCheckCircle, FiBarChart2 } from 'react-icons/fi';
 import { FaCalculator } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
 
-// Data Dummy untuk Riwayat & Nilai
-const dummyHistory = [
-    { id: 1, title: "Bilangan Sampai 10", date: "11 Okt 2025", score: 100, points: 150, details: [
-        { q: "Angka setelah 7 adalah...", a: "8", isCorrect: true },
-        { q: "Berapa hasil dari 3 + 5?", a: "8", isCorrect: true },
-    ]},
-];
-
-// Komponen-komponen UI (ChapterButton, HistoryCard, DetailModal)
+// Komponen-komponen UI (ChapterButton, HistoryCard, DetailModal, StatCard) - Salin dari PAI Page
 const ChapterButton = ({ chapter, onClick, Icon }) => (
     <motion.button
         onClick={onClick}
@@ -40,7 +32,7 @@ const HistoryCard = ({ item, onSelect }) => (
         <div className="flex justify-between items-start">
             <div>
                 <h4 className="font-bold text-sesm-deep text-md">{item.title}</h4>
-                <p className="text-xs text-gray-500 mt-1">{item.date}</p>
+                 <p className="text-xs text-gray-500 mt-1">{new Date(item.date).toLocaleString('id-ID')}</p>
             </div>
             <button onClick={() => onSelect(item)} className="text-sm font-semibold text-sesm-teal hover:underline">Lihat Detail</button>
         </div>
@@ -48,7 +40,7 @@ const HistoryCard = ({ item, onSelect }) => (
             <div className="flex items-center space-x-2">
                 <FiTarget className="text-blue-500" />
                 <div>
-                    <p className="text-lg font-bold text-sesm-deep">{item.score}</p>
+                    <p className="text-lg font-bold text-sesm-deep">{item.score ?? 'N/A'}</p>
                     <p className="text-xs text-gray-500 -mt-1">Nilai</p>
                 </div>
             </div>
@@ -64,37 +56,38 @@ const HistoryCard = ({ item, onSelect }) => (
 );
 
 const DetailModal = ({ item, onClose }) => (
-    <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-        onClick={onClose}
-    >
-        <motion.div
-            initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-            className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-        >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose} >
+        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()} >
             <header className="p-4 border-b flex justify-between items-center">
                 <h3 className="text-lg font-bold text-sesm-deep">Detail Pengerjaan</h3>
                 <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX /></button>
             </header>
-            <main className="p-6 overflow-y-auto space-y-3">
-                {item.details.map((d, i) => (
-                    <div key={i} className={`p-3 rounded-lg border-l-4 ${d.isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
-                        <p className="font-semibold text-gray-700">{i + 1}. {d.q}</p>
-                        <p className={`text-sm mt-1 ${d.isCorrect ? 'text-green-800' : 'text-red-800'}`}>Jawabanmu: {d.a}</p>
-                        {!d.isCorrect && <p className="text-sm mt-1 text-gray-600">Jawaban Benar: {d.correctA}</p>}
-                    </div>
-                ))}
+            <main className="p-6 overflow-y-auto">
+                <p className="text-center text-gray-500">Detail per soal belum tersedia untuk riwayat.</p>
             </main>
         </motion.div>
     </motion.div>
 );
 
+const StatCard = ({ icon: Icon, value, label, color }) => (
+    <div className="bg-white p-3 rounded-xl shadow-sm flex-1">
+        <div className="flex items-center">
+            <Icon className={`${color} text-2xl mr-3`} />
+            <div>
+                <p className="text-lg font-bold text-sesm-deep">{value}</p>
+                <p className="text-xs text-gray-500 font-semibold">{label}</p>
+            </div>
+        </div>
+    </div>
+);
+
+
 const MatematikaPage = ({ onNavigate, onNavigateToWorksheet }) => {
     const { user } = useAuth();
     const [chapters, setChapters] = useState([]);
+    const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [historyLoading, setHistoryLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('materi');
     const [selectedHistory, setSelectedHistory] = useState(null);
@@ -111,11 +104,26 @@ const MatematikaPage = ({ onNavigate, onNavigateToWorksheet }) => {
                 .then(response => setChapters(response.data))
                 .catch(err => setError("Gagal memuat daftar bab."))
                 .finally(() => setLoading(false));
+
+            setHistoryLoading(true);
+            DataService.getSubjectHistory(SUBJECT_NAME)
+                .then(response => setHistory(response.data))
+                .catch(err => console.error("Gagal memuat riwayat", err))
+                .finally(() => setHistoryLoading(false));
         } else {
             setError("Informasi jenjang/kelas pengguna tidak ditemukan.");
             setLoading(false);
+            setHistoryLoading(false);
         }
     }, [user]);
+
+    const stats = useMemo(() => {
+        const gradedHistory = history.filter(h => h.score !== null);
+        const completedCount = history.length;
+        const bestScore = gradedHistory.length > 0 ? Math.max(...gradedHistory.map(h => h.score)) : 0;
+        const avgScore = gradedHistory.length > 0 ? Math.round(gradedHistory.reduce((sum, h) => sum + h.score, 0) / gradedHistory.length) : 0;
+        return { completedCount, bestScore, avgScore };
+    }, [history]);
 
     const renderContent = () => {
         if (loading) return <div className="flex justify-center items-center h-48"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
@@ -127,8 +135,9 @@ const MatematikaPage = ({ onNavigate, onNavigateToWorksheet }) => {
         }
 
         if (activeTab === 'nilai') {
-            if (dummyHistory.length === 0) return <p className="text-center text-gray-500 mt-8">Anda belum pernah mengerjakan bab apapun.</p>;
-            return <div className="space-y-4">{dummyHistory.map(item => <HistoryCard key={item.id} item={item} onSelect={setSelectedHistory} />)}</div>;
+            if (historyLoading) return <div className="flex justify-center items-center h-48"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
+            if (history.length === 0) return <p className="text-center text-gray-500 mt-8">Anda belum pernah mengerjakan bab apapun.</p>;
+            return <div className="space-y-4">{history.map(item => <HistoryCard key={item.id} item={item} onSelect={setSelectedHistory} />)}</div>;
         }
     };
 
@@ -158,6 +167,14 @@ const MatematikaPage = ({ onNavigate, onNavigateToWorksheet }) => {
                             <ICON size={40} className="opacity-80"/>
                         </div>
                     </header>
+
+                     <div className="px-6 md:px-0 mb-4">
+                        <div className="flex space-x-4">
+                            <StatCard label="Materi Dikerjakan" value={historyLoading ? '...' : stats.completedCount} icon={FiCheckCircle} color="text-green-500"/>
+                            <StatCard label="Nilai Rata-rata" value={historyLoading ? '...' : stats.avgScore} icon={FiBarChart2} color="text-blue-500"/>
+                            <StatCard label="Akurasi Terbaik" value={historyLoading ? '...' : `${stats.bestScore}%`} icon={FiTarget} color="text-orange-500"/>
+                        </div>
+                    </div>
 
                     <div className="p-4 md:p-0">
                         <div className="flex items-center bg-gray-200/70 rounded-full p-1 max-w-sm mx-auto">

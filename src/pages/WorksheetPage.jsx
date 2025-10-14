@@ -1,9 +1,10 @@
 // contoh-sesm-web/pages/WorksheetPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiDownload, FiLink, FiType } from 'react-icons/fi';
+import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiDownload, FiLink, FiType, FiAward } from 'react-icons/fi';
 import DataService from '../services/dataService';
 import ConfirmationModal from '../components/ConfirmationModal';
+import PointsNotification from '../components/PointsNotification'; // Impor notifikasi poin
 
 const ImageLightbox = ({ imageUrl, onClose }) => {
     return (
@@ -132,6 +133,7 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
     const [isNavOpen, setIsNavOpen] = useState(false);
     const [isExitModalOpen, setIsExitModalOpen] = useState(false);
     const [lightboxImage, setLightboxImage] = useState(null);
+    const [showPoints, setShowPoints] = useState(false); // State untuk notifikasi poin
 
     useEffect(() => {
         if (materiKey) {
@@ -162,6 +164,9 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
             const response = await DataService.submitAnswers(materiKey, answerPayload);
             setSubmissionResult(response.data);
             setIsSubmitted(true);
+            if (response.data.pointsAwarded) {
+                setShowPoints(true);
+            }
         } catch (error) {
             const message = error.response?.data?.message || "Gagal mengirim jawaban.";
             setSubmissionResult({ message });
@@ -186,21 +191,29 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
 
     if (isSubmitted) {
         return (
-            <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4 text-center">
-                 <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
-                    <FiCheckCircle className="text-green-500 text-6xl mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-sesm-deep">Latihan Selesai!</h2>
-                    {submissionResult?.score !== undefined ? (
-                        <>
-                            <p className="text-gray-600 mt-2">Skor akhir kamu:</p>
-                            <p className="text-5xl font-bold text-sesm-teal my-3">{submissionResult.score}</p>
-                        </>
-                    ) : ( <p className="text-gray-600 my-4">{submissionResult?.message || "Jawaban telah dikumpulkan."}</p> )}
-                    <motion.button onClick={handleExit} className="w-full py-3 bg-sesm-deep text-white font-bold rounded-lg mt-6" whileTap={{ scale: 0.95 }}>
-                        Kembali ke Daftar Bab
-                    </motion.button>
-                </motion.div>
-            </div>
+            <>
+                <AnimatePresence>
+                    {showPoints && <PointsNotification points={submissionResult.pointsAwarded} message="Materi Selesai!" onDone={() => setShowPoints(false)} />}
+                </AnimatePresence>
+                <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4 text-center">
+                     <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
+                        <FiCheckCircle className="text-green-500 text-6xl mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold text-sesm-deep">Latihan Selesai!</h2>
+                        {submissionResult?.score !== undefined ? (
+                            <>
+                                <p className="text-gray-600 mt-2">Skor akhir kamu:</p>
+                                <p className="text-5xl font-bold text-sesm-teal my-3">{submissionResult.score}</p>
+                                {submissionResult.pointsAwarded && (
+                                    <p className="flex items-center justify-center font-semibold text-green-600 bg-green-100 px-3 py-1 rounded-full"><FiAward className="mr-2"/> +{submissionResult.pointsAwarded} Poin!</p>
+                                )}
+                            </>
+                        ) : ( <p className="text-gray-600 my-4">{submissionResult?.message || "Jawaban telah dikumpulkan."}</p> )}
+                        <motion.button onClick={handleExit} className="w-full py-3 bg-sesm-deep text-white font-bold rounded-lg mt-6" whileTap={{ scale: 0.95 }}>
+                            Kembali ke Daftar Bab
+                        </motion.button>
+                    </motion.div>
+                </div>
+            </>
         )
     }
 

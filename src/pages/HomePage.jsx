@@ -52,7 +52,8 @@ const SubjectButton = ({ icon: Icon, label, onClick, colors }) => {
       whileTap={{ scale: 0.95 }}
       variants={itemVariants}
     >
-      <div className={`w-full h-16 bg-white rounded-2xl flex items-center justify-center border-2 border-gray-100 shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:border-current ${colors.text}`}>
+      {/* --- PERBAIKAN DI SINI --- */}
+      <div className={`w-full aspect-square bg-white rounded-2xl flex items-center justify-center border-2 border-gray-100 shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:border-current ${colors.text}`}>
         <Icon size={32} />
       </div>
       <p className={`text-xs font-bold text-center transition-colors ${colors.text}`}>{label}</p>

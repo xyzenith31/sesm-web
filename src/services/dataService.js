@@ -112,7 +112,12 @@ const updateQuizSettings = (quizId, settings) => {
 const getPointsSummary = () => { return apiClient.get('/points/summary'); };
 const getPointsHistory = () => { return apiClient.get('/points/history'); };
 const getLeaderboard = () => { return apiClient.get('/leaderboard'); };
-const getQuizHistory = () => { return apiClient.get('/points/quiz-history'); }; // <-- FUNGSI BARU
+const getQuizHistory = () => { return apiClient.get('/points/quiz-history'); };
+
+// --- FUNGSI BARU UNTUK RIWAYAT MATERI ---
+const getSubjectHistory = (subjectName) => {
+    return apiClient.get(`/points/subject-history/${encodeURIComponent(subjectName)}`);
+};
 
 
 // --- EXPORT SEMUA FUNGSI ---
@@ -154,7 +159,8 @@ const DataService = {
   getPointsSummary,
   getPointsHistory,
   getLeaderboard,
-  getQuizHistory, // <-- Ekspor fungsi baru
+  getQuizHistory,
+  getSubjectHistory, // <-- Ekspor fungsi baru
 };
 
 export default DataService;
