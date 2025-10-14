@@ -46,18 +46,36 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     );
 };
 
+// --- [DIPERBARUI] Data peringkat dengan nama ikon ---
 const ranks = [
-    { name: 'Murid Baru', points: 0, color: '#CD7F32' },
-    { name: 'Siswa Rajin', points: 5000, color: '#C0C0C0' },
-    { name: 'Bintang Kelas', points: 12000, color: '#FFD700' },
-    { name: 'Juara Harapan', points: 25000, color: '#4682B4' },
-    { name: 'Cendekiawan Muda', points: 50000, color: '#9370DB' },
-    { name: 'Legenda Sekolah', points: 100000, color: '#FF4500' },
+  { name: 'Murid Baru', points: 0, color: '#CD7F32', icon: 'bronze' },
+  { name: 'Siswa Rajin', points: 5000, color: '#C0C0C0', icon: 'silver' },
+  { name: 'Bintang Kelas', points: 12000, color: '#FFD700', icon: 'gold' },
+  { name: 'Juara Harapan', points: 25000, color: '#4682B4', icon: 'platinum' },
+  { name: 'Cendekiawan Muda', points: 50000, color: '#9370DB', icon: 'diamond' },
+  { name: 'Legenda Sekolah', points: 100000, color: '#FF4500', icon: 'master' },
 ];
 
-const RankCard = ({ currentUserPoints = 0, onNavigate }) => {
-    const currentRankIndex = ranks.slice().reverse().findIndex(r => currentUserPoints >= r.points);
-    const currentRank = ranks[ranks.length - 1 - currentRankIndex];
+// --- [DIPERBARUI] Komponen Ikon Peringkat Kustom (SVG) ---
+const RankIcon = ({ rank, size = "w-16 h-16" }) => {
+  const iconStyle = `drop-shadow-lg ${size}`;
+  switch (rank) {
+    case 'bronze': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 39c-7.732 0-14-6.268-14-14S16.268 11 24 11s14 6.268 14 14-6.268 14-14 14z" /><path strokeLinecap="round" strokeLinejoin="round" d="M18 25h12M24 19v12" /></g></svg>;
+    case 'silver': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 42c-9.941 0-18-8.059-18-18S14.059 6 24 6s18 8.059 18 18-8.059 18-18 18z" /><path strokeLinecap="round" strokeLinejoin="round" d="M31 17l-7 7-7-7" /><path strokeLinecap="round" d="M24 24v12" /></g></svg>;
+    case 'gold': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4 4 12.954 4 24s8.954 20 20 20z" /><path strokeLinecap="round" strokeLinejoin="round" d="M24 30l-5 5 5-10 5 10-5-5z" /><path d="M17 17h14" /></g></svg>;
+    case 'platinum': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M11 18l13-13 13 13-13 13-13-13z" /><path strokeLinecap="round" strokeLinejoin="round" d="M11 18v18h26V18" /></g></svg>;
+    case 'diamond': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 5L40 19 24 43 8 19 24 5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 19h32" /></g></svg>;
+    case 'master': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 8l6 12 13 2-9 9 2 13-12-6-12 6 2-13-9-9 13-2 6-12z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 4h24v4H12z" /></g></svg>;
+    default: return null;
+  }
+};
+
+
+// --- [DIPERBARUI] Kartu Peringkat dengan Ikon Dinamis ---
+const RankCard = ({ currentRankInfo, onNavigate }) => {
+    if (!currentRankInfo) {
+        return <div className="w-full h-24 bg-gray-200 rounded-2xl animate-pulse"></div>;
+    }
 
     return (
         <motion.button
@@ -66,18 +84,21 @@ const RankCard = ({ currentUserPoints = 0, onNavigate }) => {
             whileTap={{ scale: 0.98 }}
         >
             <div className="flex justify-between items-center">
-                <div>
-                    <h3 className="font-bold text-gray-500 text-sm">Peringkat Saat Ini</h3>
-                    <p className="text-lg font-bold" style={{ color: currentRank.color }}>{currentRank.name}</p>
-                    <p className="text-sm text-gray-600 flex items-center font-semibold">
-                        <FiZap className="mr-1 text-yellow-500" /> {currentUserPoints.toLocaleString()} Poin
-                    </p>
+                <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-green-100 rounded-full" style={{ color: currentRankInfo.color }}>
+                        <RankIcon rank={currentRankInfo.icon} size="w-8 h-8" />
+                    </div>
+                    <div className="flex-grow">
+                        <p className="text-xl font-bold text-sesm-deep">{currentRankInfo.name}</p>
+                        <p className="text-sm text-gray-500 -mt-1">Peringkat Saat Ini</p>
+                    </div>
                 </div>
                 <FiChevronRight className="text-gray-400" size={24} />
             </div>
         </motion.button>
     );
 };
+
 
 const AnimatedNumber = ({ value = 0 }) => {
     const [displayValue, setDisplayValue] = useState(0);
@@ -122,7 +143,7 @@ const ProfilePage = ({ onNavigate }) => {
     const { user, logout } = useAuth();
     const { getPointsSummary } = useData();
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-    const [pointsData, setPointsData] = useState({ totalPoints: user?.points || 0 });
+    const [pointsData, setPointsData] = useState({ totalPoints: user?.points || 0, currentRank: null });
     const [loadingPoints, setLoadingPoints] = useState(true);
     const API_URL = 'http://localhost:8080';
 
@@ -131,7 +152,7 @@ const ProfilePage = ({ onNavigate }) => {
             .then(response => setPointsData(response.data))
             .catch(error => {
                 console.error("Gagal memuat ringkasan poin:", error);
-                setPointsData({ totalPoints: user?.points || 0 });
+                setPointsData({ totalPoints: user?.points || 0, currentRank: { name: 'Murid Baru', icon: 'bronze', color: '#CD7F32' } });
             })
             .finally(() => setLoadingPoints(false));
     }, [getPointsSummary, user]);
@@ -170,7 +191,7 @@ const ProfilePage = ({ onNavigate }) => {
                 title="Konfirmasi Logout"
                 message="Apakah Anda yakin ingin keluar dari akun Anda?"
             />
-
+            
             {/* --- Tampilan Mobile --- */}
             <div className="md:hidden">
                 <div className="bg-gray-100 min-h-screen pb-28">
@@ -195,11 +216,7 @@ const ProfilePage = ({ onNavigate }) => {
                     </div>
                     <main className="p-4 -mt-6">
                         <div className="space-y-4">
-                            {loadingPoints ? (
-                                <div className="w-full h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
-                            ) : (
-                                <RankCard currentUserPoints={pointsData.totalPoints} onNavigate={onNavigate} />
-                            )}
+                            <RankCard currentRankInfo={pointsData.currentRank} onNavigate={onNavigate} />
                             <div>
                                 <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-2">Aktivitas Saya</h3>
                                 <div className="space-y-3">
@@ -242,11 +259,7 @@ const ProfilePage = ({ onNavigate }) => {
                         </div>
                         {/* Kolom Kanan */}
                         <div className="lg:col-span-2 space-y-8">
-                            {loadingPoints ? (
-                                <div className="w-full h-32 bg-gray-200 rounded-2xl animate-pulse"></div>
-                            ) : (
-                                <RankCard currentUserPoints={pointsData.totalPoints} onNavigate={onNavigate} />
-                            )}
+                            <RankCard currentRankInfo={pointsData.currentRank} onNavigate={onNavigate} />
                             <div className="space-y-6">
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-3">Aktivitas Saya</h3>
@@ -265,6 +278,8 @@ const ProfilePage = ({ onNavigate }) => {
                                 <div className="pt-4">
                                     <ProfileMenuItem icon={FiLogOut} label="Logout" hasChevron={false} isLogout={true} onClick={() => setIsLogoutModalOpen(true)} />
                                 </div>
+                            </div>
+                            <div className="mt-8 flex justify-center">
                             </div>
                         </div>
                     </div>

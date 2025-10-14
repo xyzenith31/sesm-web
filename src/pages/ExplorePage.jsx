@@ -90,7 +90,7 @@ const ExplorePage = ({ onNavigate }) => {
       onNavigate('creativeZone');
     } else if (featureId === 'interactiveStory') {
       onNavigate('interactiveStory');
-    } else if (featureId === 'quiz') { // <-- INI BAGIAN YANG DIPERBARUI
+    } else if (featureId === 'quiz') { 
       onNavigate('quiz');
     } else {
       alert('Fitur ini akan segera hadir!');
@@ -155,49 +155,56 @@ const ExplorePage = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Tampilan Desktop */}
-      <div className="hidden md:flex flex-col items-center w-full min-h-screen bg-gray-100 p-8">
-        <div className="w-full max-w-6xl mx-auto">
-          <header className="flex items-center justify-between w-full mb-10">
-            <div className='flex items-center space-x-4'>
-              <motion.img
-                src={logoImage}
-                alt="SESM Logo"
-                className="w-24 h-24 object-contain"
-                whileHover={{rotate: 360}}
-                transition={{duration: 1, ease: 'linear'}}
-              />
-              <div>
-                <h1 className="text-5xl font-bold text-sesm-deep tracking-wider">Jelajahi Dunia Belajar</h1>
-                <p className="text-lg text-gray-500 mt-1">Temukan petualangan baru di setiap sudutnya.</p>
+      {/* Tampilan Desktop (Struktur Diperbarui) */}
+      <div className="hidden md:flex flex-col w-full min-h-screen bg-gray-100 p-8">
+        <div className="w-full max-w-7xl mx-auto flex-grow flex flex-col">
+          <motion.div 
+            className="bg-white p-8 rounded-2xl shadow-xl flex flex-col flex-grow"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
+            <header className="flex items-center justify-between w-full mb-10">
+              <div className='flex items-center space-x-4'>
+                <motion.img
+                  src={logoImage}
+                  alt="SESM Logo"
+                  className="w-24 h-24 object-contain"
+                  whileHover={{rotate: 360}}
+                  transition={{duration: 1, ease: 'linear'}}
+                />
+                <div>
+                  <h1 className="text-5xl font-bold text-sesm-deep tracking-wider">Jelajahi Dunia Belajar</h1>
+                  <p className="text-lg text-gray-500 mt-1">Temukan petualangan baru di setiap sudutnya.</p>
+                </div>
               </div>
-            </div>
-            <motion.div
-              className="bg-white p-4 rounded-2xl shadow-md flex items-center space-x-4"
-              initial={{opacity:0, y: -20}}
-              animate={{opacity:1, y: 0}}
-              transition={{delay: 0.2, type: 'spring'}}
-            >
-              <FaTrophy className='text-yellow-400 text-4xl' />
-              <div>
-                <p className='text-sm font-semibold text-gray-500'>Total Poin</p>
-                <p className='text-2xl font-bold text-sesm-deep'>{totalPoints.toLocaleString()}</p>
-              </div>
-            </motion.div>
-          </header>
+              <motion.div
+                className="bg-gray-100 p-4 rounded-2xl shadow-inner flex items-center space-x-4 border"
+                initial={{opacity:0, y: -20}}
+                animate={{opacity:1, y: 0}}
+                transition={{delay: 0.2, type: 'spring'}}
+              >
+                <FaTrophy className='text-yellow-400 text-4xl' />
+                <div>
+                  <p className='text-sm font-semibold text-gray-500'>Total Poin</p>
+                  <p className='text-2xl font-bold text-sesm-deep'>{totalPoints.toLocaleString()}</p>
+                </div>
+              </motion.div>
+            </header>
 
-          <main>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
-                {features.map((feature, index) => (
-                  <FeatureCard
-                    key={index}
-                    {...feature}
-                    index={index}
-                    onClick={() => handleCardClick(feature.id)}
-                  />
-                ))}
-            </div>
-          </main>
+            <main className="flex-grow">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                  {features.map((feature, index) => (
+                    <FeatureCard
+                      key={index}
+                      {...feature}
+                      index={index}
+                      onClick={() => handleCardClick(feature.id)}
+                    />
+                  ))}
+              </div>
+            </main>
+          </motion.div>
         </div>
       </div>
     </>

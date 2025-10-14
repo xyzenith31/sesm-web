@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiChevronRight, FiStar, FiHelpCircle, FiAlertCircle, FiAward, FiMessageSquare, FiX } from 'react-icons/fi';
+import { motion, AnimatePresence, animate } from 'framer-motion';
+import { FiSearch, FiChevronRight, FiStar, FiHelpCircle, FiAlertCircle, FiAward, FiMessageSquare, FiX, FiZap, FiTrendingUp } from 'react-icons/fi';
 import { FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale, FaLanguage, FaMosque, FaBookReader, FaPencilAlt, FaBullseye, FaQuestionCircle, FaPalette } from 'react-icons/fa';
 import logoSesm from '../assets/logo.png';
 import { useAuth } from '../hooks/useAuth';
 import { useData } from '../hooks/useData';
+
+// --- KUMPULAN HELPER COMPONENT ---
 
 const iconMap = {
   FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale,
@@ -38,6 +40,59 @@ const testimonials = [
   },
 ];
 
+// Helper component untuk animasi angka
+const AnimatedNumber = ({ value = 0 }) => {
+    const [displayValue, setDisplayValue] = useState(0);
+    useEffect(() => {
+        const controls = animate(0, parseInt(value) || 0, {
+            duration: 1.5,
+            ease: "easeOut",
+            onUpdate(latest) { setDisplayValue(Math.round(latest)); }
+        });
+        return () => controls.stop();
+    }, [value]);
+    return <>{displayValue.toLocaleString()}</>;
+};
+
+// [BARU] KOMPONEN UNTUK IKON PERINGKAT KUSTOM
+const RankIcon = ({ rank, size = "w-12 h-12" }) => {
+  const iconStyle = `drop-shadow-lg ${size}`;
+  switch (rank) {
+    case 'bronze': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 39c-7.732 0-14-6.268-14-14S16.268 11 24 11s14 6.268 14 14-6.268 14-14 14z" /><path strokeLinecap="round" strokeLinejoin="round" d="M18 25h12M24 19v12" /></g></svg>;
+    case 'silver': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 42c-9.941 0-18-8.059-18-18S14.059 6 24 6s18 8.059 18 18-8.059 18-18 18z" /><path strokeLinecap="round" strokeLinejoin="round" d="M31 17l-7 7-7-7" /><path strokeLinecap="round" d="M24 24v12" /></g></svg>;
+    case 'gold': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4 4 12.954 4 24s8.954 20 20 20z" /><path strokeLinecap="round" strokeLinejoin="round" d="M24 30l-5 5 5-10 5 10-5-5z" /><path d="M17 17h14" /></g></svg>;
+    case 'platinum': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M11 18l13-13 13 13-13 13-13-13z" /><path strokeLinecap="round" strokeLinejoin="round" d="M11 18v18h26V18" /></g></svg>;
+    case 'diamond': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 5L40 19 24 43 8 19 24 5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 19h32" /></g></svg>;
+    case 'master': return <svg className={iconStyle} viewBox="0 0 48 48"><g fill="none" stroke="currentColor" strokeWidth="3"><path d="M24 8l6 12 13 2-9 9 2 13-12-6-12 6 2-13-9-9 13-2 6-12z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 4h24v4H12z" /></g></svg>;
+    default: return <FiAward className={iconStyle} />;
+  }
+};
+
+// [DIPERBARUI] Helper component untuk kartu statistik
+const StatCard = ({ icon, value, label, color, onClick, rankIconName }) => (
+    <motion.div
+        className="bg-white p-4 rounded-2xl shadow-md flex-1 flex items-center space-x-4 cursor-pointer border hover:border-gray-300 transition-all"
+        whileHover={{ y: -5 }}
+        onClick={onClick}
+    >
+        <div 
+            className={`p-3 rounded-full ${color.bg} flex items-center justify-center`}
+            style={{ color: rankIconName ? color.iconColor : 'inherit' }}
+        >
+            {rankIconName ? (
+                <RankIcon rank={rankIconName} size="w-8 h-8" />
+            ) : (
+                React.createElement(icon, { className: `${color.text}`, size: 24 })
+            )}
+        </div>
+        <div>
+            <div className="text-xl font-bold text-sesm-deep">{value}</div>
+            <p className="text-sm text-gray-500 font-semibold">{label}</p>
+        </div>
+    </motion.div>
+);
+
+
 const SubjectButton = ({ icon: Icon, label, onClick, colors }) => {
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -52,7 +107,6 @@ const SubjectButton = ({ icon: Icon, label, onClick, colors }) => {
       whileTap={{ scale: 0.95 }}
       variants={itemVariants}
     >
-      {/* --- PERBAIKAN DI SINI --- */}
       <div className={`w-full aspect-square bg-white rounded-2xl flex items-center justify-center border-2 border-gray-100 shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:border-current ${colors.text}`}>
         <Icon size={32} />
       </div>
@@ -61,9 +115,8 @@ const SubjectButton = ({ icon: Icon, label, onClick, colors }) => {
   );
 };
 
-
 const TestimonialCard = ({ avatar, quote, name }) => (
-  <motion.div 
+  <motion.div
     className="bg-gray-100/80 rounded-2xl p-4 flex items-center space-x-3 shadow-sm"
     whileHover={{ y: -5, boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }}
   >
@@ -88,8 +141,11 @@ const HomePage = ({ onNavigate }) => {
   const [showSuggestionModal, setShowSuggestionModal] = useState(false);
   const [suggestionText, setSuggestionText] = useState('');
   
+  const [pointsSummary, setPointsSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+
   const { user } = useAuth();
-  const { getSubjects } = useData();
+  const { getSubjects, getPointsSummary } = useData();
 
   useEffect(() => {
     if (user && user.jenjang) {
@@ -114,6 +170,21 @@ const HomePage = ({ onNavigate }) => {
     }
   }, [user, getSubjects]);
 
+  useEffect(() => {
+    setSummaryLoading(true);
+    getPointsSummary()
+      .then(response => {
+        setPointsSummary(response.data);
+      })
+      .catch(err => {
+        console.error("Gagal memuat ringkasan poin:", err);
+        setPointsSummary({ totalPoints: 0, currentRank: { name: 'Murid Baru', icon: 'bronze', color: '#CD7F32' } });
+      })
+      .finally(() => {
+        setSummaryLoading(false);
+      });
+  }, [getPointsSummary]);
+
   const handleSubjectClick = (subjectLabel) => {
     if (!onNavigate) return;
     const subjectToViewMap = {
@@ -136,8 +207,8 @@ const HomePage = ({ onNavigate }) => {
   const SubjectLoader = () => (
     [...Array(8)].map((_, i) => (
       <div key={i} className="flex flex-col items-center justify-center space-y-3">
-        <div className="w-full h-16 bg-gray-200 rounded-2xl animate-pulse"></div>
-        <div className="h-2 w-10 bg-gray-200 rounded animate-pulse mt-1"></div>
+        <div className="w-full aspect-square bg-gray-200 rounded-2xl animate-pulse"></div>
+        <div className="h-3 w-12 bg-gray-200 rounded animate-pulse"></div>
       </div>
     ))
   );
@@ -169,7 +240,6 @@ const HomePage = ({ onNavigate }) => {
         <div className="min-h-screen bg-gray-50 pb-28">
           <header className="px-6 pt-8 pb-4">
             <div className="flex items-center space-x-3">
-              {/* --- [PERBAIKAN LOGO MOBILE] Tambahkan object-contain --- */}
               <img src={logoSesm} alt="Sesm Logo" className="w-12 h-12 object-contain" />
               <div>
                 <h1 className="text-xl font-bold text-sesm-deep">Welcome</h1>
@@ -183,6 +253,35 @@ const HomePage = ({ onNavigate }) => {
           </header>
 
           <main className="px-6 mt-4">
+            <motion.div
+              className="mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="bg-white p-4 rounded-2xl shadow-lg flex items-center justify-between">
+                {summaryLoading ? (
+                  <div className="w-full h-12 animate-pulse bg-gray-200 rounded-lg"></div>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-500">Poin Kamu</p>
+                      <p className="text-2xl font-bold text-sesm-deep">
+                        <AnimatedNumber value={pointsSummary?.totalPoints || 0} />
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-gray-500">Peringkat</p>
+                      <p className="text-md font-bold text-sesm-teal">
+                        {pointsSummary?.currentRank.name || 'Murid Baru'}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+
+            <h2 className="text-lg font-bold text-gray-800 mb-4">Mata Pelajaran</h2>
             <motion.div 
               className="grid grid-cols-4 gap-x-4 gap-y-5"
               variants={gridContainerVariants}
@@ -195,6 +294,7 @@ const HomePage = ({ onNavigate }) => {
                 ))
               )}
             </motion.div>
+            
             <div className="mt-8">
               <h2 className="text-lg font-bold text-gray-800">Fitur Unggulan SESM</h2>
               <div className="mt-3 bg-sesm-deep rounded-2xl p-4 shadow-lg space-y-3">
@@ -247,7 +347,6 @@ const HomePage = ({ onNavigate }) => {
           >
             <header className="flex justify-between items-center mb-10">
               <div className="flex items-center space-x-4">
-                {/* --- [PERBAIKAN LOGO DESKTOP] Tambahkan object-contain --- */}
                 <img src={logoSesm} alt="Sesm Logo" className="w-16 h-16 object-contain" />
                 <div>
                   <h1 className="text-3xl font-bold text-sesm-deep">Welcome</h1>
@@ -261,6 +360,46 @@ const HomePage = ({ onNavigate }) => {
             </header>
 
             <main className="space-y-12 flex flex-col flex-grow">
+              <motion.div 
+                className="grid grid-cols-3 gap-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                {summaryLoading ? (
+                  <>
+                    <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
+                    <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
+                    <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
+                  </>
+                ) : (
+                  <>
+                    <StatCard 
+                      icon={FiZap} 
+                      value={<AnimatedNumber value={pointsSummary?.totalPoints || 0} />} 
+                      label="Total Poin"
+                      color={{ bg: 'bg-yellow-100', text: 'text-yellow-600' }}
+                    />
+                    <StatCard 
+                      icon={FiAward} 
+                      value={pointsSummary?.currentRank.name || 'N/A'} 
+                      label="Peringkat Saat Ini"
+                      color={{ bg: 'bg-green-100', text: 'text-green-600', iconColor: pointsSummary?.currentRank.color }}
+                      onClick={() => onNavigate('rank')}
+                      rankIconName={pointsSummary?.currentRank.icon}
+                    />
+                     <StatCard 
+                      icon={FiTrendingUp} 
+                      value="Lihat Detail" 
+                      label="Laporan Belajar"
+                      color={{ bg: 'bg-blue-100', text: 'text-blue-600' }}
+                      onClick={() => onNavigate('studyReport')}
+                    />
+                  </>
+                )}
+              </motion.div>
+              
+              <h2 className="text-xl font-bold text-gray-800 -mb-6">Mata Pelajaran</h2>
               <motion.div 
                 className="grid grid-cols-8 gap-8"
                 variants={gridContainerVariants}
