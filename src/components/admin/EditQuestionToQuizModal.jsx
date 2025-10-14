@@ -28,12 +28,16 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
 
     useEffect(() => {
         if (questionData) {
-            const correctAnswer = questionData.options.find(opt => opt.is_correct)?.option_text || '';
+            // Safely access options, provide default empty array if not present
+            const options = Array.isArray(questionData.options) ? questionData.options : [];
+            const correctAnswer = options.find(opt => opt.is_correct)?.option_text || '';
+
             setQuestion({
                 id: questionData.id,
                 question: questionData.question_text,
                 type: questionData.question_type || 'pilihan-ganda', // Default ke PG jika tipe tidak ada
-                options: questionData.options.map(opt => opt.option_text),
+                // Map options if they exist, otherwise provide a default for the form
+                options: options.length > 0 ? options.map(opt => opt.option_text) : ['', ''],
                 correctAnswer: correctAnswer,
                 essayAnswer: questionData.correct_essay_answer || '', // Ambil dari data
                 media: questionData.media_attachments || [],
