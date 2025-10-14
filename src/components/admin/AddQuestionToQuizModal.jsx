@@ -219,12 +219,7 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         onClose();
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        onSubmit(quizId, questions);
-        localStorage.removeItem(DRAFT_KEY);
-        onClose();
-    };
+    const handleSubmit = (e) => { e.preventDefault(); onSubmit(quizId, questions); localStorage.removeItem(DRAFT_KEY); onClose(); };
 
     if (!isOpen) return null;
 
