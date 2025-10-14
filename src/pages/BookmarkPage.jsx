@@ -175,17 +175,11 @@ const SectionHeader = ({ title, count }) => (
 );
 
 const BookmarkPage = () => {
-    // Inisialisasi materials tanpa properti pinned
-    const [materials, setMaterials] = useState(dummyMaterials.map(({ pinned, ...rest }) => rest)); // Remove pinned property
+    const [materials, setMaterials] = useState(dummyMaterials.map(({ pinned, ...rest }) => rest));
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTypeFilter, setActiveTypeFilter] = useState('semua');
     const [activeSubjectFilter, setActiveSubjectFilter] = useState('Semua');
     const [selectedMaterial, setSelectedMaterial] = useState(null);
-
-    // Fungsi togglePin tidak lagi diperlukan
-    // const togglePin = (id) => {
-    //     setMaterials(materials.map(m => m.id === id ? { ...m, pinned: !m.pinned } : m));
-    // };
 
     const resetFilters = () => {
       setSearchTerm('');
@@ -202,10 +196,6 @@ const BookmarkPage = () => {
             .filter(m => m.title.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [materials, searchTerm, activeTypeFilter, activeSubjectFilter]);
 
-    // Hanya ada satu daftar materi, tidak ada lagi pinnedMaterials dan otherMaterials
-    // const pinnedMaterials = filteredMaterials.filter(m => m.pinned); // Not needed
-    // const otherMaterials = filteredMaterials.filter(m => !m.pinned); // Not needed
-
     useEffect(() => {
         document.body.style.overflow = selectedMaterial ? 'hidden' : 'unset';
     }, [selectedMaterial]);
@@ -214,14 +204,13 @@ const BookmarkPage = () => {
       const hasMaterials = materialsToRender.length > 0;
       return hasMaterials ? (
           <motion.section layout className="w-full">
-            <SectionHeader title="Materi" count={materialsToRender.length} /> {/* Mengubah judul */}
+            <SectionHeader title="Materi" count={materialsToRender.length} />
             <div className="columns-1 sm:columns-2 lg:grid lg:grid-cols-2 xl:grid-cols-4 gap-6 space-y-6 lg:space-y-0">
               <AnimatePresence>
                 {materialsToRender.map(material => (
                   <MaterialCard 
                     key={material.id} 
                     material={material} 
-                    // onPinToggle={togglePin} // onPinToggle tidak lagi dilewatkan
                     onSelect={setSelectedMaterial} 
                   />
                 ))}
@@ -264,46 +253,48 @@ const BookmarkPage = () => {
               </div>
             </div>
 
-            {/* Tampilan Desktop */}
-            <div className="hidden md:flex flex-col p-8 min-h-screen bg-gray-50">
-              <header className="w-full flex justify-between items-center mb-8">
-                  <h1 className="text-4xl font-bold text-sesm-deep tracking-wider">Bank Materi</h1>
-                  <div className="relative w-1/3">
-                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="text" placeholder="Cari materi..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white border border-gray-300 rounded-full py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-sesm-deep"/>
-                  </div>
-              </header>
+            {/* Tampilan Desktop (Struktur Diperbarui) */}
+            <div className="hidden md:flex flex-col h-screen bg-gray-100 p-8">
+                <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow bg-white p-8 rounded-2xl shadow-xl overflow-hidden">
+                    <header className="w-full flex-shrink-0 flex justify-between items-center mb-8">
+                        <h1 className="text-4xl font-bold text-sesm-deep tracking-wider">Bank Materi</h1>
+                        <div className="relative w-1/3">
+                            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input type="text" placeholder="Cari materi..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white border border-gray-300 rounded-full py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-sesm-deep"/>
+                        </div>
+                    </header>
 
-              <main className="flex-grow w-full">
-                  <div className="flex items-start justify-between mb-8">
-                    <div className="flex items-center space-x-3">
-                      <FilterButton label="Semua Tipe" icon={FiLayout} isActive={activeTypeFilter === 'semua'} onClick={() => setActiveTypeFilter('semua')} />
-                      <FilterButton label="Video" icon={FiVideo} isActive={activeTypeFilter === 'video'} onClick={() => setActiveTypeFilter('video')} />
-                      <FilterButton label="Buku" icon={FiBookOpen} isActive={activeTypeFilter === 'buku'} onClick={() => setActiveTypeFilter('buku')} />
-                      <FilterButton label="Modul" icon={FiFileText} isActive={activeTypeFilter === 'modul'} onClick={() => setActiveTypeFilter('modul')} />
-                      <AnimatePresence>
-                      {isFilterActive && (
-                        <motion.div initial={{opacity: 0, scale: 0.8}} animate={{opacity: 1, scale: 1}} exit={{opacity: 0, scale: 0.8}}>
-                            <FilterButton label="Reset" icon={FiRefreshCw} onClick={resetFilters} className="!bg-red-500/10 !text-red-600 hover:!bg-red-500/20" />
-                        </motion.div>
-                      )}
-                      </AnimatePresence>
-                    </div>
-                    <div className="relative">
-                       <select 
-                         value={activeSubjectFilter} 
-                         onChange={(e) => setActiveSubjectFilter(e.target.value)}
-                         className="appearance-none bg-white border border-gray-300 rounded-full py-2 pl-4 pr-10 font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-sesm-deep"
-                       >
-                         {subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}
-                       </select>
-                       <FiTag className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                  
-                  {renderContent(filteredMaterials)}
+                    <main className="flex-grow w-full overflow-y-auto pr-4">
+                        <div className="flex items-start justify-between mb-8">
+                            <div className="flex items-center space-x-3">
+                                <FilterButton label="Semua Tipe" icon={FiLayout} isActive={activeTypeFilter === 'semua'} onClick={() => setActiveTypeFilter('semua')} />
+                                <FilterButton label="Video" icon={FiVideo} isActive={activeTypeFilter === 'video'} onClick={() => setActiveTypeFilter('video')} />
+                                <FilterButton label="Buku" icon={FiBookOpen} isActive={activeTypeFilter === 'buku'} onClick={() => setActiveTypeFilter('buku')} />
+                                <FilterButton label="Modul" icon={FiFileText} isActive={activeTypeFilter === 'modul'} onClick={() => setActiveTypeFilter('modul')} />
+                                <AnimatePresence>
+                                {isFilterActive && (
+                                    <motion.div initial={{opacity: 0, scale: 0.8}} animate={{opacity: 1, scale: 1}} exit={{opacity: 0, scale: 0.8}}>
+                                        <FilterButton label="Reset" icon={FiRefreshCw} onClick={resetFilters} className="!bg-red-500/10 !text-red-600 hover:!bg-red-500/20" />
+                                    </motion.div>
+                                )}
+                                </AnimatePresence>
+                            </div>
+                            <div className="relative">
+                                <select 
+                                    value={activeSubjectFilter} 
+                                    onChange={(e) => setActiveSubjectFilter(e.target.value)}
+                                    className="appearance-none bg-white border border-gray-300 rounded-full py-2 pl-4 pr-10 font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-sesm-deep"
+                                >
+                                    {subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}
+                                </select>
+                                <FiTag className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
+                        </div>
+                        
+                        {renderContent(filteredMaterials)}
 
-              </main>
+                    </main>
+                </div>
             </div>
         </>
     );
