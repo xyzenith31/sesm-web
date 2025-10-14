@@ -62,6 +62,12 @@ const getChaptersForSubject = (jenjang, kelas, subjectName) => {
     return apiClient.get(url);
 };
 
+// --- FUNGSI BARU UNTUK MENAMBAH SOAL DARI BANK KE MATERI ---
+const addQuestionsFromBankToChapter = (materiKey, questionIds) => {
+    return apiClient.post(`/admin/materi/${materiKey}/add-from-bank`, { questionIds });
+};
+
+
 // --- FUNGSI PENGATURAN MATERI (BARU) ---
 const updateChapterSettings = (chapterId, settings) => {
     return apiClient.put(`/admin/materi/chapters/${chapterId}/settings`, settings);
@@ -96,7 +102,6 @@ const getAllQuestionsForBank = (jenjang, kelas) => { return apiClient.get('/admi
 const addQuestionsFromBank = (quizId, questionIds) => { return apiClient.post(`/admin/quizzes/${quizId}/add-from-bank`, { questionIds }); };
 const getQuizForStudent = (quizId) => { return apiClient.get(`/quizzes/${quizId}`); };
 const submitQuizAnswers = (quizId, answers) => { return apiClient.post(`/quizzes/${quizId}/submit`, { answers }); };
-const addQuestionsFromBankToChapter = (materiKey, questionIds) => { return apiClient.post(`/admin/materi/${materiKey}/add-from-bank`, { questionIds }); };
 
 // --- FUNGSI POIN & LEADERBOARD ---
 const getPointsSummary = () => { return apiClient.get('/points/summary'); };
@@ -121,8 +126,8 @@ const DataService = {
   deleteChapter,
   deleteQuestion,
   getChaptersForSubject,
-  addQuestionsFromBankToChapter,
-  updateChapterSettings, // <-- Fungsi baru diekspor di sini
+  addQuestionsFromBankToChapter, // <-- Fungsi baru diekspor di sini
+  updateChapterSettings,
   getAllQuizzes,
   getQuizDetailsForAdmin,
   createQuiz,

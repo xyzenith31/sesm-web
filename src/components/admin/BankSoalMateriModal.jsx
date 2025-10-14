@@ -25,10 +25,13 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
 
     // State untuk Step 2
-    const [allMateri, setAllMateri] = useState({});
+    const [targetFilterKey, setTargetFilterKey] = useState('TK'); // State baru untuk filter jenjang & kelas tujuan
+    const [targetMateriList, setTargetMateriList] = useState({});
+    const [targetMateriLoading, setTargetMateriLoading] = useState(false);
     const [targetSubjectId, setTargetSubjectId] = useState('');
     const [targetMateriKey, setTargetMateriKey] = useState('');
 
+    // Effect untuk Step 1 (Mengambil daftar soal dari bank)
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
@@ -40,10 +43,9 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
                 .then(response => setQuestions(response.data))
                 .catch(err => setError("Gagal memuat bank soal."))
                 .finally(() => setLoading(false));
-
-            // Ambil juga daftar materi untuk step 2
-            DataService.getMateriForAdmin(jenjang, kelas)
-                .then(response => setAllMateri(response.data));
+            
+            // Atur filter tujuan agar sama dengan filter awal saat modal dibuka
+            setTargetFilterKey(selectedFilterKey);
 
         } else {
             // Reset state saat modal ditutup
@@ -54,6 +56,28 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
             setSelectedSubject('Semua');
         }
     }, [isOpen, selectedFilterKey]);
+
+    // Effect baru untuk Step 2 (Mengambil daftar materi tujuan berdasarkan filternya sendiri)
+    useEffect(() => {
+        if (isOpen && step === 2) {
+            setTargetMateriLoading(true);
+            setTargetSubjectId(''); // Reset pilihan mapel
+            setTargetMateriKey(''); // Reset pilihan materi
+
+            const { jenjang, kelas } = jenjangOptions[targetFilterKey];
+            DataService.getMateriForAdmin(jenjang, kelas)
+                .then(response => {
+                    setTargetMateriList(response.data);
+                })
+                .catch(err => {
+                    console.error("Gagal memuat daftar materi tujuan:", err);
+                    setTargetMateriList({}); // Kosongkan jika error
+                })
+                .finally(() => {
+                    setTargetMateriLoading(false);
+                });
+        }
+    }, [isOpen, step, targetFilterKey]);
 
     const subjects = useMemo(() => ['Semua', ...Array.from(new Set(questions.map(q => q.nama_mapel)))], [questions]);
 
@@ -89,7 +113,7 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
         setIsAdding(true);
         try {
             await DataService.addQuestionsFromBankToChapter(targetMateriKey, Array.from(selectedQuestionIds));
-            onQuestionsAdded(targetMateriKey); // Kirim materiKey agar bisa di-refetch
+            onQuestionsAdded(targetMateriKey);
         } catch (error) {
             alert("Gagal menambahkan soal dari bank.");
             console.error(error);
@@ -98,13 +122,13 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
         }
     };
     
-    // Opsi dropdown untuk step 2
-    const targetMapelOptions = useMemo(() => Object.entries(allMateri).map(([nama, data]) => ({ subject_id: data.subject_id, nama_mapel: nama})), [allMateri]);
+    // Opsi dropdown untuk step 2 (sekarang bergantung pada targetMateriList)
+    const targetMapelOptions = useMemo(() => Object.entries(targetMateriList).map(([nama, data]) => ({ subject_id: data.subject_id, nama_mapel: nama})), [targetMateriList]);
     const targetMateriOptions = useMemo(() => {
         if (!targetSubjectId) return [];
-        const selectedMapel = Object.values(allMateri).find(m => m.subject_id === parseInt(targetSubjectId));
+        const selectedMapel = Object.values(targetMateriList).find(m => m.subject_id === parseInt(targetSubjectId));
         return selectedMapel ? selectedMapel.chapters : [];
-    }, [allMateri, targetSubjectId]);
+    }, [targetMateriList, targetSubjectId]);
 
     if (!isOpen) return null;
 
@@ -121,7 +145,7 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
                     <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-200"><FiX size={22}/></button>
                 </div>
                 
-                {/* --- Step 1: Select Questions --- */}
+                {/* --- Step 1: Pilih Soal --- */}
                 {step === 1 && (
                     <>
                         <div className="p-4 border-b bg-gray-50 flex flex-col md:flex-row gap-4">
@@ -165,21 +189,46 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
                     </>
                 )}
 
-                {/* --- Step 2: Select Target --- */}
+                {/* --- Step 2: Pilih Materi Tujuan --- */}
                 {step === 2 && (
                     <div className="flex-grow flex flex-col justify-center items-center p-8 bg-gray-50">
                         <div className='w-full max-w-md space-y-6'>
                             <h4 className='text-center text-lg font-bold text-gray-700'>Pilih Materi Tujuan</h4>
+                            
+                            {/* --- DROPDOWN JENJANG & KELAS TUJUAN (BARU) --- */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Jenjang & Kelas Tujuan</label>
+                                <select
+                                    value={targetFilterKey}
+                                    onChange={(e) => setTargetFilterKey(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                                >
+                                    {Object.keys(jenjangOptions).map(key => (<option key={key} value={key}>{key}</option>))}
+                                </select>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Mata Pelajaran</label>
-                                <select value={targetSubjectId} onChange={(e) => {setTargetSubjectId(e.target.value); setTargetMateriKey('');}} className="w-full p-3 border border-gray-300 rounded-lg bg-white">
-                                    <option value="">-- Pilih Mata Pelajaran --</option>
+                                <select
+                                    value={targetSubjectId}
+                                    onChange={(e) => { setTargetSubjectId(e.target.value); setTargetMateriKey(''); }}
+                                    className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                                    disabled={targetMateriLoading}
+                                >
+                                    <option value="">
+                                        {targetMateriLoading ? 'Memuat...' : '-- Pilih Mata Pelajaran --'}
+                                    </option>
                                     {targetMapelOptions.map(m => <option key={m.subject_id} value={m.subject_id}>{m.nama_mapel}</option>)}
                                 </select>
                             </div>
                              <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Materi / Bab</label>
-                                <select value={targetMateriKey} onChange={(e) => setTargetMateriKey(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg bg-white" disabled={!targetSubjectId}>
+                                <select
+                                    value={targetMateriKey}
+                                    onChange={(e) => setTargetMateriKey(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                                    disabled={!targetSubjectId || targetMateriLoading}
+                                >
                                     <option value="">-- Pilih Materi --</option>
                                     {targetMateriOptions.map(c => <option key={c.materiKey} value={c.materiKey}>{c.judul}</option>)}
                                 </select>

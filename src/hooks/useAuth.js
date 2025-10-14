@@ -2,11 +2,9 @@ import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import AuthService from '../services/authService';
 import DataService from '../services/dataService';
-// Hapus 'useNavigation' dari sini
 
 export const useAuth = () => {
   const { user, setUser, loading, refreshUser } = useContext(AuthContext);
-  // Hapus pemanggilan 'useNavigation' dari sini
 
   const handleAuthentication = (userData) => {
     if (userData && userData.accessToken) {
@@ -29,11 +27,9 @@ export const useAuth = () => {
     return response.data;
   }
 
-  // --- FUNGSI LOGOUT KEMBALI SEPERTI SEMULA ---
   const logout = () => {
-    AuthService.logout(); // Hapus data dari local storage
-    setUser(null); // Set state user menjadi null
-    // Perintah 'navigate' dihapus dari sini
+    AuthService.logout();
+    setUser(null);
   };
   
   const updateProfile = async (profileData, avatarFile) => {
