@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, animate } from 'framer-motion';
-import { FiSearch, FiChevronRight, FiStar, FiHelpCircle, FiAlertCircle, FiAward, FiMessageSquare, FiX, FiZap, FiTrendingUp } from 'react-icons/fi';
+import { FiSearch, FiChevronRight, FiStar, FiHelpCircle, FiAlertCircle, FiAward, FiMessageSquare, FiX, FiZap, FiTrendingUp, FiCheckSquare } from 'react-icons/fi';
 import { FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale, FaLanguage, FaMosque, FaBookReader, FaPencilAlt, FaBullseye, FaQuestionCircle, FaPalette } from 'react-icons/fa';
 import logoSesm from '../assets/logo.png';
 import { useAuth } from '../hooks/useAuth';
@@ -40,7 +40,6 @@ const testimonials = [
   },
 ];
 
-// Helper component untuk animasi angka
 const AnimatedNumber = ({ value = 0 }) => {
     const [displayValue, setDisplayValue] = useState(0);
     useEffect(() => {
@@ -54,7 +53,6 @@ const AnimatedNumber = ({ value = 0 }) => {
     return <>{displayValue.toLocaleString()}</>;
 };
 
-// [BARU] KOMPONEN UNTUK IKON PERINGKAT KUSTOM
 const RankIcon = ({ rank, size = "w-12 h-12" }) => {
   const iconStyle = `drop-shadow-lg ${size}`;
   switch (rank) {
@@ -68,30 +66,109 @@ const RankIcon = ({ rank, size = "w-12 h-12" }) => {
   }
 };
 
-// [DIPERBARUI] Helper component untuk kartu statistik
-const StatCard = ({ icon, value, label, color, onClick, rankIconName }) => (
-    <motion.div
-        className="bg-white p-4 rounded-2xl shadow-md flex-1 flex items-center space-x-4 cursor-pointer border hover:border-gray-300 transition-all"
-        whileHover={{ y: -5 }}
-        onClick={onClick}
-    >
-        <div 
-            className={`p-3 rounded-full ${color.bg} flex items-center justify-center`}
-            style={{ color: rankIconName ? color.iconColor : 'inherit' }}
-        >
-            {rankIconName ? (
-                <RankIcon rank={rankIconName} size="w-8 h-8" />
-            ) : (
-                React.createElement(icon, { className: `${color.text}`, size: 24 })
-            )}
-        </div>
-        <div>
-            <div className="text-xl font-bold text-sesm-deep">{value}</div>
-            <p className="text-sm text-gray-500 font-semibold">{label}</p>
-        </div>
-    </motion.div>
-);
+// [PERBAIKAN TOTAL] Kartu Peringkat Megah dengan Efek Aurora dan Partikel
+const RankCardAurora = ({ rank, points, color, icon, onNavigate }) => {
+    // Definisi warna gradien untuk aurora berdasarkan peringkat
+    const rankColors = {
+        platinum: 'from-sky-400 via-blue-500 to-indigo-500',
+        diamond: 'from-purple-400 via-violet-500 to-fuchsia-500',
+        master: 'from-amber-400 via-orange-500 to-red-600',
+    };
 
+    return (
+        <motion.div
+            onClick={() => onNavigate('rank')}
+            className="relative p-1 rounded-3xl overflow-hidden cursor-pointer group"
+            whileHover={{ scale: 1.03 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+        >
+            {/* Efek Aurora Background */}
+            <div
+                className={`absolute inset-0 bg-gradient-to-r ${rankColors[icon] || 'from-gray-400 to-gray-600'}`}
+                style={{
+                    animation: 'aurora 8s ease-in-out infinite',
+                    backgroundSize: '200% 200%',
+                }}
+            />
+            {/* Partikel Berkilau */}
+            <div className="absolute inset-0 overflow-hidden rounded-3xl">
+                {[...Array(15)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="absolute w-1 h-1 bg-white rounded-full"
+                        style={{
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                            animation: `sparkle ${Math.random() * 5 + 3}s linear infinite`,
+                            animationDelay: `${Math.random() * -8}s`,
+                        }}
+                    />
+                ))}
+            </div>
+
+            {/* Konten Kartu */}
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded-full bg-white/70" style={{ color: color }}>
+                        <RankIcon rank={icon} size="w-10 h-10" />
+                    </div>
+                    <div>
+                        <p className="text-lg font-bold text-sesm-deep leading-tight">{rank}</p>
+                        <p className="text-sm font-semibold text-gray-600">
+                            Poin: <AnimatedNumber value={points || 0} />
+                        </p>
+                    </div>
+                </div>
+                <FiChevronRight className="text-gray-500" size={24} />
+            </div>
+        </motion.div>
+    );
+};
+
+// Kartu Peringkat Sederhana (dengan glow tipis) untuk peringkat rendah
+const SimpleRankCard = ({ rank, points, color, icon, onNavigate }) => {
+    return(
+        <motion.div
+            onClick={() => onNavigate('rank')}
+            className="bg-white p-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all shadow-md hover:shadow-lg"
+            style={{boxShadow: `0 0 15px -3px ${color}60`}}
+            whileHover={{y: -5}}
+        >
+             <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-full bg-green-100" style={{ color: color }}>
+                    <RankIcon rank={icon} size="w-8 h-8" />
+                </div>
+                <div>
+                    <p className="text-sm font-semibold text-gray-500">Poin & Peringkat</p>
+                    <p className="text-lg font-bold text-sesm-deep leading-tight">
+                        <AnimatedNumber value={points || 0} />
+                        <span className="text-sm font-medium text-gray-600"> / {rank || 'N/A'}</span>
+                    </p>
+                </div>
+            </div>
+            <FiChevronRight className="text-gray-400" size={24} />
+        </motion.div>
+    )
+}
+
+const StatCard = ({ icon, value, label, color, onClick }) => {
+    return (
+        <motion.div
+            className={`bg-white p-4 rounded-2xl flex-1 flex items-center space-x-4 cursor-pointer border hover:border-gray-300 transition-all shadow-md`}
+            whileHover={{ y: -5 }}
+            onClick={onClick}
+        >
+            <div className={`p-3 rounded-full ${color.bg} flex items-center justify-center`}>
+                {React.createElement(icon, { className: `${color.text}`, size: 24 })}
+            </div>
+            <div>
+                <div className="text-xl font-bold text-sesm-deep">{value}</div>
+                <p className="text-sm text-gray-500 font-semibold">{label}</p>
+            </div>
+            {onClick && <FiChevronRight className="ml-auto text-gray-400" size={24} />}
+        </motion.div>
+    );
+};
 
 const SubjectButton = ({ icon: Icon, label, onClick, colors }) => {
   const itemVariants = {
@@ -146,7 +223,7 @@ const HomePage = ({ onNavigate }) => {
 
   const { user } = useAuth();
   const { getSubjects, getPointsSummary } = useData();
-
+  
   useEffect(() => {
     if (user && user.jenjang) {
       setLoading(true);
@@ -232,6 +309,33 @@ const HomePage = ({ onNavigate }) => {
     visible: { opacity: 1, scale: 1, transition: { duration: 0.2 } },
     exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } }
   };
+  
+  // Logika untuk menentukan kartu peringkat mana yang akan ditampilkan
+  const renderRankCard = () => {
+    if (summaryLoading) {
+        return <div className="w-full h-24 bg-gray-200 rounded-2xl animate-pulse"></div>;
+    }
+    const highRanks = ['platinum', 'diamond', 'master'];
+    const isHighRank = highRanks.includes(pointsSummary?.currentRank.icon);
+
+    if (isHighRank) {
+        return <RankCardAurora 
+                    rank={pointsSummary.currentRank.name}
+                    points={pointsSummary.totalPoints}
+                    color={pointsSummary.currentRank.color}
+                    icon={pointsSummary.currentRank.icon}
+                    onNavigate={onNavigate}
+                />
+    } else {
+        return <SimpleRankCard 
+                    rank={pointsSummary.currentRank.name}
+                    points={pointsSummary.totalPoints}
+                    color={pointsSummary.currentRank.color}
+                    icon={pointsSummary.currentRank.icon}
+                    onNavigate={onNavigate}
+                />
+    }
+  }
 
   return (
     <>
@@ -259,26 +363,7 @@ const HomePage = ({ onNavigate }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <div className="bg-white p-4 rounded-2xl shadow-lg flex items-center justify-between">
-                {summaryLoading ? (
-                  <div className="w-full h-12 animate-pulse bg-gray-200 rounded-lg"></div>
-                ) : (
-                  <>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-500">Poin Kamu</p>
-                      <p className="text-2xl font-bold text-sesm-deep">
-                        <AnimatedNumber value={pointsSummary?.totalPoints || 0} />
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-gray-500">Peringkat</p>
-                      <p className="text-md font-bold text-sesm-teal">
-                        {pointsSummary?.currentRank.name || 'Murid Baru'}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
+              {renderRankCard()}
             </motion.div>
 
             <h2 className="text-lg font-bold text-gray-800 mb-4">Mata Pelajaran</h2>
@@ -366,37 +451,21 @@ const HomePage = ({ onNavigate }) => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                {summaryLoading ? (
-                  <>
-                    <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
-                    <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
-                    <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
-                  </>
-                ) : (
-                  <>
-                    <StatCard 
-                      icon={FiZap} 
-                      value={<AnimatedNumber value={pointsSummary?.totalPoints || 0} />} 
-                      label="Total Poin"
-                      color={{ bg: 'bg-yellow-100', text: 'text-yellow-600' }}
-                    />
-                    <StatCard 
-                      icon={FiAward} 
-                      value={pointsSummary?.currentRank.name || 'N/A'} 
-                      label="Peringkat Saat Ini"
-                      color={{ bg: 'bg-green-100', text: 'text-green-600', iconColor: pointsSummary?.currentRank.color }}
-                      onClick={() => onNavigate('rank')}
-                      rankIconName={pointsSummary?.currentRank.icon}
+                  {/* Perenderan Kartu Peringkat di Desktop */}
+                  {renderRankCard()}
+                  <StatCard 
+                      icon={FiCheckSquare} 
+                      value="15" 
+                      label="Materi & Kuis Selesai"
+                      color={{ bg: 'bg-blue-100', text: 'text-blue-600' }}
                     />
                      <StatCard 
                       icon={FiTrendingUp} 
                       value="Lihat Detail" 
                       label="Laporan Belajar"
-                      color={{ bg: 'bg-blue-100', text: 'text-blue-600' }}
+                      color={{ bg: 'bg-indigo-100', text: 'text-indigo-600' }}
                       onClick={() => onNavigate('studyReport')}
                     />
-                  </>
-                )}
               </motion.div>
               
               <h2 className="text-xl font-bold text-gray-800 -mb-6">Mata Pelajaran</h2>

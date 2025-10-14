@@ -27,18 +27,21 @@ export const NavigationProvider = ({ children }) => {
       if (!hasSeenWelcome) {
         setCurrentView('welcome');
       } else {
-        setCurrentView('login');
+        // Jika tidak ada user dan view saat ini adalah halaman yang butuh login,
+        // arahkan ke login. Ini mencegah user stuck di halaman seperti 'home' setelah logout.
+        if ([...authenticatedStudentViews, ...authenticatedGuruViews].includes(currentView)) {
+            setCurrentView('login');
+        } else if (!currentView) { // Jika baru pertama kali load tanpa user
+            setCurrentView('login');
+        }
       }
     } else {
       if (user.role === 'guru') {
-        // Jika user guru dan tidak sedang di halaman guru, arahkan ke dashboard guru
         if (!authenticatedGuruViews.includes(currentView)) {
            setCurrentView('dashboardGuru');
         }
-      } else { // Jika user adalah siswa
+      } else { // Siswa
         if (user.jenjang) {
-          // Hanya arahkan ke 'home' jika user baru saja login atau dari halaman non-autentikasi.
-          // Ini mencegah redirect dari halaman seperti AccountSettings.
           if (!authenticatedStudentViews.includes(currentView)) {
             setCurrentView('home');
           }
@@ -47,7 +50,10 @@ export const NavigationProvider = ({ children }) => {
         }
       }
     }
-  }, [user, loading, currentView]); 
+  // [PERBAIKAN] Hapus `currentView` dari dependency array.
+  // Ini memastikan logika di atas hanya berjalan saat status `user` atau `loading` berubah,
+  // bukan setiap kali navigasi terjadi.
+  }, [user, loading]); 
 
   const navigate = (view, props = {}) => {
     if (view === 'login') {
@@ -65,6 +71,7 @@ export const NavigationProvider = ({ children }) => {
 
   return (
     <NavigationContext.Provider value={value}>
+      {/* Tampilkan children hanya jika currentView sudah di-set */}
       {currentView ? children : null}
     </NavigationContext.Provider>
   );
