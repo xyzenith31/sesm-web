@@ -9,7 +9,8 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
 
     useEffect(() => {
         if (isOpen && mapelList.length > 0) {
-            setSelectedSubjectId(mapelList[0].id);
+            // Jangan otomatis pilih, biarkan user memilih
+            setSelectedSubjectId('');
             setJudulBab('');
         }
     }, [isOpen, mapelList]);
@@ -21,7 +22,7 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
             return;
         }
         onSubmit({ subjectId: selectedSubjectId, judul: judulBab.trim() });
-        onClose();
+        // Biarkan parent component yang menutup modal setelah submit berhasil
     };
 
     if (!isOpen) return null;
@@ -31,7 +32,8 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            // --- PERBAIKAN DI SINI ---
+            className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"
         >
             <motion.div 
                 initial={{ scale: 0.9, y: -20 }} 
@@ -58,8 +60,9 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
                                     className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal"
                                     required
                                 >
+                                     <option value="" disabled>-- Pilih Mata Pelajaran --</option>
                                     {mapelList.length > 0 ? (
-                                        mapelList.map(m => <option key={m.id} value={m.id}>{m.nama_mapel}</option>)
+                                        mapelList.map(m => <option key={m.subject_id} value={m.subject_id}>{m.nama_mapel}</option>)
                                     ) : (
                                         <option disabled>Tidak ada mapel tersedia</option>
                                     )}
