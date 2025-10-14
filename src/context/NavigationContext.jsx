@@ -6,13 +6,24 @@ export const NavigationContext = createContext();
 export const NavigationProvider = ({ children }) => {
   const { user, loading } = useAuth();
   const [currentView, setCurrentView] = useState(null);
-  const [viewProps, setViewProps] = useState({}); // State untuk menyimpan props
+  const [viewProps, setViewProps] = useState({});
 
   useEffect(() => {
     if (loading) return;
-    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+
+    const authenticatedStudentViews = [
+        'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz', 'matematika', 
+        'membaca', 'menulis', 'berhitung', 'pai', 'bahasaIndonesia', 'bahasaInggris', 
+        'pkn', 'ipa', 'ips', 'accountSettings', 'dailyChallenge', 'creativeZone', 
+        'interactiveStory', 'diary', 'studyReport', 'worksheet', 'quizForm', 'drawing', 'writing'
+    ];
+    
+    const authenticatedGuruViews = [
+        'dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis'
+    ];
 
     if (!user) {
+      const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
       if (!hasSeenWelcome) {
         setCurrentView('welcome');
       } else {
@@ -20,20 +31,24 @@ export const NavigationProvider = ({ children }) => {
       }
     } else {
       if (user.role === 'guru') {
-        if (!['dashboardGuru', 'manajemenMateri', 'manajemenKuis', 'manajemenNilai', 'evaluasiKuis'].includes(currentView)) {
+        // Jika user guru dan tidak sedang di halaman guru, arahkan ke dashboard guru
+        if (!authenticatedGuruViews.includes(currentView)) {
            setCurrentView('dashboardGuru');
         }
-      } else {
+      } else { // Jika user adalah siswa
         if (user.jenjang) {
-          setCurrentView('home');
+          // Hanya arahkan ke 'home' jika user baru saja login atau dari halaman non-autentikasi.
+          // Ini mencegah redirect dari halaman seperti AccountSettings.
+          if (!authenticatedStudentViews.includes(currentView)) {
+            setCurrentView('home');
+          }
         } else {
           setCurrentView('levelSelection');
         }
       }
     }
-  }, [user, loading]); 
+  }, [user, loading, currentView]); 
 
-  // Fungsi navigate sekarang menerima props
   const navigate = (view, props = {}) => {
     if (view === 'login') {
       localStorage.setItem('hasSeenWelcome', 'true');
@@ -45,7 +60,7 @@ export const NavigationProvider = ({ children }) => {
   const value = {
     currentView,
     navigate,
-    viewProps, // Bagikan props
+    viewProps,
   };
 
   return (
