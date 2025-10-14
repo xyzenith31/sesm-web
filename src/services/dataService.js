@@ -112,6 +112,7 @@ const updateQuizSettings = (quizId, settings) => {
 const getPointsSummary = () => { return apiClient.get('/points/summary'); };
 const getPointsHistory = () => { return apiClient.get('/points/history'); };
 const getLeaderboard = () => { return apiClient.get('/leaderboard'); };
+const getQuizHistory = () => { return apiClient.get('/points/quiz-history'); }; // <-- FUNGSI BARU
 
 
 // --- EXPORT SEMUA FUNGSI ---
@@ -149,10 +150,11 @@ const DataService = {
   getSubmissionDetails,
   gradeSubmission,
   overrideAnswer,
-  updateQuizSettings, // <-- Fungsi baru diekspor di sini
+  updateQuizSettings, 
   getPointsSummary,
   getPointsHistory,
   getLeaderboard,
+  getQuizHistory, // <-- Ekspor fungsi baru
 };
 
 export default DataService;

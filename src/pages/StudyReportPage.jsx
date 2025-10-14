@@ -1,16 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiTrendingUp, FiCheckCircle, FiClock } from 'react-icons/fi';
-import { FaBook, FaCalculator, FaFlask, FaPalette, FaEdit } from 'react-icons/fa';
+import { FiArrowLeft, FiTrendingUp, FiCheckCircle, FiClock, FiLoader } from 'react-icons/fi';
+import { FaBook, FaCalculator, FaFlask, FaPalette, FaEdit, FaQuestionCircle } from 'react-icons/fa';
+import DataService from '../services/dataService'; // Impor DataService
 
-// Data dummy untuk laporan belajar
-const reportData = [
-  { id: 1, icon: FaBook, activity: "Menyelesaikan cerita 'Kancil & Buaya'", category: 'Cerita Interaktif', points: 30, time: 'Hari ini, 10:45' },
-  { id: 2, icon: FaCalculator, activity: "Menyelesaikan kuis 'Raja Perkalian'", category: 'Tantangan Harian', points: 50, time: 'Hari ini, 09:30' },
-  { id: 3, icon: FaEdit, activity: "Menulis 50 kata di 'Proyek Pertama'", category: 'Menulis Kreatif', points: 15, time: 'Kemarin, 16:20' },
-  { id: 4, icon: FaFlask, activity: "Menjawab kuis 'Ahli Planet'", category: 'Tantangan Harian', points: 60, time: 'Kemarin, 11:00' },
-  { id: 5, icon: FaPalette, activity: "Menyimpan karya 'Kanvas Pertamaku'", category: 'Menggambar', points: 25, time: '2 hari yang lalu' }
-];
+const iconMap = {
+    'Cerita Interaktif': FaBook,
+    'Tantangan Harian': FaCalculator,
+    'Menulis Kreatif': FaEdit,
+    'Menggambar': FaPalette,
+    'QUIZ_COMPLETION': FaQuestionCircle, // Ikon untuk kuis
+    'default': FiCheckCircle
+};
 
 const StatCard = ({ label, value, icon: Icon }) => (
     <div className="bg-white p-4 rounded-xl shadow-sm flex-1">
@@ -25,7 +26,12 @@ const StatCard = ({ label, value, icon: Icon }) => (
 );
 
 const ReportItem = ({ item, index }) => {
-    const { icon: Icon, activity, category, points, time } = item;
+    // Tentukan ikon berdasarkan activity_type atau category
+    const Icon = iconMap[item.activity_type] || iconMap[item.category] || iconMap.default;
+    const activity = item.activity_details || item.activity;
+    const points = item.points_earned || item.points;
+    const time = new Date(item.created_at || item.time).toLocaleString('id-ID');
+
     return(
         <motion.div
             className="flex items-start space-x-4 p-4 bg-white rounded-lg"
@@ -36,7 +42,7 @@ const ReportItem = ({ item, index }) => {
             <Icon className="text-sesm-deep text-2xl mt-1 flex-shrink-0" />
             <div className="flex-grow">
                 <p className="font-semibold text-gray-800">{activity}</p>
-                <p className="text-xs text-gray-500">{category} • {time}</p>
+                <p className="text-xs text-gray-500">{time}</p>
             </div>
             <div className="flex-shrink-0 font-bold text-green-500 text-right">
                 <p>+{points}</p>
@@ -47,7 +53,25 @@ const ReportItem = ({ item, index }) => {
 };
 
 const StudyReportPage = ({ onNavigate }) => {
-  const totalPoints = reportData.reduce((sum, item) => sum + item.points, 0);
+  const [reportData, setReportData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    DataService.getPointsHistory()
+        .then(response => {
+            setReportData(response.data);
+        })
+        .catch(err => {
+            console.error("Gagal memuat riwayat poin:", err);
+            // Anda bisa menampilkan pesan error di sini
+        })
+        .finally(() => {
+            setLoading(false);
+        });
+  }, []);
+
+  const totalPoints = reportData.reduce((sum, item) => sum + item.points_earned, 0);
   const totalActivities = reportData.length;
 
   return (
@@ -67,18 +91,26 @@ const StudyReportPage = ({ onNavigate }) => {
         <div>
             <h2 className="text-lg font-bold text-gray-700 mb-3">Ringkasan Aktivitas</h2>
             <div className="flex space-x-4">
-                <StatCard label="Total Poin Didapat" value={totalPoints} icon={FiTrendingUp} />
-                <StatCard label="Aktivitas Selesai" value={totalActivities} icon={FiCheckCircle} />
+                <StatCard label="Total Poin Didapat" value={loading ? '...' : totalPoints} icon={FiTrendingUp} />
+                <StatCard label="Aktivitas Selesai" value={loading ? '...' : totalActivities} icon={FiCheckCircle} />
             </div>
         </div>
 
         <div>
             <h2 className="text-lg font-bold text-gray-700 mb-3">Riwayat Aktivitas</h2>
-            <div className="space-y-3">
-                {reportData.map((item, index) => (
-                    <ReportItem key={item.id} item={item} index={index} />
-                ))}
-            </div>
+            {loading ? (
+                <div className="flex justify-center items-center h-40"><FiLoader className="animate-spin text-2xl text-sesm-teal"/></div>
+            ) : (
+                <div className="space-y-3">
+                    {reportData.length > 0 ? (
+                        reportData.map((item, index) => (
+                            <ReportItem key={item.created_at + index} item={item} index={index} />
+                        ))
+                    ) : (
+                        <p className="text-center text-gray-500 py-8">Belum ada aktivitas yang tercatat.</p>
+                    )}
+                </div>
+            )}
         </div>
       </main>
     </div>
