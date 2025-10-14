@@ -1,14 +1,19 @@
+// contoh-sesm-web/layouts/AdminLayout.jsx
 import React from 'react';
 import SidebarGuru from '../components/admin/SidebarGuru';
 
 const AdminLayout = ({ children, activePage, onNavigate }) => {
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
-      {/* Meneruskan `activePage` ke Sidebar */}
+    // PERBAIKAN: Mengubah div utama menjadi flexbox dengan tinggi layar penuh
+    <div className="min-h-screen bg-gray-100 font-sans flex">
       <SidebarGuru activePage={activePage} onNavigate={onNavigate} />
-      <main className="md:ml-64 p-8">
-        {children}
-      </main>
+      {/* PERBAIKAN: Layout utama untuk konten di sebelah kanan sidebar */}
+      <div className="flex-1 flex flex-col md:ml-64">
+        {/* PERBAIKAN: Area konten utama yang akan diisi oleh children */}
+        <main className="flex-1 p-8 flex flex-col">
+          {children}
+        </main>
+      </div>
     </div>
   );
 };

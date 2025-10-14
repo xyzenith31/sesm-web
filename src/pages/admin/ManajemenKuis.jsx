@@ -72,10 +72,12 @@ const ManajemenKuis = ({ onNavigate }) => {
         if (!selectedQuiz || questions.length === 0) return;
         if (window.confirm(`Anda yakin ingin menghapus SEMUA (${questions.length}) soal dari kuis "${selectedQuiz.title}"? Kuisnya tidak akan terhapus.`)) {
             try {
-                await DataService.deleteAllQuestionsFromQuiz(quizId); 
+                for (const question of questions) {
+                    await DataService.deleteQuestionFromQuiz(question.id);
+                }
                 alert("Semua soal berhasil dihapus.");
                 fetchQuizDetails(quizId); 
-                fetchQuizzes();
+                fetchQuizzes(quizId);
             } catch (error) {
                 alert("Gagal menghapus semua soal.");
             }
@@ -93,18 +95,17 @@ const ManajemenKuis = ({ onNavigate }) => {
         }
     };
 
-    const handleQuestionsFromBankAdded = () => { setBankSoalOpen(false); if(selectedQuiz){ alert("Soal berhasil ditambahkan dari bank!"); fetchQuizDetails(selectedQuiz.id); fetchQuizzes(); }};
-    const handleBatchAddQuestions = async (quizId, questionsArray) => { setDetailLoading(true); try { for (const q of questionsArray) { const formData = new FormData(); formData.append('question_text', q.question); formData.append('question_type', q.type); if (q.type.includes('pilihan-ganda')) { const formattedOptions = q.options.map(opt => ({ text: opt, isCorrect: opt === q.correctAnswer })); if (formattedOptions.filter(opt => opt.isCorrect).length === 0 && q.options.filter(opt => opt.trim() !== '').length > 0) throw new Error(`Soal "${q.question.substring(0,20)}..." belum punya jawaban.`); formData.append('options', JSON.stringify(formattedOptions)); } const links = q.media.filter(m => m.type === 'link').map(m => m.url); const files = q.media.filter(m => m.type === 'file').map(m => m.file); if (links.length > 0) formData.append('links', JSON.stringify(links)); if (files.length > 0) files.forEach(file => formData.append('mediaFiles', file)); await DataService.addQuestionToQuiz(quizId, formData); } alert(`${questionsArray.length} soal berhasil dipublikasikan!`); } catch (error) { alert(`Gagal menambah soal: ${error.message}`); } finally { fetchQuizDetails(quizId); fetchQuizzes(); } };
+    const handleQuestionsFromBankAdded = () => { setBankSoalOpen(false); if(selectedQuiz){ alert("Soal berhasil ditambahkan dari bank!"); fetchQuizDetails(selectedQuiz.id); fetchQuizzes(selectedQuiz.id); }};
+    const handleBatchAddQuestions = async (quizId, questionsArray) => { setDetailLoading(true); try { for (const q of questionsArray) { const formData = new FormData(); formData.append('question_text', q.question); formData.append('question_type', q.type); if (q.type.includes('pilihan-ganda')) { const formattedOptions = q.options.map(opt => ({ text: opt, isCorrect: opt === q.correctAnswer })); if (formattedOptions.filter(opt => opt.isCorrect).length === 0 && q.options.filter(opt => opt.trim() !== '').length > 0) throw new Error(`Soal "${q.question.substring(0,20)}..." belum punya jawaban.`); formData.append('options', JSON.stringify(formattedOptions)); } const links = q.media.filter(m => m.type === 'link').map(m => m.url); const files = q.media.filter(m => m.type === 'file').map(m => m.file); if (links.length > 0) formData.append('links', JSON.stringify(links)); if (files.length > 0) files.forEach(file => formData.append('mediaFiles', file)); await DataService.addQuestionToQuiz(quizId, formData); } alert(`${questionsArray.length} soal berhasil dipublikasikan!`); } catch (error) { alert(`Gagal menambah soal: ${error.message}`); } finally { fetchQuizDetails(quizId); fetchQuizzes(quizId); } };
     const handleOpenEditModal = (question) => { setEditingQuestion(question); setEditQuestionOpen(true); };
     const handleUpdateQuestion = async (questionId, updatedData) => { try { await DataService.updateQuestionInQuiz(questionId, updatedData); setEditQuestionOpen(false); setEditingQuestion(null); alert("Soal berhasil diperbarui!"); fetchQuizDetails(selectedQuiz.id); } catch (error) { alert("Gagal memperbarui soal."); console.error(error); } };
-    const handleDeleteQuestion = async (questionId) => { if (window.confirm("Anda yakin ingin menghapus soal ini?")) { try { await DataService.deleteQuestionFromQuiz(questionId); alert("Soal berhasil dihapus."); fetchQuizDetails(selectedQuiz.id); fetchQuizzes(); } catch (error) { alert("Gagal menghapus soal."); } } };
+    const handleDeleteQuestion = async (questionId) => { if (window.confirm("Anda yakin ingin menghapus soal ini?")) { try { await DataService.deleteQuestionFromQuiz(questionId); alert("Soal berhasil dihapus."); fetchQuizDetails(selectedQuiz.id); fetchQuizzes(selectedQuiz.id); } catch (error) { alert("Gagal menghapus soal."); } } };
     
     const handleContinueQuestionDraft = (quizId) => {
         const quizToSelect = quizzes.find(q => q.id === quizId);
         if (quizToSelect) {
             setSelectedQuiz(quizToSelect);
             setDraftQuizOpen(false);
-            // Buka modal tambah soal setelah memilih draf
             setTimeout(() => setAddQuestionOpen(true), 100);
         } else {
             alert("Kuis untuk draf ini tidak ditemukan. Mungkin sudah dihapus.");
@@ -124,8 +125,10 @@ const ManajemenKuis = ({ onNavigate }) => {
                 {isSettingsModalOpen && <QuizSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} onSave={handleSaveSettings} quizData={selectedQuiz} />}
             </AnimatePresence>
 
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="grid md:grid-cols-12 min-h-[calc(100vh-10rem)]">
+            {/* PERBAIKAN: Menambahkan 'flex flex-col flex-grow' */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-grow">
+                {/* PERBAIKAN: Menambahkan 'flex-grow' */}
+                <div className="grid md:grid-cols-12 flex-grow">
                     <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
                         <div className="p-4 border-b border-gray-200"><h2 className="font-bold text-lg text-gray-800">Daftar Kuis</h2></div>
                         <div className="flex-grow overflow-y-auto p-2">
@@ -151,14 +154,14 @@ const ManajemenKuis = ({ onNavigate }) => {
                         <div className="p-6 flex-shrink-0">
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                                 <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Kuis</h1>
-                                <p className="text-gray-500 mt-1">Buat kuis baru, kelola soal, atau lihat bank soal yang sudah ada.</p>
+                                <p className="text-gray-500 mt-1">Buat kuis baru, kelola soal, atau lihat hasil pengerjaan siswa.</p>
                                 <div className="flex items-center gap-3 my-6">
-                                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setDraftQuizOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-white rounded-lg font-semibold hover:bg-yellow-500 shadow-sm"><FiFileText/> Draf</motion.button>
-                                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setBankSoalOpen(true) } className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiCopy/> Bank Soal</motion.button>
-                                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => onNavigate('evaluasiKuis')} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm">
+                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setDraftQuizOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"><FiFileText /> Draf</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setBankSoalOpen(true) } className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-bold hover:bg-sesm-teal/10 shadow-sm"><FiBookOpen/> Bank Soal</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('evaluasiKuis')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm">
                                         <FiTrendingUp/> Manajemen Nilai
                                     </motion.button>
-                                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setCreateQuizOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-sesm-deep shadow-sm">
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setCreateQuizOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-sesm-deep shadow-sm">
                                         <FiPlus/> Buat Kuis Baru
                                     </motion.button>
                                 </div>
@@ -178,17 +181,25 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                     <div className="flex-shrink-0 flex gap-2">
                                                         <button onClick={() => setAddQuestionOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm hover:bg-opacity-90"><FiPlus/> Tambah Soal</button>
                                                         <button onClick={() => setIsSettingsModalOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold text-sm hover:bg-gray-300"><FiSettings/> Pengaturan</button>
-                                                        <button onClick={() => handleDeleteAllQuestions(selectedQuiz.id)} disabled={questions.length === 0} className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 disabled:bg-gray-300" title="Hapus Semua Soal"><FiTrash2/></button>
                                                     </div>
                                                 </div>
                                                 <p className="text-sm text-gray-500 mt-1">{selectedQuiz.description}</p>
                                             </div>
-                                            <h3 className="font-bold text-gray-700 mb-2">Daftar Soal ({questions.length})</h3>
-                                            <div className="space-y-3 max-h-[calc(100vh-30rem)] overflow-y-auto pr-2">
+                                            
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h3 className="font-bold text-gray-700">Daftar Soal ({questions.length})</h3>
+                                                <button onClick={() => handleDeleteAllQuestions(selectedQuiz.id)} disabled={questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
+                                            </div>
+                                            <div className="space-y-3 max-h-[calc(100vh-35rem)] overflow-y-auto pr-2">
                                                 {questions.length > 0 ? questions.map((q, index) => (
-                                                    <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-colors">
+                                                    <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-3 rounded-lg">
                                                         <div className="flex justify-between items-start">
-                                                            <div className="flex-grow"><p className="font-semibold">{index + 1}. {q.question_text}</p>{q.options && q.options.map(opt => (<p key={opt.id} className={`text-sm ml-4 ${opt.is_correct ? 'text-green-600 font-bold' : 'text-gray-600'}`}>- {opt.option_text}</p>))}</div>
+                                                            <div className="flex-grow">
+                                                                <p className="font-semibold">{index + 1}. {q.question_text}</p>
+                                                                {q.options && q.options.find(opt => opt.is_correct) && (
+                                                                    <p className="text-sm text-green-600 font-bold mt-1">Jawaban: {q.options.find(opt => opt.is_correct).option_text}</p>
+                                                                )}
+                                                            </div>
                                                             <div className="flex-shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 <button onClick={() => handleOpenEditModal(q)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg" title="Edit Soal"><FiEdit size={16}/></button>
                                                                 <button onClick={() => handleDeleteQuestion(q.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg" title="Hapus Soal"><FiTrash2 size={16}/></button>
@@ -196,7 +207,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                         </div>
                                                     </motion.div>
                                                 )) : (
-                                                    <div className="text-center text-gray-400 py-8"><FiAlertTriangle className="mx-auto text-4xl text-yellow-400 mb-2" /><p className="font-semibold">Belum ada soal untuk kuis ini.</p><p className="text-sm">Silakan tambahkan soal baru.</p></div>
+                                                    <p className="text-center text-gray-500 py-8">Belum ada soal untuk kuis ini.</p>
                                                 )}
                                             </div>
                                         </div>

@@ -232,8 +232,9 @@ const ManajemenMateri = ({ onNavigate }) => {
             </AnimatePresence>
             {isQuestionModalOpen && <QuestionFormModal isOpen onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
 
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="grid md:grid-cols-12 min-h-[calc(100vh-10rem)]">
+            {/* PERBAIKAN 1: Menambahkan min-h-[calc(100vh-4rem)] untuk mengisi ruang vertikal */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden min-h-[calc(100vh-4rem)]">
+                <div className="grid md:grid-cols-12 h-full">
                     <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
                         <div className="p-4 border-b">
                             <label className="text-sm font-bold text-gray-600 mb-1 block">Pilih Jenjang & Kelas</label>
@@ -264,9 +265,11 @@ const ManajemenMateri = ({ onNavigate }) => {
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                                 <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Materi & Nilai</h1>
                                 <p className="text-gray-500 mt-1">Buat materi baru, kelola soal, dan lihat hasil pengerjaan siswa.</p>
+                                
+                                {/* PERBAIKAN 2: Mengubah gaya tombol agar sesuai gambar */}
                                 <div className="flex items-center gap-3 my-6">
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsDraftsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-white rounded-lg font-semibold shadow-sm"><FiFileText /> Draf</motion.button>
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 shadow-sm"><FiArchive /> Bank Soal</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsDraftsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-gray-800 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"><FiFileText /> Draf</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiBookOpen/> Bank Soal</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsAddChapterModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold shadow-sm"><FiPlus /> Buat Materi</motion.button>
                                 </div>
