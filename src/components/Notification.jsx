@@ -7,11 +7,11 @@ import { FiX, FiCheckCircle, FiAlertTriangle } from 'react-icons/fi';
 const Notification = ({
   isOpen,
   onClose,
-  onConfirm, // Prop baru untuk aksi konfirmasi
+  onConfirm,
   title,
   message,
   success = true,
-  isConfirmation = false, // Prop baru untuk menentukan tipe modal
+  isConfirmation = false,
   confirmText = "Lanjutkan",
   cancelText = "Batal"
 }) => {
@@ -27,7 +27,8 @@ const Notification = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+        // --- PERBAIKAN DI SINI: Naikkan z-index menjadi 100 ---
+        className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
