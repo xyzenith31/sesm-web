@@ -66,10 +66,8 @@ const RankIcon = ({ rank, size = "w-12 h-12" }) => {
   }
 };
 
-// [PERBAIKAN] Komponen StatCard kini memiliki efek visual tambahan
 const StatCard = ({ icon, value, label, color, onClick, rankIconName, glowEffectClass }) => {
     
-    // Fungsi untuk merender efek aura tambahan untuk peringkat tinggi
     const renderAuroraEffect = (rank) => {
         switch(rank) {
             case 'platinum':
@@ -168,10 +166,12 @@ const HomePage = ({ onNavigate }) => {
   const [pointsSummary, setPointsSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
 
-  const { user } = useAuth();
-  const { getSubjects, getPointsSummary } = useData();
+  const [activityCount, setActivityCount] = useState(0);
+  const [activityLoading, setActivityLoading] = useState(true);
 
-    // [PERBAIKAN] Fungsi untuk mendapatkan kelas shadow yang lebih megah
+  const { user } = useAuth();
+  const { getSubjects, getPointsSummary, getPointsHistory } = useData();
+
     const getGlowEffect = (rank) => {
         const glowStyles = {
             bronze: 'shadow-[0_0_15px_rgba(205,127,50,0.3)]',
@@ -210,6 +210,8 @@ const HomePage = ({ onNavigate }) => {
 
   useEffect(() => {
     setSummaryLoading(true);
+    setActivityLoading(true);
+
     getPointsSummary()
       .then(response => {
         setPointsSummary(response.data);
@@ -221,7 +223,20 @@ const HomePage = ({ onNavigate }) => {
       .finally(() => {
         setSummaryLoading(false);
       });
-  }, [getPointsSummary]);
+
+    getPointsHistory()
+      .then(response => {
+          setActivityCount(response.data.length);
+      })
+      .catch(err => {
+          console.error("Gagal memuat riwayat aktivitas:", err);
+          setActivityCount(0);
+      })
+      .finally(() => {
+          setActivityLoading(false);
+      });
+
+  }, [getPointsSummary, getPointsHistory]);
 
   const handleSubjectClick = (subjectLabel) => {
     if (!onNavigate) return;
@@ -292,11 +307,11 @@ const HomePage = ({ onNavigate }) => {
 
           <main className="px-6 mt-4">
             <motion.div
-              className="mb-8"
+              className="mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              onClick={() => onNavigate('rank')} // Navigasi ke halaman Rank
+              onClick={() => onNavigate('rank')}
             >
               <div className={`bg-white p-4 rounded-2xl flex items-center justify-between transition-all ${getGlowEffect(pointsSummary?.currentRank.icon)}`}>
                 {summaryLoading ? (
@@ -322,6 +337,33 @@ const HomePage = ({ onNavigate }) => {
                   </>
                 )}
               </div>
+            </motion.div>
+
+            <motion.div
+                className="mb-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                onClick={() => onNavigate('studyReport')}
+            >
+                <div className="bg-white p-4 rounded-2xl flex items-center justify-between shadow-md">
+                    {activityLoading ? (
+                        <div className="w-full h-12 animate-pulse bg-gray-200 rounded-lg"></div>
+                    ) : (
+                        <>
+                            <div className="flex items-center space-x-3">
+                                <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                                    <FiCheckSquare size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-lg font-bold text-sesm-deep">{activityCount}</p>
+                                    <p className="text-sm font-semibold text-gray-500 -mt-1">Aktivitas Selesai</p>
+                                </div>
+                            </div>
+                            <FiChevronRight className="text-gray-400" size={24} />
+                        </>
+                    )}
+                </div>
             </motion.div>
 
             <h2 className="text-lg font-bold text-gray-800 mb-4">Mata Pelajaran</h2>
@@ -428,16 +470,17 @@ const HomePage = ({ onNavigate }) => {
                     />
                     <StatCard 
                       icon={FiCheckSquare} 
-                      value="15" 
+                      value={activityLoading ? '...' : activityCount} 
                       label="Materi & Kuis Selesai"
                       color={{ bg: 'bg-blue-100', text: 'text-blue-600' }}
-                    />
-                     <StatCard 
-                      icon={FiTrendingUp} 
-                      value="Lihat Detail" 
-                      label="Laporan Belajar"
-                      color={{ bg: 'bg-indigo-100', text: 'text-indigo-600' }}
                       onClick={() => onNavigate('studyReport')}
+                    />
+                    <StatCard 
+                      icon={FiZap} 
+                      value="Misi Baru!" 
+                      label="Tantangan Harian"
+                      color={{ bg: 'bg-yellow-100', text: 'text-yellow-600' }}
+                      onClick={() => onNavigate('dailyChallenge')}
                     />
                   </>
                 )}
