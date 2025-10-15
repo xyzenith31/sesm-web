@@ -10,6 +10,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         umur: '',
         role: 'siswa',
         password: '',
+        confirmPassword: '', 
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,11 +24,12 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 nama: initialData.nama || '',
                 umur: initialData.umur || '',
                 role: initialData.role || 'siswa',
-                password: '', // Password dikosongkan saat edit
+                password: '', 
+                confirmPassword: '',
             });
         } else {
-            // Reset form untuk mode create
-            setFormData({ username: '', email: '', nama: '', umur: '', role: 'siswa', password: '' });
+            // Reset form for create mode
+            setFormData({ username: '', email: '', nama: '', umur: '', role: 'siswa', password: '', confirmPassword: '' });
         }
     }, [initialData, isEditMode]);
 
@@ -38,6 +40,12 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (formData.password !== formData.confirmPassword) {
+            alert("Password dan Konfirmasi Password tidak cocok. Silakan periksa kembali.");
+            return; 
+        }
+
         setIsSubmitting(true);
         await onSubmit(formData);
         setIsSubmitting(false);
@@ -54,7 +62,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         >
             <motion.div
                 initial={{ scale: 0.9 }} animate={{ scale: 1 }}
-                className="bg-white rounded-2xl w-full max-w-lg shadow-xl flex flex-col"
+                className="bg-white rounded-2xl w-full max-w-md shadow-xl flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 <form onSubmit={handleSubmit}>
@@ -63,37 +71,54 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX /></button>
                     </header>
 
+                    {/* --- MAIN LAYOUT DIUBAH MENJADI VERTIKAL --- */}
                     <main className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="font-semibold text-sm">Nama Lengkap</label>
-                                <input type="text" name="nama" value={formData.nama} onChange={handleInputChange} className={inputStyle} required />
-                            </div>
-                            <div>
-                                <label className="font-semibold text-sm">Username</label>
-                                <input type="text" name="username" value={formData.username} onChange={handleInputChange} className={inputStyle} required />
-                            </div>
+                        <div>
+                            <label className="font-semibold text-sm mb-1 block">Nama Lengkap</label>
+                            <input type="text" name="nama" value={formData.nama} onChange={handleInputChange} className={inputStyle} required />
                         </div>
                         <div>
-                            <label className="font-semibold text-sm">Email</label>
+                            <label className="font-semibold text-sm mb-1 block">Username</label>
+                            <input type="text" name="username" value={formData.username} onChange={handleInputChange} className={inputStyle} required />
+                        </div>
+                        <div>
+                            <label className="font-semibold text-sm mb-1 block">Email</label>
                             <input type="email" name="email" value={formData.email} onChange={handleInputChange} className={inputStyle} required />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div>
-                                <label className="font-semibold text-sm">Umur</label>
-                                <input type="number" name="umur" value={formData.umur} onChange={handleInputChange} className={inputStyle} required />
-                            </div>
-                            <div>
-                                <label className="font-semibold text-sm">Role</label>
-                                <select name="role" value={formData.role} onChange={handleInputChange} className={inputStyle}>
-                                    <option value="siswa">Siswa</option>
-                                    <option value="guru">Guru</option>
-                                </select>
-                            </div>
+                        <div>
+                            <label className="font-semibold text-sm mb-1 block">Umur</label>
+                            <input type="number" name="umur" value={formData.umur} onChange={handleInputChange} className={inputStyle} required />
                         </div>
                         <div>
-                            <label className="font-semibold text-sm">Password</label>
-                            <input type="password" name="password" value={formData.password} onChange={handleInputChange} className={inputStyle} placeholder={isEditMode ? 'Kosongkan jika tidak ingin mengubah' : ''} required={!isEditMode} />
+                            <label className="font-semibold text-sm mb-1 block">Role</label>
+                            <select name="role" value={formData.role} onChange={handleInputChange} className={inputStyle}>
+                                <option value="siswa">Siswa</option>
+                                <option value="guru">Guru</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="font-semibold text-sm mb-1 block">Password</label>
+                            <input 
+                                type="password" 
+                                name="password" 
+                                value={formData.password} 
+                                onChange={handleInputChange} 
+                                className={inputStyle} 
+                                placeholder={isEditMode ? 'Kosongkan jika tidak diubah' : ''} 
+                                required={!isEditMode} 
+                            />
+                        </div>
+                        <div>
+                            <label className="font-semibold text-sm mb-1 block">Konfirmasi Password</label>
+                            <input 
+                                type="password" 
+                                name="confirmPassword" 
+                                value={formData.confirmPassword} 
+                                onChange={handleInputChange} 
+                                className={inputStyle} 
+                                placeholder="Ulangi password"
+                                required={!isEditMode || formData.password !== ''} 
+                            />
                         </div>
                     </main>
 

@@ -57,14 +57,16 @@ const ManajemenPengguna = () => {
     const [isUserFormModalOpen, setIsUserFormModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
 
+    // --- State untuk notifikasi (info, sukses, error, konfirmasi) ---
     const [notif, setNotif] = useState({
         isOpen: false,
         title: '',
         message: '',
         isConfirmation: false,
+        success: true,
         onConfirm: () => {},
     });
-    const [isDeleting, setIsDeleting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -138,42 +140,53 @@ const ManajemenPengguna = () => {
         setEditingUser(null);
     };
 
+    // --- FUNGSI SIMPAN DENGAN NOTIFIKASI ---
     const handleSaveUser = async (userData) => {
+        setIsSubmitting(true);
         try {
             if (editingUser) {
                 await DataService.updateUserByAdmin(editingUser.id, userData);
+                setNotif({ isOpen: true, title: "Berhasil!", message: "Data pengguna telah diperbarui.", success: true });
             } else {
                 await DataService.createUserByAdmin(userData);
+                setNotif({ isOpen: true, title: "Berhasil!", message: "Pengguna baru telah ditambahkan.", success: true });
             }
             fetchUsers();
             handleCloseUserFormModal();
         } catch (err) {
-            alert(`Gagal menyimpan: ${err.response?.data?.message || 'Error tidak diketahui'}`);
+            setNotif({ isOpen: true, title: "Gagal!", message: err.response?.data?.message || 'Terjadi kesalahan.', success: false });
+        } finally {
+            setIsSubmitting(false);
         }
     };
     
+    // --- FUNGSI HAPUS DENGAN MODAL KONFIRMASI ---
     const handleDeleteUser = (user) => {
         setNotif({
             isOpen: true,
-            title: "Konfirmasi Hapus Pengguna",
-            message: `Apakah Anda yakin ingin menghapus pengguna "${user.nama}" secara permanen?`,
+            title: "Konfirmasi Hapus",
+            message: `Anda yakin ingin menghapus pengguna "${user.nama}"?`,
             isConfirmation: true,
-            success: false,
+            success: false, // Menampilkan ikon peringatan
             onConfirm: () => confirmDeleteUser(user),
         });
     };
 
+    // --- FUNGSI KONFIRMASI HAPUS DENGAN NOTIFIKASI ---
     const confirmDeleteUser = async (user) => {
         if (!user) return;
-        setIsDeleting(true);
+        setIsSubmitting(true);
+        // Tutup modal konfirmasi dulu
+        setNotif(prev => ({ ...prev, isOpen: false }));
+
         try {
             await DataService.deleteUserByAdmin(user.id);
+            setNotif({ isOpen: true, title: "Berhasil!", message: `Pengguna "${user.nama}" telah dihapus.`, success: true });
             fetchUsers();
         } catch (err) {
-            alert(`Gagal menghapus: ${err.response?.data?.message || 'Error tidak diketahui'}`);
+            setNotif({ isOpen: true, title: "Gagal!", message: err.response?.data?.message || 'Gagal menghapus pengguna.', success: false });
         } finally {
-            setIsDeleting(false);
-            setNotif({ ...notif, isOpen: false });
+            setIsSubmitting(false);
         }
     };
     
@@ -194,6 +207,7 @@ const ManajemenPengguna = () => {
                         onClose={handleCloseUserFormModal}
                         onSubmit={handleSaveUser}
                         initialData={editingUser}
+                        isSubmitting={isSubmitting} // Kirim status submitting ke modal
                     />
                 )}
             </AnimatePresence>
@@ -206,7 +220,7 @@ const ManajemenPengguna = () => {
                 message={notif.message}
                 isConfirmation={notif.isConfirmation}
                 success={notif.success}
-                confirmText={isDeleting ? 'Menghapus...' : 'Hapus'}
+                confirmText={isSubmitting ? 'Memproses...' : 'Hapus'}
             />
             
             <div className="bg-white p-6 rounded-xl shadow-lg flex-grow flex flex-col h-full">
@@ -243,7 +257,6 @@ const ManajemenPengguna = () => {
                         ))}
                     </div>
                     <div className="flex items-center gap-3 w-full md:w-auto">
-                        {/* --- SELECT DROPDOWN YANG DIPERBARUI --- */}
                         <div className="relative">
                             <select
                                 value={`${sortConfig.key}-${sortConfig.direction}`}

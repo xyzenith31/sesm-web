@@ -44,7 +44,9 @@ import DrawingPage from './pages/DrawingPage';
 import WritingPage from './pages/WritingPage';
 import DiaryPage from './pages/DiaryPage';
 import StudyReportPage from './pages/StudyReportPage';
-import ManajemenPengguna from './pages/admin/ManajemenPengguna'; // <-- IMPOR HALAMAN BARU
+import ManajemenPengguna from './pages/admin/ManajemenPengguna';
+// --- Ganti nama impor dari ManajemenBookmark ke ManajemenBookmark ---
+import ManajemenBookmark from './pages/admin/ManajemenBookmark';
 
 const pageVariants = {
   initial: { opacity: 0, scale: 0.98 },
@@ -95,7 +97,8 @@ function App() {
       'diary', 'studyReport'
     ];
 
-    const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis', 'manajemenPengguna']; // <-- TAMBAHKAN DI SINI
+    // --- GANTI KEY DARI manajemenBookmark ke manajemenBookmark ---
+    const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis', 'manajemenPengguna', 'manajemenBookmark'];
 
     if (viewsInMainLayout.includes(currentView)) {
       const pageMap = {
@@ -132,13 +135,15 @@ function App() {
     }
 
     if (viewsInAdminLayout.includes(currentView)) {
+      // --- GANTI KEY DAN KOMPONEN DI SINI ---
       const pageMap = {
           dashboardGuru: <DashboardGuru />,
           manajemenMateri: <ManajemenMateri onNavigate={navigate} />,
           manajemenNilai: <ManajemenNilai onNavigate={navigate} />,
           manajemenKuis: <ManajemenKuis onNavigate={navigate} />,
           evaluasiKuis: <EvaluasiKuis onNavigate={navigate} />,
-          manajemenPengguna: <ManajemenPengguna onNavigate={navigate} /> // <-- TAMBAHKAN DI SINI
+          manajemenPengguna: <ManajemenPengguna onNavigate={navigate} />,
+          manajemenBookmark: <ManajemenBookmark onNavigate={navigate} />
       };
       const pageComponent = pageMap[currentView];
 

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FiBookOpen, FiLogOut, FiHelpCircle, FiAlertTriangle, FiUsers } from 'react-icons/fi'; // Tambahkan FiUsers
+import { FiBookOpen, FiLogOut, FiHelpCircle, FiAlertTriangle, FiUsers, FiBookmark } from 'react-icons/fi'; // Ganti FiFileText ke FiBookmark
 import Logo from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Komponen Modal Konfirmasi Logout
+// Komponen Modal Konfirmasi Logout (Tidak berubah)
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     if (!isOpen) return null;
     return (
@@ -81,7 +81,13 @@ const SidebarGuru = ({ activePage, onNavigate }) => {
             isActive={activePage === 'manajemenKuis'}
             onClick={() => onNavigate('manajemenKuis')}
           />
-          {/* --- MENU BARU --- */}
+          {/* --- PERBAIKAN NAMA DAN IKON --- */}
+          <NavLink
+            icon={<FiBookmark size={20} />}
+            label="Manajemen Bookmark"
+            isActive={activePage === 'manajemenBookmark'}
+            onClick={() => onNavigate('manajemenBookmark')}
+          />
           <NavLink
             icon={<FiUsers size={20} />}
             label="Manajemen Pengguna"
