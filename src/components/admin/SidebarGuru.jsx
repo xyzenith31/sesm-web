@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiBookOpen, FiLogOut, FiHelpCircle, FiAlertTriangle } from 'react-icons/fi';
+import { FiBookOpen, FiLogOut, FiHelpCircle, FiAlertTriangle, FiUsers } from 'react-icons/fi'; // Tambahkan FiUsers
 import Logo from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -80,6 +80,13 @@ const SidebarGuru = ({ activePage, onNavigate }) => {
             label="Manajemen Kuis"
             isActive={activePage === 'manajemenKuis'}
             onClick={() => onNavigate('manajemenKuis')}
+          />
+          {/* --- MENU BARU --- */}
+          <NavLink
+            icon={<FiUsers size={20} />}
+            label="Manajemen Pengguna"
+            isActive={activePage === 'manajemenPengguna'}
+            onClick={() => onNavigate('manajemenPengguna')}
           />
         </nav>
         <div className="p-4 border-t">

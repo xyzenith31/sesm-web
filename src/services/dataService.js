@@ -12,20 +12,14 @@ const updateLevelAndClass = (levelData) => { return apiClient.put('/user/profile
 
 const updateUserProfile = (profileData, avatarFile) => {
   const formData = new FormData();
-
-  // Lampirkan semua data teks ke formData
   for (const key in profileData) {
     if (profileData[key] !== undefined && profileData[key] !== null) {
         formData.append(key, profileData[key]);
     }
   }
-
-  // Jika ada file avatar baru yang dipilih, lampirkan juga
   if (avatarFile) {
     formData.append('avatar', avatarFile);
   }
-
-  // Kirim sebagai multipart/form-data
   return apiClient.put('/user', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
@@ -35,6 +29,24 @@ const getDetailMateriForSiswa = (materiKey) => { return apiClient.get(`/materi/$
 const submitAnswers = (materiKey, answers) => { return apiClient.post(`/materi/${materiKey}/submit`, { answers }); };
 
 // --- FUNGSI GURU / ADMIN ---
+// ... (fungsi admin materi & nilai yang sudah ada tidak perlu diubah)
+
+// === FUNGSI-FUNGSI BARU UNTUK MANAJEMEN PENGGUNA ===
+const getAllUsers = () => {
+  return apiClient.get('/admin/users');
+};
+const createUserByAdmin = (userData) => {
+  return apiClient.post('/admin/users', userData);
+};
+const updateUserByAdmin = (userId, userData) => {
+  return apiClient.put(`/admin/users/${userId}`, userData);
+};
+const deleteUserByAdmin = (userId) => {
+  return apiClient.delete(`/admin/users/${userId}`);
+};
+
+
+// --- FUNGSI GURU / ADMIN (YANG SUDAH ADA) ---
 const getMateriForAdmin = (jenjang, kelas) => { return apiClient.get('/admin/materi', { params: { jenjang, kelas } }); };
 const getDetailMateriForAdmin = (materiKey) => { return apiClient.get(`/admin/materi/${materiKey}`); };
 const addChapter = (chapterData) => { return apiClient.post('/admin/materi/chapters', chapterData); };
@@ -69,26 +81,17 @@ const getChaptersForSubject = (jenjang, kelas, subjectName) => {
     url += `/${encodeURIComponent(subjectName)}`;
     return apiClient.get(url);
 };
-
-// --- FUNGSI BARU UNTUK MENAMBAH SOAL DARI BANK KE MATERI ---
 const addQuestionsFromBankToChapter = (materiKey, questionIds) => {
     return apiClient.post(`/admin/materi/${materiKey}/add-from-bank`, { questionIds });
 };
-
-
-// --- FUNGSI PENGATURAN MATERI (BARU) ---
 const updateChapterSettings = (chapterId, settings) => {
     return apiClient.put(`/admin/materi/chapters/${chapterId}/settings`, settings);
 };
-
-// --- FUNGSI MANAJEMEN NILAI ---
 const updateGradingMode = (chapterId, mode) => { return apiClient.put(`/admin/chapters/${chapterId}/grading-mode`, { mode }); };
 const getAllSubmissionsForChapter = (chapterId) => { return apiClient.get(`/admin/nilai/chapter/${chapterId}`); };
 const getSubmissionDetails = (submissionId) => { return apiClient.get(`/admin/nilai/submission/${submissionId}`); };
 const gradeSubmission = (submissionId, score) => { return apiClient.post(`/admin/nilai/submission/${submissionId}`, { score }); };
 const overrideAnswer = (answerId, isCorrect) => { return apiClient.patch(`/admin/nilai/answer/${answerId}`, { isCorrect }); };
-
-// --- FUNGSI MANAJEMEN KUIS & BANK SOAL ---
 const getAllQuizzes = () => { return apiClient.get('/quizzes'); };
 const getQuizDetailsForAdmin = (quizId) => { return apiClient.get(`/admin/quizzes/${quizId}/details`); };
 const createQuiz = (formData) => { return apiClient.post('/admin/quizzes', formData, { headers: { 'Content-Type': 'multipart/form-data' } }); };
@@ -110,8 +113,6 @@ const getAllQuestionsForBank = (jenjang, kelas) => { return apiClient.get('/admi
 const addQuestionsFromBank = (quizId, questionIds) => { return apiClient.post(`/admin/quizzes/${quizId}/add-from-bank`, { questionIds }); };
 const getQuizForStudent = (quizId) => { return apiClient.get(`/quizzes/${quizId}`); };
 const submitQuizAnswers = (quizId, answers) => { return apiClient.post(`/quizzes/${quizId}/submit`, { answers }); };
-
-// --- FUNGSI BARU UNTUK PENGATURAN KUIS ---
 const updateQuizSettings = (quizId, settings) => {
     return apiClient.put(`/admin/quizzes/${quizId}/settings`, settings);
 };
@@ -139,8 +140,6 @@ const deleteDiaryEntry = (id) => {
     return apiClient.delete(`/diary/${id}`);
 };
 
-
-// --- EXPORT SEMUA FUNGSI ---
 const DataService = {
   getSubjects,
   updateLevelAndClass,
@@ -185,6 +184,11 @@ const DataService = {
   addDiaryEntry,
   updateDiaryEntry,
   deleteDiaryEntry,
+  // --- EXPORT FUNGSI BARU ---
+  getAllUsers,
+  createUserByAdmin,
+  updateUserByAdmin,
+  deleteUserByAdmin,
 };
 
 export default DataService;

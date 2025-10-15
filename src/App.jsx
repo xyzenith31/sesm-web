@@ -44,6 +44,7 @@ import DrawingPage from './pages/DrawingPage';
 import WritingPage from './pages/WritingPage';
 import DiaryPage from './pages/DiaryPage';
 import StudyReportPage from './pages/StudyReportPage';
+import ManajemenPengguna from './pages/admin/ManajemenPengguna'; // <-- IMPOR HALAMAN BARU
 
 const pageVariants = {
   initial: { opacity: 0, scale: 0.98 },
@@ -58,7 +59,7 @@ const pageTransition = {
 };
 
 function App() {
-  const { currentView, navigate, viewProps } = useNavigation(); // Ambil viewProps
+  const { currentView, navigate, viewProps } = useNavigation();
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [selectedChapterInfo, setSelectedChapterInfo] = useState(null);
   
@@ -94,7 +95,7 @@ function App() {
       'diary', 'studyReport'
     ];
 
-    const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis'];
+    const viewsInAdminLayout = ['dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis', 'manajemenPengguna']; // <-- TAMBAHKAN DI SINI
 
     if (viewsInMainLayout.includes(currentView)) {
       const pageMap = {
@@ -136,7 +137,8 @@ function App() {
           manajemenMateri: <ManajemenMateri onNavigate={navigate} />,
           manajemenNilai: <ManajemenNilai onNavigate={navigate} />,
           manajemenKuis: <ManajemenKuis onNavigate={navigate} />,
-          evaluasiKuis: <EvaluasiKuis onNavigate={navigate} />
+          evaluasiKuis: <EvaluasiKuis onNavigate={navigate} />,
+          manajemenPengguna: <ManajemenPengguna onNavigate={navigate} /> // <-- TAMBAHKAN DI SINI
       };
       const pageComponent = pageMap[currentView];
 
@@ -147,19 +149,17 @@ function App() {
       );
     }
 
-    // Halaman di luar layout utama
     switch (currentView) {
       case 'login': 
         return <LoginPage onNavigate={navigate} onSwitchToRegister={() => navigate('register')} />;
       case 'register': 
         return <RegisterPage onSwitchToLogin={() => navigate('login')} />;
-      
       case 'forgotPassword':
         return <ForgotPasswordPage 
           onNavigate={navigate} 
           onCodeSent={(identifier) => {
             setResetIdentifier(identifier);
-            navigate('verifyCode', { for: 'reset' }); // Tandai untuk reset password
+            navigate('verifyCode', { for: 'reset' });
           }} 
         />;
       case 'verifyCode':
@@ -171,7 +171,6 @@ function App() {
               setResetIdentifier(identifier);
               navigate('resetPassword');
             }
-            // Untuk login/register, verifikasi sudah langsung login, jadi tidak perlu onVerified
           }} 
         />;
       case 'resetPassword':
