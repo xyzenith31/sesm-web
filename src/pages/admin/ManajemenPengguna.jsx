@@ -5,7 +5,6 @@ import DataService from '../../services/dataService';
 import UserFormModal from '../../components/admin/UserFormModal';
 import Notification from '../../components/ui/Notification';
 
-// Komponen Kartu Statistik (tidak ada perubahan)
 const StatCard = ({ icon: Icon, value, label, color, delay }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -23,7 +22,6 @@ const StatCard = ({ icon: Icon, value, label, color, delay }) => (
     </motion.div>
 );
 
-// Komponen Header Tabel dengan Fitur Sortir (tidak ada perubahan)
 const SortableHeader = ({ children, column, sortConfig, onSort }) => {
     const isSorted = sortConfig.key === column;
     const direction = isSorted ? sortConfig.direction : 'none';
@@ -57,7 +55,6 @@ const ManajemenPengguna = () => {
     const [isUserFormModalOpen, setIsUserFormModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
 
-    // --- State untuk notifikasi (info, sukses, error, konfirmasi) ---
     const [notif, setNotif] = useState({
         isOpen: false,
         title: '',
@@ -67,6 +64,9 @@ const ManajemenPengguna = () => {
         onConfirm: () => {},
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // --- PERBAIKAN: Definisikan base URL API ---
+    const API_URL = 'http://localhost:8080';
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -140,7 +140,6 @@ const ManajemenPengguna = () => {
         setEditingUser(null);
     };
 
-    // --- FUNGSI SIMPAN DENGAN NOTIFIKASI ---
     const handleSaveUser = async (userData) => {
         setIsSubmitting(true);
         try {
@@ -160,23 +159,20 @@ const ManajemenPengguna = () => {
         }
     };
     
-    // --- FUNGSI HAPUS DENGAN MODAL KONFIRMASI ---
     const handleDeleteUser = (user) => {
         setNotif({
             isOpen: true,
             title: "Konfirmasi Hapus",
             message: `Anda yakin ingin menghapus pengguna "${user.nama}"?`,
             isConfirmation: true,
-            success: false, // Menampilkan ikon peringatan
+            success: false, 
             onConfirm: () => confirmDeleteUser(user),
         });
     };
 
-    // --- FUNGSI KONFIRMASI HAPUS DENGAN NOTIFIKASI ---
     const confirmDeleteUser = async (user) => {
         if (!user) return;
         setIsSubmitting(true);
-        // Tutup modal konfirmasi dulu
         setNotif(prev => ({ ...prev, isOpen: false }));
 
         try {
@@ -207,7 +203,7 @@ const ManajemenPengguna = () => {
                         onClose={handleCloseUserFormModal}
                         onSubmit={handleSaveUser}
                         initialData={editingUser}
-                        isSubmitting={isSubmitting} // Kirim status submitting ke modal
+                        isSubmitting={isSubmitting}
                     />
                 )}
             </AnimatePresence>
@@ -312,7 +308,22 @@ const ManajemenPengguna = () => {
                                                 transition={{ duration: 0.3 }}
                                                 className="hover:bg-gray-50"
                                             >
-                                                <td className="px-6 py-4 font-bold text-sesm-deep">{user.nama}</td>
+                                                {/* --- PERBAIKAN TAMPILAN NAMA DENGAN AVATAR --- */}
+                                                <td className="px-6 py-4 font-bold text-sesm-deep">
+                                                    <div className="flex items-center gap-3">
+                                                        <img
+                                                            src={
+                                                                user.avatar
+                                                                    ? (user.avatar.startsWith('http') ? user.avatar : `${API_URL}/${user.avatar}`)
+                                                                    : `https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=${user.username}`
+                                                            }
+                                                            alt={user.nama}
+                                                            className="w-10 h-10 rounded-full object-cover"
+                                                        />
+                                                        <span>{user.nama}</span>
+                                                    </div>
+                                                </td>
+                                                {/* --- BATAS AKHIR PERBAIKAN --- */}
                                                 <td className="px-6 py-4 text-gray-600">{user.username}</td>
                                                 <td className="px-6 py-4 text-gray-600">{user.email}</td>
                                                 <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
