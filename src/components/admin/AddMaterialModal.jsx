@@ -1,23 +1,8 @@
 // contoh-sesm-web/components/admin/AddMaterialModal.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// --- PERBAIKAN DI SINI: Tambahkan FiTrash2 ---
 import { FiX, FiPlus, FiSave, FiLoader, FiTrash2 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
-
-// Custom hook for debouncing
-const useDebounce = (value, delay) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
-    return debouncedValue;
-};
 
 const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => onUpdate(qIndex, { ...q, [field]: value });
@@ -101,8 +86,6 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
 
     const getNewQuestionObject = () => ({ id: Date.now() + Math.random(), type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '' });
 
-    const debouncedState = useDebounce({ formData, tasks, mediaSourceType }, 1500);
-
     useEffect(() => {
         if (isOpen) {
             const draftContent = initialDraft?.content;
@@ -118,12 +101,13 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
         }
     }, [isOpen, initialDraft]);
 
+    // PERBAIKAN: Hapus `useDebounce` dan simpan setiap ada perubahan `formData` atau `tasks`
     useEffect(() => {
-        if (isOpen && (formData.title.trim() || tasks.length > 0)) {
+        if (isOpen && (formData.title.trim() || tasks.length > 0 || formData.subject.trim() || formData.description.trim())) {
             const draftData = { formData, tasks, mediaSourceType };
             DataService.saveDraft(DRAFT_KEY, draftData).catch(err => console.error("Autosave failed:", err));
         }
-    }, [debouncedState, isOpen, DRAFT_KEY, formData, tasks, mediaSourceType]);
+    }, [formData, tasks, mediaSourceType, isOpen, DRAFT_KEY]);
     
     const handleFormChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handleMainFileChange = (e) => { const file = e.target.files[0]; if (file) { setMainFile(file); setMainFilePreview(file.name); } };

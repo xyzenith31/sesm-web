@@ -4,15 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
 import DataService from '../../services/dataService'; // Impor DataService
 
-const useDebounce = (value, delay) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => { setDebouncedValue(value); }, delay);
-        return () => { clearTimeout(handler); };
-    }, [value, delay]);
-    return debouncedValue;
-};
-
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (file) => {
         if (file.type.startsWith('image/')) return <FiImage className="text-blue-500" size={24} />;
@@ -53,7 +44,6 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
         const newOptions = [...question.options];
         const oldOptionValue = newOptions[optIndex];
         newOptions[optIndex] = value;
-        // Jika opsi yang diubah adalah jawaban benar, update juga jawaban benarnya
         if (question.correctAnswer === oldOptionValue) {
             handleInputChange('correctAnswer', value);
         }
@@ -64,7 +54,6 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
         if (question.options.length <= 2) return;
         const optionToRemove = question.options[optIndex];
         const newOptions = question.options.filter((_, i) => i !== optIndex);
-        // Jika opsi yang dihapus adalah jawaban benar, kosongkan jawaban benar
         if (question.correctAnswer === optionToRemove) {
             handleInputChange('correctAnswer', '');
         }
@@ -184,13 +173,12 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         }
     };
     
-    const debouncedQuestions = useDebounce(questions, 2000);
-
+    // PERBAIKAN: Hapus `useDebounce` dan simpan setiap ada perubahan `questions`
     useEffect(() => {
-        if (isOpen && debouncedQuestions.length > 0 && debouncedQuestions.some(q => q.question.trim() !== '')) {
-            saveDraft(debouncedQuestions);
+        if (isOpen && questions.length > 0 && questions.some(q => q.question.trim() !== '')) {
+            saveDraft(questions);
         }
-    }, [debouncedQuestions, DRAFT_KEY, isOpen]);
+    }, [questions, DRAFT_KEY, isOpen]); // Dependensi diubah ke `questions`
 
     useEffect(() => {
         if (isOpen) {

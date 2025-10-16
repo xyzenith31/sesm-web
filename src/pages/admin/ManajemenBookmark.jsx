@@ -46,9 +46,13 @@ const ManajemenBookmark = () => {
             
             const localDraftKeys = Object.keys(localStorage).filter(key => key.startsWith('bookmark_draft_'));
             const bookmarkLocalDrafts = localDraftKeys.map(key => {
-                const content = JSON.parse(localStorage.getItem(key));
-                return { draft_key: key, content, last_saved: new Date().toISOString() };
-            });
+                try {
+                    const content = JSON.parse(localStorage.getItem(key));
+                    return { draft_key: key, content, last_saved: new Date().toISOString() };
+                } catch(e) {
+                    return null;
+                }
+            }).filter(Boolean);
 
             const allDrafts = [
                 ...bookmarkServerDrafts,
@@ -57,10 +61,8 @@ const ManajemenBookmark = () => {
             
             if (allDrafts.length > 0) {
                 setDrafts(allDrafts);
-                const hasShownNotification = sessionStorage.getItem('hasShownBookmarkDraftNotification');
-                if (!hasShownNotification) {
-                    setShowDraftsNotification(true);
-                }
+                // PERBAIKAN: Selalu tampilkan notifikasi jika ada draf, tanpa memeriksa sessionStorage
+                setShowDraftsNotification(true);
             } else {
                 setDrafts([]);
             }
@@ -144,10 +146,8 @@ const ManajemenBookmark = () => {
         }
     };
     
-    const closeDraftNotification = (setSessionFlag = false) => {
-        if (setSessionFlag) {
-            sessionStorage.setItem('hasShownBookmarkDraftNotification', 'true');
-        }
+    // PERBAIKAN: Fungsi ini sekarang hanya menutup notifikasi
+    const closeDraftNotification = () => {
         setShowDraftsNotification(false);
     }
 
@@ -163,16 +163,16 @@ const ManajemenBookmark = () => {
             
             <Notification
                 isOpen={showDraftsNotification}
-                onClose={() => closeDraftNotification(true)}
+                onClose={closeDraftNotification} // Panggil fungsi yang sudah diperbaiki
                 onConfirm={() => {
-                    closeDraftNotification(true);
+                    closeDraftNotification();
                     setIsDraftModalOpen(true);
                 }}
                 title="Anda Memiliki Draf Materi"
                 message={`Anda memiliki ${drafts.length} draf yang belum selesai. Ingin melanjutkannya?`}
                 isConfirmation={true}
                 confirmText="Lanjutkan"
-                cancelText="Nanti Saja"
+                cancelText="Tidak"
             />
 
             <div className="bg-white p-6 rounded-xl shadow-lg flex-grow flex flex-col h-full">
