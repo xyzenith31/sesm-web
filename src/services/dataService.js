@@ -113,6 +113,11 @@ const updateQuizSettings = (quizId, settings) => {
     return apiClient.put(`/admin/quizzes/${quizId}/settings`, settings);
 };
 
+// --- FUNGSI BARU UNTUK BANK SOAL BOOKMARK ---
+const addQuestionsFromBankToBookmark = (bookmarkId, questionIds) => {
+    return apiClient.post(`/admin/bookmarks/${bookmarkId}/add-from-bank`, { questionIds });
+};
+
 // --- FUNGSI POIN & LEADERBOARD ---
 const getPointsSummary = () => { return apiClient.get('/points/summary'); };
 const getPointsHistory = () => { return apiClient.get('/points/history'); };
@@ -202,6 +207,7 @@ const DataService = {
   getDraft,
   getAllDrafts,
   deleteDraft,
+  addQuestionsFromBankToBookmark, // <-- Tambahkan di sini
 };
 
 export default DataService;

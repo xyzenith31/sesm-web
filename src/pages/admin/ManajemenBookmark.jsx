@@ -1,13 +1,14 @@
 // contoh-sesm-web/pages/admin/ManajemenBookmark.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiEdit, FiBookmark, FiFileText } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiEdit, FiBookmark, FiFileText, FiBookOpen } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
 import DataService from '../../services/dataService';
 import Notification from '../../components/ui/Notification';
 import AddMaterialModal from '../../components/admin/AddMaterialModal';
 import EditMaterialModal from '../../components/admin/EditMaterialModal';
 import DraftBookmarkModal from '../../components/admin/DraftBookmarkModal';
+import BankSoalBookmarkModal from '../../components/admin/BankSoalBookmarkModal';
 
 const ManajemenBookmark = () => {
     const [bookmarks, setBookmarks] = useState([]);
@@ -18,6 +19,7 @@ const ManajemenBookmark = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+    const [isBankSoalOpen, setIsBankSoalOpen] = useState(false);
     
     const [editingMaterial, setEditingMaterial] = useState(null);
     const [selectedDraft, setSelectedDraft] = useState(null);
@@ -61,7 +63,6 @@ const ManajemenBookmark = () => {
             
             if (allDrafts.length > 0) {
                 setDrafts(allDrafts);
-                // PERBAIKAN: Selalu tampilkan notifikasi jika ada draf, tanpa memeriksa sessionStorage
                 setShowDraftsNotification(true);
             } else {
                 setDrafts([]);
@@ -146,10 +147,15 @@ const ManajemenBookmark = () => {
         }
     };
     
-    // PERBAIKAN: Fungsi ini sekarang hanya menutup notifikasi
     const closeDraftNotification = () => {
         setShowDraftsNotification(false);
     }
+
+    const handleQuestionsFromBankAdded = (updatedBookmarkId) => {
+        setIsBankSoalOpen(false);
+        setNotif({ isOpen: true, title: "Sukses", message: "Soal berhasil ditambahkan dari bank!", success: true });
+        fetchBookmarks();
+    };
 
     return (
         <>
@@ -157,13 +163,20 @@ const ManajemenBookmark = () => {
                 {isAddModalOpen && <AddMaterialModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSave={(data) => handleSave(data, null)} initialDraft={selectedDraft} />}
                 {isEditModalOpen && <EditMaterialModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={handleSave} initialData={editingMaterial} />}
                 {isDraftModalOpen && <DraftBookmarkModal isOpen={isDraftModalOpen} onClose={() => setIsDraftModalOpen(false)} drafts={drafts} onContinue={handleContinueDraft} onDraftDeleted={fetchDrafts} />}
+                {isBankSoalOpen && (
+                    <BankSoalBookmarkModal 
+                        isOpen={isBankSoalOpen}
+                        onClose={() => setIsBankSoalOpen(false)}
+                        onQuestionsAdded={handleQuestionsFromBankAdded}
+                    />
+                )}
             </AnimatePresence>
             
             <Notification isOpen={notif.isOpen} onClose={() => setNotif({ ...notif, isOpen: false })} title={notif.title} message={notif.message} success={notif.success} />
             
             <Notification
                 isOpen={showDraftsNotification}
-                onClose={closeDraftNotification} // Panggil fungsi yang sudah diperbaiki
+                onClose={closeDraftNotification}
                 onConfirm={() => {
                     closeDraftNotification();
                     setIsDraftModalOpen(true);
@@ -187,6 +200,9 @@ const ManajemenBookmark = () => {
                                 <FiFileText /> Draf ({drafts.length})
                             </motion.button>
                         )}
+                        <motion.button whileTap={{scale: 0.95}} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm">
+                            <FiBookOpen/> Bank Soal
+                        </motion.button>
                         <motion.button whileTap={{scale: 0.95}} onClick={() => handleOpenAddModal(null)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white font-semibold rounded-lg shadow-sm">
                             <FiPlus/> Tambah Materi
                         </motion.button>
