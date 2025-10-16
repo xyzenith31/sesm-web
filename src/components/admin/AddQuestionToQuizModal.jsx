@@ -1,7 +1,7 @@
 // contoh-sesm-web/components/admin/AddQuestionToQuizModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
 import DataService from '../../services/dataService'; // Impor DataService
 
 const useDebounce = (value, delay) => {
@@ -51,15 +51,23 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => onUpdate(index, { ...question, [field]: value });
     const handleOptionChange = (optIndex, value) => {
         const newOptions = [...question.options];
-        if (question.correctAnswer === newOptions[optIndex]) {
+        const oldOptionValue = newOptions[optIndex];
+        newOptions[optIndex] = value;
+        // Jika opsi yang diubah adalah jawaban benar, update juga jawaban benarnya
+        if (question.correctAnswer === oldOptionValue) {
             handleInputChange('correctAnswer', value);
         }
-        newOptions[optIndex] = value;
         onUpdate(index, { ...question, options: newOptions });
     };
     const addOption = () => onUpdate(index, { ...question, options: [...question.options, ''] });
     const removeOption = (optIndex) => {
+        if (question.options.length <= 2) return;
+        const optionToRemove = question.options[optIndex];
         const newOptions = question.options.filter((_, i) => i !== optIndex);
+        // Jika opsi yang dihapus adalah jawaban benar, kosongkan jawaban benar
+        if (question.correctAnswer === optionToRemove) {
+            handleInputChange('correctAnswer', '');
+        }
         onUpdate(index, { ...question, options: newOptions });
     };
     const handleMediaUpload = (e) => {

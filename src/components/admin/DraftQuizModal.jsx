@@ -14,10 +14,13 @@ const DraftQuizModal = ({ isOpen, onClose, allQuizzes, drafts: initialDrafts, on
                     const quizId = parseInt(draft.draft_key.replace('quiz_', ''), 10);
                     const quizInfo = allQuizzes.find(q => q.id === quizId);
                     
+                    // Hanya tampilkan draf jika kuis terkait masih ada
+                    if (!quizInfo) return null;
+
                     return {
                         key: draft.draft_key,
                         quizId,
-                        title: quizInfo ? `Soal untuk: ${quizInfo.title}` : `Soal untuk kuis (ID: ${quizId})`,
+                        title: `Soal untuk: ${quizInfo.title}`,
                         questionCount: draft.content?.length || 0,
                         lastSaved: new Date(draft.last_saved).toLocaleString('id-ID')
                     };
@@ -25,7 +28,7 @@ const DraftQuizModal = ({ isOpen, onClose, allQuizzes, drafts: initialDrafts, on
                     console.error("Gagal memproses draf kuis:", draft.draft_key, e);
                     return null;
                 }
-            }).filter(Boolean);
+            }).filter(Boolean); // Hapus draf yang tidak valid atau tidak memiliki kuis
 
             setDrafts(loadedDrafts.sort((a, b) => new Date(b.lastSaved) - new Date(a.lastSaved)));
         }
@@ -35,18 +38,21 @@ const DraftQuizModal = ({ isOpen, onClose, allQuizzes, drafts: initialDrafts, on
         if (window.confirm(`Yakin ingin menghapus draf untuk "${title}"?`)) {
             try {
                 await DataService.deleteDraft(draftKey);
+                // Panggil fungsi callback untuk memberitahu parent agar me-refresh daftar draft
                 if (onDraftDeleted) {
-                    onDraftDeleted();
+                    onDraftDeleted(); 
                 }
+                // Hapus dari state lokal untuk update UI instan
                 setDrafts(prevDrafts => prevDrafts.filter(d => d.key !== draftKey));
             } catch (error) {
                 alert("Gagal menghapus draf dari server.");
+                console.error("Gagal hapus draf:", error);
             }
         }
     };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col h-[70vh]">
                 <div className="p-6 border-b">
                     <div className="flex justify-between items-center">
@@ -85,6 +91,7 @@ const DraftQuizModal = ({ isOpen, onClose, allQuizzes, drafts: initialDrafts, on
                         <div className="text-center text-gray-400 h-full flex flex-col justify-center items-center">
                            <FiFileText size={48}/>
                            <p className="mt-2 font-semibold">Tidak ada draf soal tersimpan.</p>
+                           <p className="text-sm mt-1">Draf akan muncul di sini setelah Anda mulai membuat soal.</p>
                         </div>
                     )}
                 </div>
