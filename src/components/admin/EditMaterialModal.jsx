@@ -1,35 +1,29 @@
 // contoh-sesm-web/components/admin/EditMaterialModal.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// --- PERBAIKAN DI SINI: Tambahkan FiTrash2 ---
 import { FiX, FiPlus, FiSave, FiLoader, FiTrash2 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 
-// Custom hook for debouncing
-const useDebounce = (value, delay) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
-    return debouncedValue;
-};
-
+// Komponen-komponen internal (QuestionItem, StepIndicator) disalin dari AddMaterialModal untuk konsistensi
 const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => onUpdate(qIndex, { ...q, [field]: value });
     const handleOptionChange = (optIndex, value) => {
         const newOptions = [...q.options];
+        const oldOptionValue = newOptions[optIndex];
         newOptions[optIndex] = value;
+        if (q.correctAnswer === oldOptionValue) {
+            handleInputChange('correctAnswer', value);
+        }
         onUpdate(qIndex, { ...q, options: newOptions });
     };
     const addOption = () => onUpdate(qIndex, { ...q, options: [...q.options, ''] });
     const removeOption = (optIndex) => {
         if (q.options.length <= 2) return;
+        const optionToRemove = q.options[optIndex];
         const newOptions = q.options.filter((_, i) => i !== optIndex);
+        if (q.correctAnswer === optionToRemove) {
+            handleInputChange('correctAnswer', '');
+        }
         onUpdate(qIndex, { ...q, options: newOptions });
     };
 
@@ -60,7 +54,7 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
                     <button type="button" onClick={addOption} className="text-sm font-semibold text-sesm-deep"><FiPlus className="inline"/> Tambah Opsi</button>
                     <select value={q.correctAnswer} onChange={(e) => handleInputChange('correctAnswer', e.target.value)} className={`${inputStyle} mt-2`} required>
                         <option value="" disabled>-- Pilih Jawaban Benar --</option>
-                        {q.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (
+                        {q.options.filter(opt => opt && opt.trim() !== '').map((opt, oIndex) => (
                             <option key={oIndex} value={opt}>{opt}</option>
                         ))}
                     </select>
@@ -76,69 +70,83 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
     );
 };
 
-const StepIndicator = ({ stepNumber, label, isActive, onClick }) => (
-    <button type="button" onClick={onClick} className="flex items-center gap-4 w-full text-left group">
-        <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold border-2 transition-all duration-300 ${isActive ? 'bg-sesm-deep text-white border-sesm-deep' : 'bg-gray-200 text-gray-500 border-gray-200 group-hover:border-sesm-teal'}`}>
+const StepIndicator = ({ stepNumber, label, isActive, onClick, isDisabled }) => (
+    <button type="button" onClick={onClick} disabled={isDisabled} className="flex items-center gap-4 w-full text-left disabled:cursor-not-allowed group">
+        <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold border-2 transition-all duration-300 ${isActive ? 'bg-sesm-deep text-white border-sesm-deep' : 'bg-gray-200 text-gray-500 border-gray-200 group-hover:border-sesm-teal disabled:group-hover:border-gray-200'}`}>
             {stepNumber}
         </div>
-        <span className={`font-semibold transition-colors duration-300 ${isActive ? 'text-sesm-deep' : 'text-gray-500 group-hover:text-sesm-deep'}`}>{label}</span>
+        <span className={`font-semibold transition-colors duration-300 ${isActive ? 'text-sesm-deep' : 'text-gray-500 group-hover:text-sesm-deep disabled:group-hover:text-gray-500'}`}>{label}</span>
     </button>
 );
 
-
 const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
-    const DRAFT_KEY = useMemo(() => `bookmark_draft_edit_${initialData?.id}`, [initialData]);
-
+    const API_URL = 'http://localhost:8080';
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
     const [tasks, setTasks] = useState([]);
+    const [mainFile, setMainFile] = useState(null);
+    const [coverImage, setCoverImage] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
-    
+    const [mainFilePreview, setMainFilePreview] = useState('');
+    const [coverImagePreview, setCoverImagePreview] = useState('');
+    const [mediaSourceType, setMediaSourceType] = useState('file');
+
     const getNewQuestionObject = () => ({ id: Date.now() + Math.random(), type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '' });
 
-    const debouncedState = useDebounce({ formData, tasks }, 1500);
-
-    // Load initial data or draft
     useEffect(() => {
-        if (isOpen) {
-            const savedDraft = JSON.parse(localStorage.getItem(DRAFT_KEY));
-            const sourceData = savedDraft || initialData;
+        if (isOpen && initialData) {
+            setFormData({
+                title: initialData.title || '',
+                description: initialData.description || '',
+                subject: initialData.subject || '',
+                url_link: initialData.type === 'video_link' ? initialData.url : '',
+                grading_type: initialData.grading_type || 'manual',
+                recommended_level: initialData.recommended_level || 'Semua'
+            });
 
-            if (sourceData) {
-                setFormData({
-                    title: sourceData.title || '', description: sourceData.description || '', subject: sourceData.subject || '',
-                    url_link: sourceData.type === 'video_link' ? sourceData.url : '',
-                    grading_type: sourceData.grading_type || 'manual', recommended_level: sourceData.recommended_level || 'Semua'
-                });
+            setTasks(initialData.tasks.map(t => ({...getNewQuestionObject(), ...t})));
+            
+            const sourceType = initialData.type === 'video_link' ? 'link' : 'file';
+            setMediaSourceType(sourceType);
 
-                const initialTasks = (sourceData.tasks || []).map((task, index) => ({
-                    ...getNewQuestionObject(),
-                    ...task,
-                    id: task.id || index
-                }));
-                setTasks(initialTasks);
+            if (sourceType === 'file' && initialData.url) {
+                setMainFilePreview(initialData.url.split('/').pop());
+            } else {
+                setMainFilePreview('');
             }
+
+            if (initialData.cover_image_url) {
+                setCoverImagePreview(`${API_URL}/${initialData.cover_image_url}`);
+            } else {
+                setCoverImagePreview('');
+            }
+
+            // Reset file input state
+            setMainFile(null);
+            setCoverImage(null);
         }
-    }, [isOpen, initialData, DRAFT_KEY]);
-    
-    // Auto-save draft on change
-    useEffect(() => {
-        if (isOpen) {
-            const draftData = { ...initialData, ...formData, tasks };
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
-            DataService.saveDraft(DRAFT_KEY, draftData).catch(err => console.error("Autosave failed:", err));
-        }
-    }, [debouncedState, isOpen, DRAFT_KEY, initialData, formData, tasks]);
+    }, [isOpen, initialData]);
     
     const handleFormChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleMainFileChange = (e) => { const file = e.target.files[0]; if (file) { setMainFile(file); setMainFilePreview(file.name); } };
+    const handleCoverImageChange = (e) => { const file = e.target.files[0]; if (file) { setCoverImage(file); setCoverImagePreview(URL.createObjectURL(file)); } };
+    
     const updateTask = (index, updatedTask) => setTasks(prev => prev.map((task, i) => i === index ? updatedTask : task));
     const addTask = () => setTasks(prev => [...prev, getNewQuestionObject()]);
     const removeTask = (index) => setTasks(prev => prev.filter((_, i) => i !== index));
 
+    const navigateToStep = (targetStep) => {
+        if (targetStep > 1 && (!formData.title.trim() || !formData.subject.trim())) {
+            alert("Judul dan Mapel wajib diisi sebelum melanjutkan.");
+            return;
+        }
+        setStep(targetStep);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (step < 2) {
-            setStep(step + 1);
+        if (step < 3) {
+            navigateToStep(step + 1);
             return;
         }
 
@@ -146,13 +154,14 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
         const data = new FormData();
         Object.keys(formData).forEach(key => data.append(key, formData[key]));
         data.append('tasks', JSON.stringify(tasks));
-
+        if (mainFile) data.append('mainFile', mainFile);
+        if (coverImage) data.append('coverImage', coverImage);
+        if (mediaSourceType === 'file') data.delete('url_link');
+        
         try {
             await onSave(data, initialData.id);
-            localStorage.removeItem(DRAFT_KEY);
-            DataService.deleteDraft(DRAFT_KEY).catch(err => console.warn("Failed to delete server draft:", err));
         } catch (error) {
-            // Parent handles notification
+            // Error ditangani oleh parent
         } finally {
             setIsSaving(false);
         }
@@ -166,7 +175,9 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
             case 1:
                 return ( <motion.div key={1} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> <div><label className="font-semibold text-sm">Judul</label><input type="text" name="title" value={formData.title} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Mapel</label><input type="text" name="subject" value={formData.subject} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Disarankan Untuk</label><select name="recommended_level" value={formData.recommended_level} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="Semua">Semua Jenjang</option><option value="TK">TK</option><option value="SD 1-2">SD Kelas 1-2</option><option value="SD 3-4">SD Kelas 3-4</option><option value="SD 5-6">SD Kelas 5-6</option></select></div> <div><label className="font-semibold text-sm">Deskripsi</label><textarea name="description" value={formData.description} onChange={handleFormChange} className={`${inputStyle} h-24`}></textarea></div> </motion.div> );
             case 2:
-                return ( <motion.div key={2} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-3"> <div><label className="font-semibold text-sm">Tipe Penilaian</label><select name="grading_type" value={formData.grading_type} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="manual">Manual (Guru menilai)</option><option value="otomatis">Otomatis (hanya PG)</option></select><p className="text-xs text-gray-500 mt-1">{formData.grading_type === 'otomatis' ? 'Jawaban esai tidak akan dinilai otomatis.' : 'Semua jenis soal akan dinilai manual oleh guru.'}</p></div> <div className="border-t pt-4"><h4 className="font-semibold">Soal & Tugas</h4><div className="space-y-3 mt-2 max-h-[320px] overflow-y-auto pr-2">{tasks.map((task, index) => (<QuestionItem key={task.id} q={task} qIndex={index} onUpdate={updateTask} onRemove={() => removeTask(index)} />))}<button type="button" onClick={addTask} className="text-sm font-semibold text-sesm-deep mt-2"><FiPlus className="inline"/> Tambah Soal</button></div></div> </motion.div> );
+                return ( <motion.div key={2} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> <div className="space-y-2"> <label className="font-semibold text-sm">Sumber Materi</label> <div className="flex gap-4"> <label className="flex items-center gap-2"><input type="radio" name="mediaSource" value="file" checked={mediaSourceType === 'file'} onChange={(e) => setMediaSourceType(e.target.value)} /> File</label> <label className="flex items-center gap-2"><input type="radio" name="mediaSource" value="link" checked={mediaSourceType === 'link'} onChange={(e) => setMediaSourceType(e.target.value)} /> Link Video</label> </div> </div> <AnimatePresence mode="wait"> <motion.div key={mediaSourceType} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> {mediaSourceType === 'file' ? ( <div><label className="font-semibold text-sm">Ganti File Utama (Opsional)</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="main-upload-edit" className="hidden" onChange={handleMainFileChange} /><label htmlFor="main-upload-edit" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1"><FiPlus /><span>{mainFilePreview || "Pilih file baru..."}</span></label></div></div> ) : ( <div><label className="font-semibold text-sm">Link Video</label><input type="url" name="url_link" value={formData.url_link} onChange={handleFormChange} className={inputStyle} placeholder="https://www.youtube.com/..." /></div> )} </motion.div> </AnimatePresence> <div><label className="font-semibold text-sm">Ganti Gambar Sampul (Opsional)</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="cover-upload-edit" className="hidden" onChange={handleCoverImageChange} accept="image/*" /><label htmlFor="cover-upload-edit" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1">{coverImagePreview ? <img src={coverImagePreview} alt="Preview" className="h-24 rounded-md mb-2 object-cover" /> : <FiPlus />}<span>{coverImage ? coverImage.name : "Pilih gambar baru..."}</span></label></div></div> </motion.div> );
+            case 3:
+                return ( <motion.div key={3} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-3"> <div><label className="font-semibold text-sm">Tipe Penilaian</label><select name="grading_type" value={formData.grading_type} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="manual">Manual (Guru menilai)</option><option value="otomatis">Otomatis (hanya PG)</option></select><p className="text-xs text-gray-500 mt-1">{formData.grading_type === 'otomatis' ? 'Jawaban esai tidak akan dinilai otomatis.' : 'Semua jenis soal akan dinilai manual oleh guru.'}</p></div> <div className="border-t pt-4"><h4 className="font-semibold">Soal & Tugas</h4><div className="space-y-3 mt-2 max-h-[280px] overflow-y-auto pr-2">{tasks.map((task, index) => (<QuestionItem key={task.id} q={task} qIndex={index} onUpdate={updateTask} onRemove={() => removeTask(index)} />))}<button type="button" onClick={addTask} className="text-sm font-semibold text-sesm-deep mt-2"><FiPlus className="inline"/> Tambah Soal</button></div></div> </motion.div> );
             default:
                 return null;
         }
@@ -184,17 +195,18 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
                     </header>
                     <main className="p-6 flex gap-8">
                         <div className="w-1/3 border-r pr-6 space-y-6 pt-2">
-                            <StepIndicator stepNumber={1} label="Informasi Dasar" isActive={step === 1} onClick={() => setStep(1)} />
-                            <StepIndicator stepNumber={2} label="Soal & Tugas" isActive={step === 2} onClick={() => setStep(2)} />
+                            <StepIndicator stepNumber={1} label="Informasi Dasar" isActive={step === 1} onClick={() => navigateToStep(1)} />
+                            <StepIndicator stepNumber={2} label="Media & Materi" isActive={step === 2} onClick={() => navigateToStep(2)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
+                            <StepIndicator stepNumber={3} label="Soal & Tugas" isActive={step === 3} onClick={() => navigateToStep(3)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
                         </div>
                         <div className="w-2/3">
-                           <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
+                            <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
                         </div>
                     </main>
                     <footer className="bg-gray-50 p-4 flex justify-end items-center gap-3 rounded-b-2xl border-t">
                         <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold bg-gray-200 hover:bg-gray-300">Batal</button>
-                        {step < 2 ? (
-                            <button type="button" onClick={() => setStep(step + 1)} className="px-5 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-opacity-90">Lanjutkan</button>
+                        {step < 3 ? (
+                            <button type="button" onClick={() => navigateToStep(step + 1)} className="px-5 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-opacity-90">Lanjutkan</button>
                         ) : (
                             <button type="submit" disabled={isSaving} className="px-5 py-2 bg-sesm-deep text-white rounded-lg flex items-center gap-2 disabled:bg-gray-400">{isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}{isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
                         )}

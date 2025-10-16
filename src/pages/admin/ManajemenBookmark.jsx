@@ -1,7 +1,7 @@
 // contoh-sesm-web/pages/admin/ManajemenBookmark.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiEdit, FiBookmark, FiFileText, FiBookOpen } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiEdit, FiBookmark, FiFileText, FiBookOpen, FiTrendingUp } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
 import DataService from '../../services/dataService';
 import Notification from '../../components/ui/Notification';
@@ -10,12 +10,11 @@ import EditMaterialModal from '../../components/admin/EditMaterialModal';
 import DraftBookmarkModal from '../../components/admin/DraftBookmarkModal';
 import BankSoalBookmarkModal from '../../components/admin/BankSoalBookmarkModal';
 
-const ManajemenBookmark = () => {
+const ManajemenBookmark = ({ onNavigate }) => {
     const [bookmarks, setBookmarks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
     
-    // State untuk Modal
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
@@ -24,9 +23,9 @@ const ManajemenBookmark = () => {
     const [editingMaterial, setEditingMaterial] = useState(null);
     const [selectedDraft, setSelectedDraft] = useState(null);
     
-    // State untuk Draft
     const [drafts, setDrafts] = useState([]);
     const [showDraftsNotification, setShowDraftsNotification] = useState(false);
+    const [hasDismissedDraftNotif, setHasDismissedDraftNotif] = useState(false);
 
 
     const fetchBookmarks = useCallback(async () => {
@@ -61,16 +60,16 @@ const ManajemenBookmark = () => {
                 ...bookmarkLocalDrafts.filter(ld => !bookmarkServerDrafts.find(sd => sd.draft_key === ld.draft_key))
             ];
             
-            if (allDrafts.length > 0) {
-                setDrafts(allDrafts);
+            setDrafts(allDrafts);
+            
+            if (allDrafts.length > 0 && !hasDismissedDraftNotif) {
                 setShowDraftsNotification(true);
-            } else {
-                setDrafts([]);
             }
+
         } catch (error) {
             console.error("Gagal mengambil draf:", error);
         }
-    }, []);
+    }, [hasDismissedDraftNotif]);
 
     useEffect(() => { 
         fetchBookmarks();
@@ -149,6 +148,7 @@ const ManajemenBookmark = () => {
     
     const closeDraftNotification = () => {
         setShowDraftsNotification(false);
+        setHasDismissedDraftNotif(true);
     }
 
     const handleQuestionsFromBankAdded = (updatedBookmarkId) => {
@@ -189,25 +189,34 @@ const ManajemenBookmark = () => {
             />
 
             <div className="bg-white p-6 rounded-xl shadow-lg flex-grow flex flex-col h-full">
-                <div className="flex justify-between items-start mb-4 pb-4 border-b">
-                    <div>
-                        <h1 className="text-3xl font-bold text-sesm-deep flex items-center gap-3"><FiBookmark /> Manajemen Bookmark</h1>
-                        <p className="text-gray-500">Kelola materi, soal, dan penilaian untuk siswa.</p>
-                    </div>
-                     <div className='flex gap-2'>
-                        {drafts.length > 0 && (
-                            <motion.button whileTap={{scale: 0.95}} onClick={() => setIsDraftModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-gray-800 rounded-lg font-bold hover:bg-yellow-500 shadow-sm">
-                                <FiFileText /> Draf ({drafts.length})
-                            </motion.button>
-                        )}
-                        <motion.button whileTap={{scale: 0.95}} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm">
+                {/* --- PERBAIKAN STRUKTUR HEADER DIMULAI DI SINI --- */}
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+                    <h1 className="text-3xl font-bold text-sesm-deep flex items-center gap-3"><FiBookmark /> Manajemen Bookmark</h1>
+                    <p className="text-gray-500 mt-1">Kelola materi, soal, dan penilaian untuk siswa.</p>
+                    
+                    <div className='flex items-center gap-3 my-6'>
+                        <motion.button 
+                            whileTap={{ scale: 0.95 }} 
+                            onClick={() => setIsDraftModalOpen(true)} 
+                            disabled={drafts.length === 0}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 rounded-lg font-bold hover:bg-yellow-500 shadow-sm disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">
+                            <FiFileText /> Draf {drafts.length > 0 && `(${drafts.length})`}
+                        </motion.button>
+                        <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm">
                             <FiBookOpen/> Bank Soal
                         </motion.button>
-                        <motion.button whileTap={{scale: 0.95}} onClick={() => handleOpenAddModal(null)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white font-semibold rounded-lg shadow-sm">
-                            <FiPlus/> Tambah Materi
+                        <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm">
+                            <FiTrendingUp /> Manajemen Nilai
                         </motion.button>
-                     </div>
-                </div>
+                        <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleOpenAddModal(null)} className="flex items-center gap-2 px-5 py-2.5 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-sesm-deep shadow-sm">
+                            <FiPlus /> Buat Materi Baru
+                        </motion.button>
+                    </div>
+                </motion.div>
+                
+                <div className="border-t-2 border-dashed border-gray-200 mb-6"></div>
+                {/* --- BATAS AKHIR PERBAIKAN STRUKTUR --- */}
+
 
                 <AnimatePresence mode="wait">
                     {loading ? (

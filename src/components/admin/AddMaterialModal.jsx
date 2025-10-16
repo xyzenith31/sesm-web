@@ -8,13 +8,21 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => onUpdate(qIndex, { ...q, [field]: value });
     const handleOptionChange = (optIndex, value) => {
         const newOptions = [...q.options];
+        const oldOptionValue = newOptions[optIndex];
         newOptions[optIndex] = value;
+        if (q.correctAnswer === oldOptionValue) {
+            handleInputChange('correctAnswer', value);
+        }
         onUpdate(qIndex, { ...q, options: newOptions });
     };
     const addOption = () => onUpdate(qIndex, { ...q, options: [...q.options, ''] });
     const removeOption = (optIndex) => {
         if (q.options.length <= 2) return;
+        const optionToRemove = q.options[optIndex];
         const newOptions = q.options.filter((_, i) => i !== optIndex);
+        if (q.correctAnswer === optionToRemove) {
+            handleInputChange('correctAnswer', '');
+        }
         onUpdate(qIndex, { ...q, options: newOptions });
     };
 
@@ -97,11 +105,14 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
                 setFormData({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
                 setTasks([]);
                 setMediaSourceType('file');
+                setMainFile(null);
+                setCoverImage(null);
+                setMainFilePreview('');
+                setCoverImagePreview('');
             }
         }
     }, [isOpen, initialDraft]);
 
-    // PERBAIKAN: Hapus `useDebounce` dan simpan setiap ada perubahan `formData` atau `tasks`
     useEffect(() => {
         if (isOpen && (formData.title.trim() || tasks.length > 0 || formData.subject.trim() || formData.description.trim())) {
             const draftData = { formData, tasks, mediaSourceType };
