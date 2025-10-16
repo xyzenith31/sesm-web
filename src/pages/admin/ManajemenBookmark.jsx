@@ -1,11 +1,11 @@
 // contoh-sesm-web/pages/admin/ManajemenBookmark.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiEdit, FiSave, FiX, FiBookmark } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiEdit, FiSave, FiX, FiBookmark, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
 import Notification from '../../components/ui/Notification';
 
-// --- Modal Penilaian (Tidak Berubah) ---
+// --- Modal Penilaian (Sudah diubah) ---
 const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {
     const [details, setDetails] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {
             setLoading(true);
             BookmarkService.getSubmissionDetails(submission.id)
                 .then(res => {
-                    const formattedDetails = res.data.map(d => ({...d, is_correct: d.is_correct === null ? null : Boolean(d.is_correct)}));
+                    const formattedDetails = res.data.map(d => ({...d, is_correct: d.is_correct === null ? null : Boolean(d.is_correct), correction_text: d.correction_text || ''}));
                     setDetails(formattedDetails);
                     const correctCount = formattedDetails.filter(d => d.is_correct === true).length;
                     const calculatedScore = formattedDetails.length > 0 ? Math.round((correctCount / formattedDetails.length) * 100) : 0;
@@ -26,8 +26,19 @@ const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {
         }
     }, [submission]);
 
+    const updateDetail = (answerId, field, value) => {
+        setDetails(prevDetails =>
+            prevDetails.map(d => (d.id === answerId ? { ...d, [field]: value } : d))
+        );
+    };
+    
     const toggleCorrectness = (answerId) => {
-        const newDetails = details.map(d => d.id === answerId ? { ...d, is_correct: d.is_correct === null ? true : !d.is_correct } : d);
+        const newDetails = details.map(d => {
+            if (d.id === answerId) {
+                return { ...d, is_correct: d.is_correct === null ? true : !d.is_correct };
+            }
+            return d;
+        });
         setDetails(newDetails);
         const correctCount = newDetails.filter(d => d.is_correct === true).length;
         setScore(newDetails.length > 0 ? Math.round((correctCount / newDetails.length) * 100) : 0);
@@ -35,13 +46,13 @@ const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {
 
     const handleGrade = async () => {
         try {
-            const answerPayload = details.map(({ id, is_correct }) => ({ id, is_correct }));
+            const answerPayload = details.map(({ id, is_correct, correction_text }) => ({ id, is_correct, correction_text }));
             await BookmarkService.gradeSubmission(submission.id, score, answerPayload);
             onGradeSubmitted();
         } catch (error) { alert("Gagal menyimpan nilai."); }
     };
     
-    return ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"><motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col h-[85vh]"><header className="p-5 border-b flex justify-between items-center"><h3 className="text-xl font-bold">Nilai Pengerjaan: {submission.student_name}</h3><button onClick={onClose}><FiX/></button></header><main className="flex-grow overflow-y-auto p-6 bg-gray-50">{loading ? <div className="flex justify-center"><FiLoader className="animate-spin"/></div> : details.map(item => (<div key={item.id} className="bg-white p-4 rounded-lg border mb-4"><p className="font-bold text-gray-800">{item.question_index + 1}. {item.question_text}</p><div className="mt-2 bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg"><p>{item.answer_text || "(Tidak dijawab)"}</p></div><div className="mt-3 pt-3 border-t flex justify-end gap-2"><button onClick={() => toggleCorrectness(item.id)} className={`flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-md ${item.is_correct === false ? 'bg-red-500 text-white' : 'bg-red-100 text-red-600'}`}>Salah</button><button onClick={() => toggleCorrectness(item.id)} className={`flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-md ${item.is_correct === true ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}>Benar</button></div></div>))}</main><footer className="p-5 border-t flex justify-between items-center bg-white"><div className="flex items-center gap-3"><label className="font-bold text-lg">Nilai Akhir:</label><input type="number" value={score} onChange={e => setScore(e.target.value)} className="w-24 p-2 text-lg font-bold border rounded-lg" /></div><button onClick={handleGrade} className="px-6 py-3 bg-sesm-deep text-white rounded-lg font-semibold">Simpan Nilai</button></footer></motion.div></motion.div> );
+    return ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"><motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col h-[85vh]"><header className="p-5 border-b flex justify-between items-center"><h3 className="text-xl font-bold">Nilai Pengerjaan: {submission.student_name}</h3><button onClick={onClose}><FiX/></button></header><main className="flex-grow overflow-y-auto p-6 bg-gray-50">{loading ? <div className="flex justify-center"><FiLoader className="animate-spin"/></div> : details.map(item => (<div key={item.id} className="bg-white p-4 rounded-lg border mb-4"><div className="flex justify-between items-start"><p className="font-bold text-gray-800 flex-grow pr-4">{item.question_index + 1}. {item.question_text}</p>{item.is_correct === true && <FiCheckCircle className="text-green-500 text-2xl"/>}{item.is_correct === false && <FiXCircle className="text-red-500 text-2xl"/>}</div><div className="mt-2 bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg"><p>{item.answer_text || "(Tidak dijawab)"}</p></div><div className="mt-3 pt-3 border-t space-y-2"><div className="flex justify-end gap-2"><button onClick={() => toggleCorrectness(item.id)} className={`flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-md ${item.is_correct === false ? 'bg-red-500 text-white' : 'bg-red-100 text-red-600'}`}>Salah</button><button onClick={() => toggleCorrectness(item.id)} className={`flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-md ${item.is_correct === true ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}>Benar</button></div><div><label className="text-xs font-semibold text-gray-600">Catatan Pembenaran (Opsional)</label><textarea value={item.correction_text} onChange={(e) => updateDetail(item.id, 'correction_text', e.target.value)} className="w-full p-2 border rounded-md mt-1 text-sm" placeholder="Tulis pembenaran atau feedback..."></textarea></div></div></div>))}</main><footer className="p-5 border-t flex justify-between items-center bg-white"><div className="flex items-center gap-3"><label className="font-bold text-lg">Nilai Akhir:</label><input type="number" value={score} onChange={e => setScore(e.target.value)} className="w-24 p-2 text-lg font-bold border rounded-lg" /></div><button onClick={handleGrade} className="px-6 py-3 bg-sesm-deep text-white rounded-lg font-semibold">Simpan Nilai</button></footer></motion.div></motion.div> );
 };
 
 // --- Komponen Step Indicator ---
