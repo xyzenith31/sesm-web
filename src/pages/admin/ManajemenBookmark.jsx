@@ -1,3 +1,4 @@
+// contoh-sesm-web/pages/admin/ManajemenBookmark.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiEdit, FiSave, FiX, FiBookmark } from 'react-icons/fi';
@@ -263,11 +264,11 @@ const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
             <Notification
-                isOpen={notif.isOpen}
-                onClose={() => setNotif({ ...notif, isOpen: false })}
-                title={notif.title}
-                message={notif.message}
-                success={notif.success}
+                isOpen={modalNotif.isOpen}
+                onClose={() => setModalNotif({ ...modalNotif, isOpen: false })}
+                title={modalNotif.title}
+                message={modalNotif.message}
+                success={modalNotif.success}
             />
              <Notification
                 isOpen={confirmTaskDelete.isOpen}
