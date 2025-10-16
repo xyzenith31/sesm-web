@@ -3,8 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiDownload, FiLink, FiType, FiAward } from 'react-icons/fi';
 import DataService from '../services/dataService';
-import ConfirmationModal from '../components/ConfirmationModal';
-import PointsNotification from '../components/PointsNotification'; // Impor notifikasi poin
+import ConfirmationModal from '../components/mod/ConfirmationModal';
+import PointsNotification from '../components/ui/PointsNotification'; // Impor notifikasi poin
 
 const ImageLightbox = ({ imageUrl, onClose }) => {
     return (

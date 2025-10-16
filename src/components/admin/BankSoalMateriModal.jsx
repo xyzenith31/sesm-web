@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiSearch, FiLoader, FiInbox, FiCheckSquare, FiArrowRight, FiArrowLeft, FiPlus } from 'react-icons/fi';
 import DataService from '../../services/dataService';
-import AddChapterModal from '../AddChapterModal'; // Impor modal untuk menambah chapter
+import AddChapterModal from '../mod/AddChapterModal'; // Impor modal untuk menambah chapter
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },

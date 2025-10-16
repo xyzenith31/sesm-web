@@ -1,6 +1,6 @@
 import React from 'react';
 import { FiHome, FiSearch, FiBookmark, FiUser, FiLogOut } from 'react-icons/fi';
-import Logo from '../assets/logo.png';
+import Logo from '../../assets/logo.png';
 
 const NavLink = ({ icon, label, isActive, onClick }) => (
   <button

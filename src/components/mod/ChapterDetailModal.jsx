@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiCheck, FiRefreshCw, FiLoader } from 'react-icons/fi';
-import DataService from '../services/dataService';
+import DataService from '../../services/dataService';
 
 const QuestionCard = ({ question, index, userAnswer, onAnswerChange, isSubmitted }) => {
   const isCorrect = isSubmitted && userAnswer && question.correctAnswer && userAnswer.toLowerCase() === question.correctAnswer.toLowerCase();

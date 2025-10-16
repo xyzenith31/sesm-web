@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
-import Card from '../components/Card';
+import Card from '../components/ui/Card';
 import { FiArrowLeft } from 'react-icons/fi';
 import AuthService from '../services/authService';
 

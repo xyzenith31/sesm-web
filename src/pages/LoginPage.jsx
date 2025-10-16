@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import LoginForm from '../components/Auth/LoginForm';
 import Logo from '../assets/logo.png';
-import Card from '../components/Card';
+import Card from '../components/ui/Card';
 
 const LoginPage = ({ onSwitchToRegister, onNavigate }) => {
   const itemContainerVariants = {

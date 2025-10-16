@@ -5,7 +5,7 @@ import { FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigation } from '../../hooks/useNavigation';
-import Notification from '../Notification'; // <-- 1. Impor komponen notifikasi
+import Notification from '../ui/Notification'; // <-- 1. Impor komponen notifikasi
 
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);

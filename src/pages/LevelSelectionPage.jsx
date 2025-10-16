@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
 import UserLayout from '../layouts/UserLayout';
-import ConfirmationModal from '../components/ConfirmationModal';
+import ConfirmationModal from '../components/mod/ConfirmationModal';
 import { useData } from '../hooks/useData';
 
 const LevelSelectionPage = ({ onSelectSD, onSelectTK, onExit }) => {

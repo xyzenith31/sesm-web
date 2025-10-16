@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
 import UserLayout from '../layouts/UserLayout';
-import ConfirmationModal from '../components/ConfirmationModal';
+import ConfirmationModal from '../components/mod/ConfirmationModal';
 import { useData } from '../hooks/useData'; // <-- GANTI DENGAN INI
 
 const ChooseSelectionPage = ({ onExit, onSelectClass1, onSelectClass2, onSelectClass3_4, onSelectClass5, onSelectClass6 }) => {

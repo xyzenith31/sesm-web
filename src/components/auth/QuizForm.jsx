@@ -2,10 +2,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiClock, FiAward, FiCheck, FiX, FiLoader, FiAlertCircle, FiDownload, FiLink } from 'react-icons/fi';
-import AnswerFeedback from '../components/AnswerFeedback';
-import thankYouMeme from '../assets/meme/terima-kasih.jpeg';
-import salahMeme from '../assets/meme/meme-salah/9.jpeg'; // Meme untuk jawaban salah
-import DataService from '../services/dataService';
+import AnswerFeedback from '../ui/AnswerFeedback';
+import thankYouMeme from '../../assets/meme/terima-kasih.jpeg';
+import salahMeme from '../../assets/meme/meme-salah/9.jpeg'; // Meme untuk jawaban salah
+import DataService from '../../services/dataService';
 
 // Komponen MemeOverlay, QuizLeaderboard, MediaViewer (tidak berubah)
 const MemeOverlay = ({ meme, title, onClose }) => { if (!meme) return null; return (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center flex-col p-4" onClick={onClose}>{title && <h2 className="text-white text-3xl font-bold mb-4 text-center">{title}</h2>}<img src={meme} alt="Meme" className="max-w-sm max-h-[60vh] rounded-lg shadow-lg" /><p className="text-white font-semibold mt-4 text-lg">Klik di mana saja untuk melanjutkan</p></motion.div>);};

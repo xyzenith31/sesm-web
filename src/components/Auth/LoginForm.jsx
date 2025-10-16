@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigation } from '../../hooks/useNavigation';
-import Notification from '../Notification'; // <-- 1. Impor komponen notifikasi
+import Notification from '../ui/Notification'; // <-- 1. Impor komponen notifikasi
 
 const LoginForm = ({ onNavigate }) => {
   const [identifier, setIdentifier] = useState('');

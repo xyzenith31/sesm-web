@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'; // 1. Impor createPortal
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiZap, FiGift, FiClock, FiCheckCircle, FiAward } from 'react-icons/fi';
 import { FaCalculator, FaBook, FaFlask, FaTrophy } from 'react-icons/fa';
-import ChallengeModal from '../components/ChallengeModal';
+import ChallengeModal from '../components/mod/ChallengeModal';
 
 // --- Komponen Notifikasi Klaim Hadiah (Diperbarui dengan Portal) ---
 const RewardNotification = ({ onClose }) => createPortal(

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 // --- PERBAIKAN DI SINI: FiLoader dan ikon lainnya ditambahkan ---
 import { FiX, FiExternalLink, FiHelpCircle, FiCheck, FiXCircle, FiFileText, FiSave, FiCheckCircle, FiLoader } from 'react-icons/fi';
-import BookmarkService from '../services/bookmarkService';
+import BookmarkService from '../../services/bookmarkService';
 
 const MaterialDetailModal = ({ material, onClose }) => {
   const API_URL = 'http://localhost:8080';

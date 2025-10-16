@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiLoader, FiAlertCircle, FiEdit, FiSave, FiX, FiBookmark } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
-import Notification from '../../components/Notification';
+import Notification from '../../components/ui/Notification';
 
 // --- Modal Penilaian (Tidak Berubah) ---
 const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {

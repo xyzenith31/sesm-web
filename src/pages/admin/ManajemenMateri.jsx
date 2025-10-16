@@ -7,9 +7,9 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
-import AddChapterModal from '../../components/AddChapterModal';
-import QuestionFormModal from '../../components/QuestionFormModal';
-import DraftsModal from '../../components/DraftsModal';
+import AddChapterModal from '../../components/mod/AddChapterModal';
+import QuestionFormModal from '../../components/mod/QuestionFormModal';
+import DraftsModal from '../../components/mod/DraftsModal';
 import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal';
 import EditQuestionModal from '../../components/admin/EditQuestionModal';
 import ChapterSettingsModal from '../../components/admin/ChapterSettingsModal';

@@ -1,6 +1,6 @@
 import React from 'react';
-import SideBar from '../components/SideBar';
-import BottomNavBar from '../components/BottomNavBar';
+import SideBar from '../components/navigation/SideBar';
+import BottomNavBar from '../components/navigation/BottomNavBar';
 
 const MainLayout = ({ children, activePage, onNavigate }) => {
   return (

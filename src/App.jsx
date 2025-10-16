@@ -36,7 +36,7 @@ import ManajemenNilai from './pages/admin/ManajemenNilai';
 import ManajemenKuis from './pages/admin/ManajemenKuis';
 import EvaluasiKuis from './pages/admin/EvaluasiKuis';
 import MainLayout from './layouts/MainLayout';
-import QuizForm from './components/QuizForm';
+import QuizForm from './components/auth/QuizForm';
 import DailyChallengePage from './pages/DailyChallengePage';
 import CreativeZonePage from './pages/CreativeZonePage';
 import InteractiveStoryPage from './pages/InteractiveStoryPage';

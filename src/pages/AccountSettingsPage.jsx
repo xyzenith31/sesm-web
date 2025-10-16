@@ -4,7 +4,7 @@ import { FiArrowLeft, FiCamera, FiTrash2, FiLoader, FiChevronLeft, FiChevronRigh
 import { useAuth } from '../hooks/useAuth';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import Notification from '../components/Notification'; // Pastikan komponen Notifikasi ada
+import Notification from '../components/ui/Notification'; // Pastikan komponen Notifikasi ada
 
 // --- Komponen Modal Cropping (Tidak berubah) ---
 const CropModal = ({ upImg, onClose, onCropComplete }) => {

@@ -1,6 +1,6 @@
 // contoh-sesm-web/layouts/AdminLayout.jsx
 import React from 'react';
-import SidebarGuru from '../components/admin/SidebarGuru';
+import SidebarGuru from '../components/navigation/SidebarGuru';
 
 const AdminLayout = ({ children, activePage, onNavigate }) => {
   return (

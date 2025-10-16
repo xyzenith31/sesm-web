@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
-import Card from '../components/Card';
+import Card from '../components/ui/Card';
 import AuthService from '../services/authService';
 import { useAuth } from '../hooks/useAuth'; // Impor useAuth
 

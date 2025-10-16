@@ -12,7 +12,7 @@ import {
   FiAlertCircle,
   FiClipboard
 } from 'react-icons/fi';
-import MaterialDetailModal from '../components/MaterialDetailModal';
+import MaterialDetailModal from '../components/mod/MaterialDetailModal';
 import BookmarkService from '../services/bookmarkService';
 
 // Komponen Card Materi (tidak berubah dari sebelumnya)

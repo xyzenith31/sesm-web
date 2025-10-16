@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiCheckCircle, FiXCircle, FiLoader, FiSave, FiThumbsUp, FiThumbsDown, FiEdit } from 'react-icons/fi';
-import DataService from '../services/dataService';
+import DataService from '../../services/dataService';
 
 const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitted }) => {
     const [details, setDetails] = useState([]);

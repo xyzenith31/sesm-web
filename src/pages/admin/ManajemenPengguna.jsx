@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiUsers, FiPlus, FiSearch, FiLoader, FiEdit, FiTrash2, FiAlertCircle, FiBriefcase, FiUserCheck, FiArrowUp, FiArrowDown, FiChevronDown } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 import UserFormModal from '../../components/admin/UserFormModal';
-import Notification from '../../components/Notification';
+import Notification from '../../components/ui/Notification';
 
 // Komponen Kartu Statistik (tidak ada perubahan)
 const StatCard = ({ icon: Icon, value, label, color, delay }) => (

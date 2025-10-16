@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FiLoader, FiSearch, FiClock, FiStar, FiBarChart2, FiCheckCircle, FiEdit, FiArrowLeft } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataService from '../../services/dataService';
-import SubmissionDetailModal from '../../components/SubmissionDetailModal';
+import SubmissionDetailModal from '../../components/mod/SubmissionDetailModal';
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },

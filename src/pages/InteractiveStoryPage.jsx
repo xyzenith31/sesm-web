@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiBook, FiClock, FiStar, FiCheckCircle } from 'react-icons/fi';
 import { FaTrophy } from 'react-icons/fa';
-import StoryReaderModal from '../components/StoryReaderModal';
-import PointsNotification from '../components/PointsNotification';
+import StoryReaderModal from '../components/mod/StoryReaderModal';
+import PointsNotification from '../components/ui/PointsNotification.jsx';
 // --- INI BAGIAN YANG DIPERBAIKI: Menambahkan ekstensi .js ---
 import { kancilStory } from '../data/storyData.js';
 
