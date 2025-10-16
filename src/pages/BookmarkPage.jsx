@@ -15,7 +15,6 @@ import {
 import MaterialDetailModal from '../components/mod/MaterialDetailModal';
 import BookmarkService from '../services/bookmarkService';
 
-// Komponen Card Materi (tidak berubah dari sebelumnya)
 const MaterialCard = ({ material, onSelect }) => {
     const API_URL = 'http://localhost:8080';
     const typeInfo = {
@@ -35,8 +34,11 @@ const MaterialCard = ({ material, onSelect }) => {
                 <div className={`absolute top-2 right-2 flex items-center space-x-1.5 text-white text-xs font-bold py-1 px-2 rounded-full ${color}`}><Icon size={14} /><span>{label}</span></div>
             </div>
             <div className="p-4">
-                <span className="text-xs font-semibold text-sesm-teal bg-sesm-teal/10 px-2 py-1 rounded-full">{material.subject}</span>
-                <h3 className="font-bold text-md text-sesm-deep leading-tight group-hover:text-sesm-teal transition-colors mt-2">{material.title}</h3>
+                <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold text-sesm-teal bg-sesm-teal/10 px-2 py-1 rounded-full">{material.subject}</span>
+                    <span className="text-xs font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded-full">{material.recommended_level}</span>
+                </div>
+                <h3 className="font-bold text-md text-sesm-deep leading-tight group-hover:text-sesm-teal transition-colors">{material.title}</h3>
                 <p className="text-xs text-gray-600 mt-1 line-clamp-2">{material.description}</p>
             </div>
         </motion.div>
@@ -44,7 +46,6 @@ const MaterialCard = ({ material, onSelect }) => {
 };
 
 
-// Komponen Kartu Riwayat Nilai (BARU)
 const HistoryCard = ({ item }) => (
     <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white p-4 rounded-xl shadow-sm border flex justify-between items-center">
         <div>
@@ -58,7 +59,6 @@ const HistoryCard = ({ item }) => (
     </motion.div>
 );
 
-// Helper lain (tidak berubah)
 const FilterButton = ({ label, icon: Icon, isActive, onClick, className = '' }) => ( <motion.button onClick={onClick} className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center space-x-2 shadow-sm ${ isActive ? 'bg-sesm-deep text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'} ${className}`} whileTap={{scale: 0.95}}>{Icon && <Icon size={16} />}<span>{label}</span></motion.button> );
 const EmptyState = ({message}) => ( <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center col-span-full py-16"><FiSearch size={48} className="mx-auto text-gray-300" /><h3 className="mt-4 text-lg font-semibold text-gray-700">{message}</h3></motion.div> );
 const SectionHeader = ({ title, count }) => ( <div className="flex items-center space-x-2 mb-4 px-2"><h2 className="text-xl font-bold text-gray-800">{title}</h2><span className="bg-sesm-sky/20 text-sesm-deep text-xs font-bold px-2 py-0.5 rounded-full">{count}</span></div> );
@@ -74,6 +74,7 @@ const BookmarkPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTypeFilter, setActiveTypeFilter] = useState('semua');
     const [activeSubjectFilter, setActiveSubjectFilter] = useState('Semua');
+    const [activeLevelFilter, setActiveLevelFilter] = useState('Semua');
 
     const fetchData = async () => {
         setLoading(true);
@@ -97,27 +98,30 @@ const BookmarkPage = () => {
 
     const subjects = useMemo(() => ['Semua', ...Array.from(new Set(materials.map(m => m.subject).filter(Boolean)))], [materials]);
     const types = useMemo(() => ['semua', ...Array.from(new Set(materials.map(m => m.type)))], [materials]);
+    const levels = useMemo(() => ['Semua', 'TK', 'SD 1-2', 'SD 3-4', 'SD 5-6'], []);
 
     const filteredMaterials = useMemo(() => {
         return materials
             .filter(m => activeTypeFilter === 'semua' || m.type === activeTypeFilter)
             .filter(m => activeSubjectFilter === 'Semua' || m.subject === activeSubjectFilter)
+            .filter(m => activeLevelFilter === 'Semua' || m.recommended_level === activeLevelFilter)
             .filter(m => m.title.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [materials, searchTerm, activeTypeFilter, activeSubjectFilter]);
+    }, [materials, searchTerm, activeTypeFilter, activeSubjectFilter, activeLevelFilter]);
 
     const resetFilters = () => {
       setSearchTerm('');
       setActiveTypeFilter('semua');
       setActiveSubjectFilter('Semua');
+      setActiveLevelFilter('Semua');
     };
-    const isFilterActive = searchTerm !== '' || activeTypeFilter !== 'semua' || activeSubjectFilter !== 'Semua';
+    const isFilterActive = searchTerm !== '' || activeTypeFilter !== 'semua' || activeSubjectFilter !== 'Semua' || activeLevelFilter !== 'Semua';
     useEffect(() => {
         document.body.style.overflow = selectedMaterial ? 'hidden' : 'unset';
     }, [selectedMaterial]);
     
     const handleCloseModal = () => {
         setSelectedMaterial(null);
-        fetchData(); // Muat ulang data setelah modal ditutup, untuk update riwayat
+        fetchData();
     };
 
     const renderContent = () => {
@@ -174,13 +178,26 @@ const BookmarkPage = () => {
                     </header>
                     <main className="flex-grow w-full overflow-y-auto pr-4">
                          {activeTab === 'materi' && (
-                            <div className="flex items-start justify-between mb-8">
-                                <div className="flex items-center space-x-3">{types.map(type => ( <FilterButton key={type} label={type.replace(/_/g, ' ')} isActive={activeTypeFilter === type} onClick={() => setActiveTypeFilter(type)} /> ))}
-                                    <AnimatePresence>{isFilterActive && (<motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}><FilterButton label="Reset" icon={FiRefreshCw} onClick={resetFilters} className="!bg-red-500/10 !text-red-600 hover:!bg-red-500/20" /></motion.div>)}</AnimatePresence>
+                            <div className="space-y-4 mb-8">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center space-x-3">{types.map(type => ( <FilterButton key={type} label={type.replace(/_/g, ' ')} isActive={activeTypeFilter === type} onClick={() => setActiveTypeFilter(type)} /> ))}
+                                        <AnimatePresence>{isFilterActive && (<motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}><FilterButton label="Reset" icon={FiRefreshCw} onClick={resetFilters} className="!bg-red-500/10 !text-red-600 hover:!bg-red-500/20" /></motion.div>)}</AnimatePresence>
+                                    </div>
+                                    <div className="relative">
+                                        <select value={activeSubjectFilter} onChange={(e) => setActiveSubjectFilter(e.target.value)} className="appearance-none bg-white border rounded-full py-2 pl-4 pr-10 font-semibold">{subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}</select>
+                                        <FiTag className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                    </div>
                                 </div>
-                                <div className="relative">
-                                    <select value={activeSubjectFilter} onChange={(e) => setActiveSubjectFilter(e.target.value)} className="appearance-none bg-white border rounded-full py-2 pl-4 pr-10 font-semibold">{subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}</select>
-                                    <FiTag className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <div className="flex items-center space-x-3">
+                                    <span className="font-semibold text-gray-500 text-sm">Jenjang:</span>
+                                    {levels.map(level => (
+                                        <FilterButton
+                                            key={level}
+                                            label={level}
+                                            isActive={activeLevelFilter === level}
+                                            onClick={() => setActiveLevelFilter(level)}
+                                        />
+                                    ))}
                                 </div>
                             </div>
                          )}

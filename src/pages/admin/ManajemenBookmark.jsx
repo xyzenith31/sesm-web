@@ -43,74 +43,232 @@ const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {
     return ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"><motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col h-[85vh]"><header className="p-5 border-b flex justify-between items-center"><h3 className="text-xl font-bold">Nilai Pengerjaan: {submission.student_name}</h3><button onClick={onClose}><FiX/></button></header><main className="flex-grow overflow-y-auto p-6 bg-gray-50">{loading ? <div className="flex justify-center"><FiLoader className="animate-spin"/></div> : details.map(item => (<div key={item.id} className="bg-white p-4 rounded-lg border mb-4"><p className="font-bold text-gray-800">{item.question_index + 1}. {item.question_text}</p><div className="mt-2 bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg"><p>{item.answer_text || "(Tidak dijawab)"}</p></div><div className="mt-3 pt-3 border-t flex justify-end gap-2"><button onClick={() => toggleCorrectness(item.id)} className={`flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-md ${item.is_correct === false ? 'bg-red-500 text-white' : 'bg-red-100 text-red-600'}`}>Salah</button><button onClick={() => toggleCorrectness(item.id)} className={`flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-md ${item.is_correct === true ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'}`}>Benar</button></div></div>))}</main><footer className="p-5 border-t flex justify-between items-center bg-white"><div className="flex items-center gap-3"><label className="font-bold text-lg">Nilai Akhir:</label><input type="number" value={score} onChange={e => setScore(e.target.value)} className="w-24 p-2 text-lg font-bold border rounded-lg" /></div><button onClick={handleGrade} className="px-6 py-3 bg-sesm-deep text-white rounded-lg font-semibold">Simpan Nilai</button></footer></motion.div></motion.div> );
 };
 
+// --- Komponen Step Indicator ---
+const StepIndicator = ({ stepNumber, label, isActive, onClick, isDisabled }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        disabled={isDisabled}
+        className="flex items-center gap-4 w-full text-left disabled:cursor-not-allowed group"
+    >
+        <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold border-2 transition-all duration-300 ${isActive ? 'bg-sesm-deep text-white border-sesm-deep' : 'bg-gray-200 text-gray-500 border-gray-200 group-hover:border-sesm-teal disabled:group-hover:border-gray-200'}`}>
+            {stepNumber}
+        </div>
+        <span className={`font-semibold transition-colors duration-300 ${isActive ? 'text-sesm-deep' : 'text-gray-500 group-hover:text-sesm-deep disabled:group-hover:text-gray-500'}`}>{label}</span>
+    </button>
+);
 
-// --- Komponen Modal Tambah/Edit Materi (Tidak Berubah) ---
+// --- Komponen Form Soal Internal ---
+const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
+    const handleInputChange = (field, value) => onUpdate(qIndex, { ...q, [field]: value });
+    
+    const handleOptionChange = (optIndex, value) => {
+        const newOptions = [...q.options];
+        newOptions[optIndex] = value;
+        onUpdate(qIndex, { ...q, options: newOptions });
+    };
+
+    const addOption = () => onUpdate(qIndex, { ...q, options: [...q.options, ''] });
+    
+    const removeOption = (optIndex) => {
+        if (q.options.length <= 2) return;
+        const newOptions = q.options.filter((_, i) => i !== optIndex);
+        onUpdate(qIndex, { ...q, options: newOptions });
+    };
+
+    const inputStyle = "w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal";
+
+    return (
+        <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-sesm-teal space-y-3">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-700">{qIndex + 1}.</span>
+                    <select value={q.type} onChange={(e) => handleInputChange('type', e.target.value)} className="p-2 border rounded-md bg-white text-sm">
+                        <option value="pilihan-ganda">Pilihan Ganda</option>
+                        <option value="esai">Esai</option>
+                        <option value="pilihan-ganda-esai">Pilihan Ganda & Esai</option>
+                    </select>
+                </div>
+                <button type="button" onClick={onRemove} className="p-2 text-red-500 hover:bg-red-100 rounded-full"><FiTrash2 size={16}/></button>
+            </div>
+            
+            <textarea value={q.question} onChange={(e) => handleInputChange('question', e.target.value)} placeholder="Tulis pertanyaan..." className={`${inputStyle} h-20`} required />
+            
+            {(q.type === 'pilihan-ganda' || q.type === 'pilihan-ganda-esai') && (
+                <div className="space-y-2 pt-2 border-t">
+                    {q.options.map((opt, oIndex) => (
+                        <div key={oIndex} className="flex items-center gap-2">
+                            <input type="text" value={opt} onChange={(e) => handleOptionChange(oIndex, e.target.value)} placeholder={`Pilihan ${oIndex + 1}`} className="w-full p-2 border rounded-md bg-white" required />
+                            <button type="button" onClick={() => removeOption(oIndex)} disabled={q.options.length <= 2} className="p-2 text-gray-400 hover:text-red-600 disabled:text-gray-300"><FiTrash2 /></button>
+                        </div>
+                    ))}
+                    <button type="button" onClick={addOption} className="text-sm font-semibold text-sesm-deep"><FiPlus className="inline"/> Tambah Opsi</button>
+                    <select value={q.correctAnswer} onChange={(e) => handleInputChange('correctAnswer', e.target.value)} className={`${inputStyle} mt-2`} required>
+                        <option value="" disabled>-- Pilih Jawaban Benar --</option>
+                        {q.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (
+                            <option key={oIndex} value={opt}>{opt}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
+            
+            {(q.type === 'esai' || q.type === 'pilihan-ganda-esai') && (
+                 <div className="pt-2 border-t">
+                    <label className="text-sm font-semibold text-gray-600">Kunci Jawaban Esai (Opsional)</label>
+                    <input type="text" value={q.essayAnswer} onChange={(e) => handleInputChange('essayAnswer', e.target.value)} className={`${inputStyle} mt-1`} />
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+// --- Komponen Modal Utama ---
 const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
+    const [step, setStep] = useState(1);
     const isEditMode = Boolean(initialData);
-    const [formData, setFormData] = useState({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual' });
+
+    const [formData, setFormData] = useState({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
     const [tasks, setTasks] = useState([]);
     const [mainFile, setMainFile] = useState(null);
     const [coverImage, setCoverImage] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [mainFilePreview, setMainFilePreview] = useState('');
+    const [coverImagePreview, setCoverImagePreview] = useState('');
+
+    const getNewQuestionObject = () => ({ id: Date.now() + Math.random(), type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '' });
 
     useEffect(() => {
-        if (initialData) {
-            setFormData({ title: initialData.title, description: initialData.description, subject: initialData.subject, url_link: initialData.url, grading_type: initialData.grading_type });
-            setTasks(initialData.tasks || []);
-        } else {
-            setFormData({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual' });
-            setTasks([]);
+        if (isOpen) {
+            setStep(1);
+            if (initialData) {
+                setFormData({
+                    title: initialData.title || '', description: initialData.description || '', subject: initialData.subject || '',
+                    url_link: initialData.type === 'video_link' ? initialData.url : '',
+                    grading_type: initialData.grading_type || 'manual', recommended_level: initialData.recommended_level || 'Semua'
+                });
+                
+                const initialTasks = (initialData.tasks || []).map((task, index) => {
+                    if (typeof task === 'string') {
+                        if (initialData.grading_type === 'otomatis' && task.includes('@@')) {
+                            const [question, correctAnswer] = task.split('@@');
+                            return { id: index, type: 'esai', question, options: [], correctAnswer: '', essayAnswer: correctAnswer };
+                        }
+                        return { id: index, type: 'esai', question: task, options: [], correctAnswer: '', essayAnswer: '' };
+                    }
+                    return { ...getNewQuestionObject(), ...task, id: task.id || index };
+                });
+                setTasks(initialTasks.length > 0 ? initialTasks : [getNewQuestionObject()]);
+
+            } else {
+                setFormData({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
+                setTasks([getNewQuestionObject()]);
+            }
+            setMainFile(null); setCoverImage(null); setMainFilePreview(''); setCoverImagePreview('');
         }
-        setMainFile(null);
-        setCoverImage(null);
     }, [initialData, isOpen]);
 
-    const handleTaskChange = (index, value) => { const newTasks = [...tasks]; newTasks[index] = value; setTasks(newTasks); };
-    const addTask = () => setTasks([...tasks, '']);
-    const removeTask = (index) => setTasks(tasks.filter((_, i) => i !== index));
+    const handleFormChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleMainFileChange = (e) => { const file = e.target.files[0]; if (file) { setMainFile(file); setMainFilePreview(file.name); } };
+    const handleCoverImageChange = (e) => { const file = e.target.files[0]; if (file) { setCoverImage(file); setCoverImagePreview(URL.createObjectURL(file)); } };
+    
+    const updateTask = (index, updatedTask) => setTasks(prev => prev.map((task, i) => i === index ? updatedTask : task));
+    const addTask = () => setTasks(prev => [...prev, getNewQuestionObject()]);
+    const removeTask = (index) => setTasks(prev => prev.filter((_, i) => i !== index));
+
+    const navigateToStep = (targetStep) => {
+        if (targetStep > 1 && (!formData.title.trim() || !formData.subject.trim())) {
+            alert("Judul dan Mapel wajib diisi sebelum melanjutkan.");
+            return;
+        }
+        setStep(targetStep);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSaving(true);
-        const data = isEditMode ? {} : new FormData();
+        const data = new FormData(); // Selalu gunakan FormData untuk upload file
         
-        if (isEditMode) {
-            Object.assign(data, { ...formData, tasks: JSON.stringify(tasks.filter(t => t.trim() !== '')) });
-        } else {
-            data.append('title', formData.title);
-            data.append('description', formData.description);
-            data.append('subject', formData.subject);
-            data.append('url_link', formData.url_link);
-            data.append('grading_type', formData.grading_type);
-            data.append('tasks', JSON.stringify(tasks.filter(t => t.trim() !== '')));
-            if (mainFile) data.append('mainFile', mainFile);
-            if (coverImage) data.append('coverImage', coverImage);
+        // Gabungkan data form
+        Object.keys(formData).forEach(key => data.append(key, formData[key]));
+        
+        // Proses tasks
+        let finalTasks = tasks;
+        if (formData.grading_type === 'otomatis') {
+            finalTasks = tasks.map(q => `${q.question}@@${q.type.includes('esai') ? q.essayAnswer : q.correctAnswer}`);
         }
+        data.append('tasks', JSON.stringify(finalTasks));
+        
+        // Tambahkan file jika ada
+        if (mainFile) data.append('mainFile', mainFile);
+        if (coverImage) data.append('coverImage', coverImage);
         
         await onSave(data, initialData?.id);
         setIsSaving(false);
     };
 
     const inputStyle = "w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal";
+    const stepVariants = { hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -20 } };
+
+    const renderStepContent = () => {
+        switch(step) {
+            case 1:
+                return (
+                    <motion.div key={1} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
+                        <div><label className="font-semibold text-sm">Judul</label><input type="text" name="title" value={formData.title} onChange={handleFormChange} className={inputStyle} required /></div>
+                        <div><label className="font-semibold text-sm">Mapel</label><input type="text" name="subject" value={formData.subject} onChange={handleFormChange} className={inputStyle} required /></div>
+                        <div><label className="font-semibold text-sm">Disarankan Untuk</label><select name="recommended_level" value={formData.recommended_level} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="Semua">Semua Jenjang</option><option value="TK">TK</option><option value="SD 1-2">SD Kelas 1-2</option><option value="SD 3-4">SD Kelas 3-4</option><option value="SD 5-6">SD Kelas 5-6</option></select></div>
+                        <div><label className="font-semibold text-sm">Deskripsi</label><textarea name="description" value={formData.description} onChange={handleFormChange} className={`${inputStyle} h-24`}></textarea></div>
+                    </motion.div>
+                );
+            case 2:
+                return (
+                     <motion.div key={2} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
+                        <div><label className="font-semibold text-sm">File Utama (PDF, Video, dll.)</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="main-upload" className="hidden" onChange={handleMainFileChange} /><label htmlFor="main-upload" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1"><FiPlus /><span>{mainFilePreview || "Pilih file..."}</span></label></div></div>
+                        <div><label className="font-semibold text-sm">Atau Link Video</label><input type="url" name="url_link" value={formData.url_link} onChange={handleFormChange} className={inputStyle} placeholder="https://www.youtube.com/..." /></div>
+                        <div><label className="font-semibold text-sm">Gambar Sampul</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="cover-upload" className="hidden" onChange={handleCoverImageChange} accept="image/*" /><label htmlFor="cover-upload" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1">{coverImagePreview ? <img src={coverImagePreview} alt="Preview" className="h-24 rounded-md mb-2 object-cover" /> : <FiPlus />}<span>{coverImage ? coverImage.name : "Pilih gambar..."}</span></label></div></div>
+                     </motion.div>
+                );
+            case 3:
+                return (
+                    <motion.div key={3} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-3">
+                        <div><label className="font-semibold text-sm">Tipe Penilaian</label><select name="grading_type" value={formData.grading_type} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="manual">Manual (Guru menilai)</option><option value="otomatis">Otomatis (hanya PG)</option></select><p className="text-xs text-gray-500 mt-1">{formData.grading_type === 'otomatis' ? 'Jawaban esai tidak akan dinilai otomatis.' : 'Semua jenis soal akan dinilai manual oleh guru.'}</p></div>
+                        <div className="border-t pt-4"><h4 className="font-semibold">Soal & Tugas</h4><div className="space-y-3 mt-2 max-h-[280px] overflow-y-auto pr-2">{tasks.map((task, index) => (<QuestionItem key={task.id} q={task} qIndex={index} onUpdate={updateTask} onRemove={() => removeTask(index)} />))}<button type="button" onClick={addTask} className="text-sm font-semibold text-sesm-teal mt-2"><FiPlus className="inline"/> Tambah Soal</button></div></div>
+                    </motion.div>
+                );
+            default:
+                return null;
+        }
+    }
+    
+    if (!isOpen) return null;
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col">
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col">
                 <form onSubmit={handleSubmit}>
-                    <header className="p-6 border-b"><h3 className="text-xl font-bold text-sesm-deep">{isEditMode ? 'Edit Materi & Soal' : 'Tambah Materi Baru'}</h3></header>
-                    <main className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                        <div><label className="font-semibold text-sm">Judul</label><input type="text" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className={inputStyle} required /></div>
-                        <div><label className="font-semibold text-sm">Mapel</label><input type="text" value={formData.subject} onChange={(e) => setFormData({...formData, subject: e.target.value})} className={inputStyle} required /></div>
-                        <div><label className="font-semibold text-sm">Deskripsi</label><textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className={`${inputStyle} h-20`}></textarea></div>
-                        {!isEditMode && ( <> <div><label className="font-semibold text-sm">File Utama (PDF, Video, dll.)</label><div className="border-2 border-dashed p-4 mt-1"><input type="file" id="main-upload" className="hidden" onChange={(e) => setMainFile(e.target.files[0])} /><label htmlFor="main-upload" className="cursor-pointer text-sesm-teal font-semibold flex items-center gap-2"> {mainFile ? mainFile.name : "Pilih file..."}</label></div></div><div><label className="font-semibold text-sm">Atau Link Video</label><input type="url" value={formData.url_link} onChange={(e) => setFormData({...formData, url_link: e.target.value})} className={inputStyle} /></div><div><label className="font-semibold text-sm">Gambar Sampul</label><div className="border-2 border-dashed p-4 mt-1"><input type="file" id="cover-upload" className="hidden" onChange={(e) => setCoverImage(e.target.files[0])} accept="image/*" /><label htmlFor="cover-upload" className="cursor-pointer text-sesm-teal font-semibold flex items-center gap-2">{coverImage ? coverImage.name : "Pilih gambar..."}</label></div></div> </>)}
-                        <div className="border-t pt-4 space-y-3">
-                            <div><label className="font-semibold text-sm">Tipe Penilaian</label><select value={formData.grading_type} onChange={(e) => setFormData({...formData, grading_type: e.target.value})} className={`${inputStyle} mt-1`}><option value="manual">Manual (Guru menilai)</option><option value="otomatis">Otomatis (Sistem menilai)</option></select><p className="text-xs text-gray-500 mt-1">Untuk penilaian otomatis, tulis soal dengan format: `Pertanyaan@@KunciJawaban`</p></div>
-                            <h4 className="font-semibold">Soal / Tugas</h4>
-                            {tasks.map((task, index) => (<div key={index} className="flex items-center gap-2"><input type="text" value={task} onChange={(e) => handleTaskChange(index, e.target.value)} placeholder={`Soal #${index + 1}`} className={inputStyle} /><button type="button" onClick={() => removeTask(index)} className="p-2 text-red-500 hover:bg-red-100 rounded-full"><FiTrash2/></button></div>))}
-                            <button type="button" onClick={addTask} className="text-sm font-semibold text-sesm-teal"><FiPlus className="inline"/> Tambah Soal</button>
+                    <header className="p-6 border-b flex justify-between items-center">
+                        <h3 className="text-xl font-bold text-sesm-deep">{isEditMode ? 'Edit Materi' : 'Tambah Materi Baru'}</h3>
+                        <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
+                    </header>
+                    <main className="p-6 flex gap-8">
+                        <div className="w-1/3 border-r pr-6 space-y-6 pt-2">
+                            <StepIndicator stepNumber={1} label="Informasi Dasar" isActive={step === 1} onClick={() => navigateToStep(1)} />
+                            <StepIndicator stepNumber={2} label="Media & Materi" isActive={step === 2} onClick={() => navigateToStep(2)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
+                            <StepIndicator stepNumber={3} label="Soal & Tugas" isActive={step === 3} onClick={() => navigateToStep(3)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
+                        </div>
+                        <div className="w-2/3">
+                           <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
                         </div>
                     </main>
-                    <footer className="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t"><button type="button" onClick={onClose} className="px-5 py-2">Batal</button><button type="submit" disabled={isSaving} className="px-5 py-2 bg-sesm-deep text-white rounded-lg flex items-center gap-2">{isSaving ? 'Menyimpan...' : 'Simpan'}</button></footer>
+                    <footer className="bg-gray-50 p-4 flex justify-end items-center gap-3 rounded-b-2xl border-t">
+                        <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold bg-gray-200 hover:bg-gray-300">Batal</button>
+                        {step < 3 ? (
+                            <button type="button" onClick={() => navigateToStep(step + 1)} className="px-5 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-opacity-90">Lanjutkan</button>
+                        ) : (
+                            <button type="submit" disabled={isSaving} className="px-5 py-2 bg-sesm-deep text-white rounded-lg flex items-center gap-2 disabled:bg-gray-400">{isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}{isSaving ? 'Menyimpan...' : 'Simpan Materi'}</button>
+                        )}
+                    </footer>
                 </form>
             </motion.div>
         </motion.div>
@@ -226,12 +384,12 @@ const ManajemenBookmark = () => {
                                     <button onClick={() => handleOpenModal(null)} className="px-4 py-2 bg-sesm-teal text-white font-semibold rounded-lg flex items-center gap-2"><FiPlus/> Tambah Materi</button>
                                 </div>
                                 {bookmarks.length === 0 ? <div className="text-center py-16 text-gray-400"><FiAlertCircle size={48} className="mx-auto"/><p>Belum ada materi.</p></div> : (
-                                    // --- PERBAIKAN TABEL DI SINI ---
                                     <table className="w-full text-sm text-left">
                                         <thead className="text-xs text-gray-700 uppercase bg-gray-100">
                                             <tr>
                                                 <th className="px-6 py-3 text-left">Judul</th>
                                                 <th className="px-6 py-3 text-left">Mapel</th>
+                                                <th className="px-6 py-3 text-center">Jenjang</th>
                                                 <th className="px-6 py-3 text-center">Jumlah Soal</th>
                                                 <th className="px-6 py-3 text-center">Penilaian</th>
                                                 <th className="px-6 py-3 text-center">Aksi</th>
@@ -240,6 +398,7 @@ const ManajemenBookmark = () => {
                                         <tbody>{bookmarks.map(item => ( <tr key={item.id} className="hover:bg-gray-50 border-b">
                                             <td className="px-6 py-4 font-bold text-gray-800">{item.title}</td>
                                             <td className="px-6 py-4">{item.subject}</td>
+                                            <td className="px-6 py-4 text-center">{item.recommended_level}</td>
                                             <td className="px-6 py-4 text-center">{item.tasks?.length || 0}</td>
                                             <td className="px-6 py-4 capitalize text-center">{item.grading_type}</td>
                                             <td className="px-6 py-4">
@@ -258,7 +417,6 @@ const ManajemenBookmark = () => {
                             <div>
                                 <div className="mb-4"><label className="font-semibold text-sm">Pilih Materi untuk Dinilai:</label><select value={selectedBookmarkId || ''} onChange={e => handleSelectBookmarkForGrading(parseInt(e.target.value))} className="w-full mt-1 p-2 border rounded-lg bg-gray-50"><option value="" disabled>-- Pilih Materi --</option>{bookmarks.map(b => <option key={b.id} value={b.id}>{b.title}</option>)}</select></div>
                                 {submissions.length === 0 ? <p className="text-center text-gray-400 py-8">Belum ada siswa yang mengerjakan materi ini.</p> : (
-                                    // --- PERBAIKAN TABEL DI SINI JUGA ---
                                     <table className="w-full text-sm text-left">
                                         <thead className="text-xs uppercase bg-gray-100">
                                             <tr>
