@@ -2,46 +2,46 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiFileText, FiTrash2 } from 'react-icons/fi';
+import DataService from '../../services/dataService'; // Impor DataService
 
-const DraftQuizModal = ({ isOpen, onClose, allQuizzes, onContinueQuestionDraft }) => {
+const DraftQuizModal = ({ isOpen, onClose, allQuizzes, drafts: initialDrafts, onContinueQuestionDraft, onDraftDeleted }) => {
     const [drafts, setDrafts] = useState([]);
 
     useEffect(() => {
-        if (isOpen) {
-            const allKeys = Object.keys(localStorage);
-            const draftKeys = allKeys.filter(key => key.startsWith('quiz_question_draft_'));
-            
-            const loadedDrafts = draftKeys.map(key => {
+        if (isOpen && initialDrafts) {
+            const loadedDrafts = initialDrafts.map(draft => {
                 try {
-                    const quizId = parseInt(key.replace('quiz_question_draft_', ''), 10);
-                    // Ambil draft dari local storage
-                    const rawDraftData = localStorage.getItem(key);
-                    if (!rawDraftData) return null;
-                    const draftData = JSON.parse(rawDraftData);
-                    
+                    const quizId = parseInt(draft.draft_key.replace('quiz_', ''), 10);
                     const quizInfo = allQuizzes.find(q => q.id === quizId);
                     
                     return {
-                        key,
+                        key: draft.draft_key,
                         quizId,
                         title: quizInfo ? `Soal untuk: ${quizInfo.title}` : `Soal untuk kuis (ID: ${quizId})`,
-                        questionCount: draftData.questions?.length || 0,
-                        lastSaved: new Date(draftData.lastSaved || Date.now()).toLocaleString('id-ID')
+                        questionCount: draft.content?.length || 0,
+                        lastSaved: new Date(draft.last_saved).toLocaleString('id-ID')
                     };
                 } catch (e) {
-                    console.error("Gagal memuat draf kuis:", key, e);
+                    console.error("Gagal memproses draf kuis:", draft.draft_key, e);
                     return null;
                 }
-            }).filter(Boolean); // Hapus draf yang korup
+            }).filter(Boolean);
 
             setDrafts(loadedDrafts.sort((a, b) => new Date(b.lastSaved) - new Date(a.lastSaved)));
         }
-    }, [isOpen, allQuizzes]);
+    }, [isOpen, allQuizzes, initialDrafts]);
 
-    const handleDelete = (key, title) => {
+    const handleDelete = async (draftKey, title) => {
         if (window.confirm(`Yakin ingin menghapus draf untuk "${title}"?`)) {
-            localStorage.removeItem(key);
-            setDrafts(prevDrafts => prevDrafts.filter(d => d.key !== key));
+            try {
+                await DataService.deleteDraft(draftKey);
+                if (onDraftDeleted) {
+                    onDraftDeleted();
+                }
+                setDrafts(prevDrafts => prevDrafts.filter(d => d.key !== draftKey));
+            } catch (error) {
+                alert("Gagal menghapus draf dari server.");
+            }
         }
     };
 
@@ -66,7 +66,7 @@ const DraftQuizModal = ({ isOpen, onClose, allQuizzes, onContinueQuestionDraft }
                                         <div className="overflow-hidden">
                                             <p className="font-bold text-gray-800 truncate">{draft.title}</p>
                                             <p className="text-sm text-gray-500">
-                                                {draft.questionCount} soal • {draft.lastSaved}
+                                                {draft.questionCount} soal • Disimpan: {draft.lastSaved}
                                             </p>
                                         </div>
                                     </div>

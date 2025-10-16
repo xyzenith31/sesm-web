@@ -1,3 +1,4 @@
+// contoh-sesm-web/services/dataService.js
 import apiClient from '../utils/apiClient';
 
 // --- FUNGSI SISWA ---
@@ -29,9 +30,6 @@ const getDetailMateriForSiswa = (materiKey) => { return apiClient.get(`/materi/$
 const submitAnswers = (materiKey, answers) => { return apiClient.post(`/materi/${materiKey}/submit`, { answers }); };
 
 // --- FUNGSI GURU / ADMIN ---
-// ... (fungsi admin materi & nilai yang sudah ada tidak perlu diubah)
-
-// === FUNGSI-FUNGSI BARU UNTUK MANAJEMEN PENGGUNA ===
 const getAllUsers = () => {
   return apiClient.get('/admin/users');
 };
@@ -45,8 +43,6 @@ const deleteUserByAdmin = (userId) => {
   return apiClient.delete(`/admin/users/${userId}`);
 };
 
-
-// --- FUNGSI GURU / ADMIN (YANG SUDAH ADA) ---
 const getMateriForAdmin = (jenjang, kelas) => { return apiClient.get('/admin/materi', { params: { jenjang, kelas } }); };
 const getDetailMateriForAdmin = (materiKey) => { return apiClient.get(`/admin/materi/${materiKey}`); };
 const addChapter = (chapterData) => { return apiClient.post('/admin/materi/chapters', chapterData); };
@@ -140,6 +136,20 @@ const deleteDiaryEntry = (id) => {
     return apiClient.delete(`/diary/${id}`);
 };
 
+// --- FUNGSI DRAFT ---
+const saveDraft = (draftKey, content) => {
+    return apiClient.post('/drafts', { draftKey, content });
+};
+const getDraft = (draftKey) => {
+    return apiClient.get(`/drafts/${draftKey}`);
+};
+const getAllDrafts = () => {
+    return apiClient.get('/drafts');
+};
+const deleteDraft = (draftKey) => {
+    return apiClient.delete(`/drafts/${draftKey}`);
+};
+
 const DataService = {
   getSubjects,
   updateLevelAndClass,
@@ -184,11 +194,14 @@ const DataService = {
   addDiaryEntry,
   updateDiaryEntry,
   deleteDiaryEntry,
-  // --- EXPORT FUNGSI BARU ---
   getAllUsers,
   createUserByAdmin,
   updateUserByAdmin,
   deleteUserByAdmin,
+  saveDraft,
+  getDraft,
+  getAllDrafts,
+  deleteDraft,
 };
 
 export default DataService;

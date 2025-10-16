@@ -13,6 +13,7 @@ import BankSoalQuizModal from '../../components/admin/BankSoalModal';
 import EditQuestionToQuizModal from '../../components/admin/EditQuestionToQuizModal';
 import DraftQuizModal from '../../components/admin/DraftQuizModal';
 import QuizSettingsModal from '../../components/admin/QuizSettingsModal';
+import Notification from '../../components/ui/Notification'; // Impor Notifikasi
 
 const StatCard = ({ icon: Icon, value, label, color }) => ( <div className="bg-gray-100 p-4 rounded-lg flex-1 border hover:border-sesm-teal transition-colors"><div className="flex items-center"><Icon className={`text-xl mr-3 ${color}`} /><div><p className="text-xl font-bold text-sesm-deep">{value}</p><p className="text-xs text-gray-500 font-semibold">{label}</p></div></div></div> );
 const DashboardView = ({ userName, stats }) => ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col justify-center h-full text-center px-4"><FiBookOpen className="text-6xl text-gray-300 mx-auto mb-4" /><h2 className="text-2xl font-bold text-gray-800">Selamat Datang, {userName || 'Guru'}!</h2><p className="text-gray-500 max-w-md mx-auto mb-8">Pilih kuis dari daftar di sebelah kiri untuk melihat detail atau kelola soal. Gunakan tombol di atas untuk membuat kuis baru.</p><div className="space-y-6 text-left"><div><h3 className="font-bold text-gray-700 mb-3">Ringkasan Kuis</h3><div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4"><StatCard icon={FiGrid} value={stats.totalQuizzes} label="Total Kuis" color="text-blue-500" /><StatCard icon={FiCheckSquare} value={stats.totalQuestions} label="Total Soal" color="text-orange-500" /></div></div></div></motion.div> );
@@ -33,6 +34,10 @@ const ManajemenKuis = ({ onNavigate }) => {
     const [isDraftQuizOpen, setDraftQuizOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
+    // State untuk draft
+    const [drafts, setDrafts] = useState([]);
+    const [showDraftsNotification, setShowDraftsNotification] = useState(false);
+
     const fetchQuizzes = useCallback((selectIdAfterFetch = null) => { 
         setLoading(true); 
         DataService.getAllQuizzes()
@@ -48,8 +53,28 @@ const ManajemenKuis = ({ onNavigate }) => {
             .catch(err => console.error(err))
             .finally(() => setLoading(false)); 
     }, []);
+
+    const fetchDrafts = useCallback(async () => {
+        try {
+            const response = await DataService.getAllDrafts();
+            if (response.data && response.data.length > 0) {
+                const quizDrafts = response.data.filter(d => d.draft_key.startsWith('quiz_'));
+                if (quizDrafts.length > 0) {
+                    setDrafts(quizDrafts);
+                    setShowDraftsNotification(true);
+                }
+            }
+        } catch (error) {
+            console.error("Gagal mengambil draft kuis:", error);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchQuizzes();
+        fetchDrafts();
+    }, [fetchQuizzes, fetchDrafts]);
+
     const fetchQuizDetails = useCallback((quizId) => { setDetailLoading(true); DataService.getQuizDetailsForAdmin(quizId).then(res => setQuestions(res.data)).catch(err => console.error(err)).finally(() => setDetailLoading(false)); }, []);
-    useEffect(() => { fetchQuizzes(); }, [fetchQuizzes]);
     useEffect(() => { if (selectedQuiz) fetchQuizDetails(selectedQuiz.id); else setQuestions([]); }, [selectedQuiz, fetchQuizDetails]);
     const handleCreateQuiz = async (formData) => { try { await DataService.createQuiz(formData); fetchQuizzes(); } catch (error) { alert("Gagal membuat kuis."); }};
     
@@ -113,6 +138,7 @@ const ManajemenKuis = ({ onNavigate }) => {
         const quizToSelect = quizzes.find(q => q.id === quizId);
         if (quizToSelect) {
             setSelectedQuiz(quizToSelect);
+            setShowDraftsNotification(false);
             setDraftQuizOpen(false);
             setTimeout(() => setAddQuestionOpen(true), 100);
         } else {
@@ -125,11 +151,36 @@ const ManajemenKuis = ({ onNavigate }) => {
     return (
         <>
             <AnimatePresence>
+                {showDraftsNotification && (
+                    <Notification
+                        isOpen={showDraftsNotification}
+                        onClose={() => setShowDraftsNotification(false)}
+                        onConfirm={() => {
+                            setShowDraftsNotification(false);
+                            setDraftQuizOpen(true);
+                        }}
+                        title="Anda Memiliki Draf Kuis"
+                        message={`Anda memiliki ${drafts.length} draf kuis yang belum selesai. Ingin melanjutkannya?`}
+                        isConfirmation={true}
+                        confirmText="Ya, Lanjutkan"
+                        cancelText="Nanti Saja"
+                        success={true}
+                    />
+                )}
                 {isCreateQuizOpen && <CreateQuizModal isOpen={isCreateQuizOpen} onClose={() => setCreateQuizOpen(false)} onSubmit={handleCreateQuiz} />}
                 {isAddQuestionOpen && <AddQuestionToQuizModal isOpen={isAddQuestionOpen} onClose={() => setAddQuestionOpen(false)} onSubmit={handleBatchAddQuestions} quizId={selectedQuiz?.id} />}
                 {isBankSoalOpen && <BankSoalQuizModal isOpen={isBankSoalOpen} onClose={() => setBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
                 {isEditQuestionOpen && <EditQuestionToQuizModal isOpen={isEditQuestionOpen} onClose={() => setEditQuestionOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
-                {isDraftQuizOpen && <DraftQuizModal isOpen={isDraftQuizOpen} onClose={() => setDraftQuizOpen(false)} allQuizzes={quizzes} onContinueQuestionDraft={handleContinueQuestionDraft} />}
+                {isDraftQuizOpen && (
+                    <DraftQuizModal 
+                        isOpen={isDraftQuizOpen} 
+                        onClose={() => setDraftQuizOpen(false)} 
+                        allQuizzes={quizzes} 
+                        drafts={drafts}
+                        onContinueQuestionDraft={handleContinueQuestionDraft} 
+                        onDraftDeleted={fetchDrafts}
+                    />
+                )}
                 {isSettingsModalOpen && <QuizSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} onSave={handleSaveSettings} quizData={selectedQuiz} />}
             </AnimatePresence>
 

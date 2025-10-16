@@ -1,29 +1,24 @@
-// src/components/DraftsModal.jsx
+// contoh-sesm-web/components/mod/DraftsModal.jsx
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiFileText, FiTrash2 } from 'react-icons/fi';
+import DataService from '../../services/dataService'; // Impor DataService
 
-const DraftsModal = ({ isOpen, onClose, allData, onContinue }) => {
+const DraftsModal = ({ isOpen, onClose, allData, drafts: initialDrafts, onContinue, onDraftDeleted }) => {
     const [drafts, setDrafts] = useState([]);
 
     useEffect(() => {
-        if (isOpen) {
-            const allKeys = Object.keys(localStorage);
-            const draftKeys = allKeys.filter(key => key.startsWith('question_draft_'));
-            
-            const loadedDrafts = draftKeys.map(key => {
+        if (isOpen && initialDrafts) {
+            const loadedDrafts = initialDrafts.map(draft => {
                 try {
-                    const chapterId = key.replace('question_draft_', '');
-                    const rawDraftData = localStorage.getItem(key);
-                    if (!rawDraftData) return null;
-                    const draftData = JSON.parse(rawDraftData);
+                    const materiKey = draft.draft_key.replace('materi_', '');
                     
                     let chapterTitle = 'Bab Tidak Ditemukan';
                     if (allData) {
                         for (const mapelName in allData) {
                             const mapel = allData[mapelName];
-                            const found = mapel.chapters.find(ch => ch.materiKey === chapterId);
+                            const found = mapel.chapters.find(ch => ch.materiKey === materiKey);
                             if (found) {
                                 chapterTitle = found.judul;
                                 break;
@@ -32,26 +27,36 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue }) => {
                     }
                     
                     return {
-                        key,
-                        chapterId,
+                        key: draft.draft_key,
+                        materiKey: materiKey,
                         title: chapterTitle,
-                        questionCount: draftData.questions?.length || 0,
-                        lastSaved: new Date(draftData.lastSaved).toLocaleString('id-ID')
+                        questionCount: draft.content?.length || 0,
+                        lastSaved: new Date(draft.last_saved).toLocaleString('id-ID')
                     };
                 } catch (e) {
-                    console.error("Gagal memuat draf:", key, e);
+                    console.error("Gagal memproses draf:", draft.draft_key, e);
                     return null;
                 }
             }).filter(Boolean);
 
             setDrafts(loadedDrafts.sort((a, b) => new Date(b.lastSaved) - new Date(a.lastSaved)));
         }
-    }, [isOpen, allData]);
+    }, [isOpen, allData, initialDrafts]);
 
-    const handleDelete = (key, title) => {
+    const handleDelete = async (draftKey, title) => {
         if (window.confirm(`Yakin ingin menghapus draf untuk "${title}"?`)) {
-            localStorage.removeItem(key);
-            setDrafts(prevDrafts => prevDrafts.filter(d => d.key !== key));
+            try {
+                await DataService.deleteDraft(draftKey);
+                // Panggil fungsi callback untuk memberitahu parent agar me-refresh daftar draft
+                if (onDraftDeleted) {
+                    onDraftDeleted(); 
+                }
+                // Hapus dari state lokal untuk update UI instan
+                setDrafts(prevDrafts => prevDrafts.filter(d => d.key !== draftKey));
+            } catch (error) {
+                alert("Gagal menghapus draf dari server.");
+                console.error("Gagal hapus draf:", error);
+            }
         }
     };
 
@@ -76,7 +81,7 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue }) => {
                                         <div className='overflow-hidden'>
                                             <p className="font-bold text-gray-800 truncate">{draft.title}</p>
                                             <p className="text-sm text-gray-500">
-                                                {draft.questionCount} soal • {draft.lastSaved}
+                                                {draft.questionCount} soal • Disimpan: {draft.lastSaved}
                                             </p>
                                         </div>
                                     </div>
@@ -84,7 +89,7 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue }) => {
                                         <button onClick={() => handleDelete(draft.key, draft.title)} className="p-2 text-red-500 hover:bg-red-100 rounded-md" title="Hapus Draf">
                                             <FiTrash2/>
                                         </button>
-                                        <button onClick={() => onContinue(draft.chapterId)} className="px-4 py-2 text-sm bg-sesm-teal text-white font-semibold rounded-md hover:bg-sesm-deep">
+                                        <button onClick={() => onContinue(draft.materiKey)} className="px-4 py-2 text-sm bg-sesm-teal text-white font-semibold rounded-md hover:bg-sesm-deep">
                                             Lanjutkan
                                         </button>
                                     </div>
@@ -95,6 +100,7 @@ const DraftsModal = ({ isOpen, onClose, allData, onContinue }) => {
                         <div className="text-center text-gray-400 h-full flex flex-col justify-center items-center">
                            <FiFileText size={48}/>
                            <p className="mt-2 font-semibold">Tidak ada draf tersimpan.</p>
+                           <p className="text-sm mt-1">Draf yang sudah dipublikasikan atau dihapus tidak akan muncul di sini.</p>
                         </div>
                     )}
                 </div>

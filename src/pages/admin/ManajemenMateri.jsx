@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiPlus, FiChevronRight, FiBookOpen, FiTrash2, FiLoader, FiGrid,
-    FiCheckSquare, FiFileText, FiEdit, FiAlertCircle, FiTrendingUp, FiArchive, FiSettings
+    FiCheckSquare, FiFileText, FiEdit, FiAlertCircle, FiTrendingUp, FiSettings
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
@@ -13,6 +13,7 @@ import DraftsModal from '../../components/mod/DraftsModal';
 import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal';
 import EditQuestionModal from '../../components/admin/EditQuestionModal';
 import ChapterSettingsModal from '../../components/admin/ChapterSettingsModal';
+import Notification from '../../components/ui/Notification';
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -78,6 +79,9 @@ const ManajemenMateri = ({ onNavigate }) => {
     
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [selectedChapterForSettings, setSelectedChapterForSettings] = useState(null);
+    
+    const [drafts, setDrafts] = useState([]);
+    const [showDraftsNotification, setShowDraftsNotification] = useState(false);
 
     const fetchMateriList = useCallback((selectKeyAfterFetch = null) => {
         const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
@@ -94,9 +98,30 @@ const ManajemenMateri = ({ onNavigate }) => {
             }
         }).catch(err => setError(err.response?.data?.message || "Gagal memuat data.")).finally(() => setIsLoading(false));
     }, [selectedFilterKey]);
+    
+    const fetchDrafts = useCallback(async () => {
+        try {
+            const response = await DataService.getAllDrafts();
+            if (response.data && response.data.length > 0) {
+                const materiDrafts = response.data.filter(d => d.draft_key.startsWith('materi_'));
+                if (materiDrafts.length > 0) {
+                    setDrafts(materiDrafts);
+                    setShowDraftsNotification(true);
+                } else {
+                    setDrafts([]);
+                }
+            } else {
+                setDrafts([]);
+            }
+        } catch (error) {
+            console.error("Gagal mengambil draft:", error);
+        }
+    }, []);
 
-
-    useEffect(() => { fetchMateriList(); }, [fetchMateriList]);
+    useEffect(() => {
+        fetchMateriList();
+        fetchDrafts();
+    }, [fetchMateriList, fetchDrafts]);
 
     const fetchDetailMateri = useCallback(() => {
         if (!selectedKey) { setSelectedMateri(null); return; }
@@ -114,7 +139,7 @@ const ManajemenMateri = ({ onNavigate }) => {
     }), [materiList]);
 
     const handleAddChapterSubmit = async (data) => {
-        try { await DataService.addChapter(data); fetchMateriList(); } catch (e) { alert("Gagal: " + e.message); }
+        try { await DataService.addChapter(data); fetchMateriList(); setIsAddChapterModalOpen(false); } catch (e) { alert("Gagal: " + e.message); }
     };
     
     const handleQuestionsFromBankAdded = (targetMateriKey) => {
@@ -206,19 +231,48 @@ const ManajemenMateri = ({ onNavigate }) => {
         }
     };
 
-    const handleContinueDraft = (key) => { 
-        setSelectedKey(key); 
+    const handleContinueDraft = (materiKey) => { 
+        setSelectedKey(materiKey); 
+        setShowDraftsNotification(false);
         setIsDraftsModalOpen(false); 
         setTimeout(() => setIsQuestionModalOpen(true), 100);
     };
 
-    const currentMapelList = useMemo(() => Object.entries(materiList).map(([nama, data]) => ({ id: data.subject_id, nama_mapel: nama })).filter(m => m.id), [materiList]);
+    const currentMapelList = useMemo(() => Object.entries(materiList).map(([nama, data]) => ({ subject_id: data.subject_id, nama_mapel: nama })).filter(m => m.subject_id), [materiList]);
+
 
     return (
         <>
             <AnimatePresence>
+                 {showDraftsNotification && (
+                    <Notification
+                        isOpen={showDraftsNotification}
+                        onClose={() => setShowDraftsNotification(false)}
+                        onConfirm={() => {
+                            setShowDraftsNotification(false);
+                            setIsDraftsModalOpen(true);
+                        }}
+                        title="Anda Memiliki Draf"
+                        message={`Anda memiliki ${drafts.length} draf materi yang belum selesai. Ingin melanjutkannya?`}
+                        isConfirmation={true}
+                        confirmText="Ya, Lanjutkan"
+                        cancelText="Nanti Saja"
+                        success={true}
+                    />
+                )}
                 {isAddChapterModalOpen && <AddChapterModal isOpen onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
-                {isDraftsModalOpen && <DraftsModal isOpen onClose={() => setIsDraftsModalOpen(false)} allData={materiList} onContinue={handleContinueDraft} />}
+                
+                {isDraftsModalOpen && (
+                    <DraftsModal 
+                        isOpen={isDraftsModalOpen} 
+                        onClose={() => setIsDraftsModalOpen(false)} 
+                        allData={materiList} 
+                        drafts={drafts}
+                        onContinue={handleContinueDraft}
+                        onDraftDeleted={fetchDrafts}
+                    />
+                )}
+
                 {isBankSoalOpen && <BankSoalMateriModal isOpen onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
                 {isEditModalOpen && <EditQuestionModal isOpen onClose={() => setIsEditModalOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
                 {isSettingsModalOpen && (
@@ -232,7 +286,6 @@ const ManajemenMateri = ({ onNavigate }) => {
             </AnimatePresence>
             {isQuestionModalOpen && <QuestionFormModal isOpen onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
 
-            {/* PERBAIKAN 1: Menambahkan min-h-[calc(100vh-4rem)] untuk mengisi ruang vertikal */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden min-h-[calc(100vh-4rem)]">
                 <div className="grid md:grid-cols-12 h-full">
                     <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
@@ -266,7 +319,6 @@ const ManajemenMateri = ({ onNavigate }) => {
                                 <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Materi & Nilai</h1>
                                 <p className="text-gray-500 mt-1">Buat materi baru, kelola soal, dan lihat hasil pengerjaan siswa.</p>
                                 
-                                {/* PERBAIKAN 2: Mengubah gaya tombol agar sesuai gambar */}
                                 <div className="flex items-center gap-3 my-6">
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsDraftsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-gray-800 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"><FiFileText /> Draf</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiBookOpen/> Bank Soal</motion.button>

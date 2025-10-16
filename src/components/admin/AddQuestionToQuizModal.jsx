@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink } from 'react-icons/fi';
+import DataService from '../../services/dataService'; // Impor DataService
 
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -50,6 +51,9 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => onUpdate(index, { ...question, [field]: value });
     const handleOptionChange = (optIndex, value) => {
         const newOptions = [...question.options];
+        if (question.correctAnswer === newOptions[optIndex]) {
+            handleInputChange('correctAnswer', value);
+        }
         newOptions[optIndex] = value;
         onUpdate(index, { ...question, options: newOptions });
     };
@@ -160,47 +164,41 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
 
 
 const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
-    const DRAFT_KEY = `quiz_question_draft_${quizId}`;
+    const DRAFT_KEY = `quiz_${quizId}`;
     const [questions, setQuestions] = useState([getNewQuestion()]);
     
-    // Fungsi untuk menyimpan draft
-    const saveDraft = (data) => {
-        const draftToSave = {
-            lastSaved: new Date().toISOString(),
-            questions: data.map(({ media, ...rest }) => rest)
-        };
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
+    const saveDraft = async (data) => {
+        try {
+            const serializableData = data.map(({ media, ...rest }) => rest);
+            await DataService.saveDraft(DRAFT_KEY, serializableData);
+        } catch (error) {
+            console.error("Gagal menyimpan draf kuis ke server:", error);
+        }
     };
     
-    // Debounce untuk autosave
-    const debouncedQuestions = useDebounce(questions, 1500);
+    const debouncedQuestions = useDebounce(questions, 2000);
+
     useEffect(() => {
         if (isOpen && debouncedQuestions.length > 0 && debouncedQuestions.some(q => q.question.trim() !== '')) {
             saveDraft(debouncedQuestions);
         }
     }, [debouncedQuestions, DRAFT_KEY, isOpen]);
 
-    // Memuat draft saat modal dibuka
     useEffect(() => {
         if (isOpen) {
-            try {
-                const savedDraft = localStorage.getItem(DRAFT_KEY);
-                if (savedDraft) {
-                    const parsedDraft = JSON.parse(savedDraft);
-                    if (parsedDraft.questions && parsedDraft.questions.length > 0) {
-                        setQuestions(parsedDraft.questions.map(q => ({ ...getNewQuestion(), ...q, media: [] })));
+            DataService.getDraft(DRAFT_KEY)
+                .then(response => {
+                    if (response.data && response.data.content && response.data.content.length > 0) {
+                        setQuestions(response.data.content.map(q => ({ ...getNewQuestion(), ...q, media: [] })));
                     } else {
                         setQuestions([getNewQuestion()]);
                     }
-                } else {
+                })
+                .catch(() => {
                     setQuestions([getNewQuestion()]);
-                }
-            } catch (error) {
-                console.error("Gagal memuat draf soal kuis:", error);
-                setQuestions([getNewQuestion()]);
-            }
+                });
         }
-    }, [isOpen, quizId]);
+    }, [isOpen, DRAFT_KEY]);
     
     const handleUpdateQuestion = (index, updatedQuestion) => {
         setQuestions(prev => prev.map((q, i) => i === index ? updatedQuestion : q));
@@ -222,7 +220,12 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         onClose();
     };
 
-    const handleSubmit = (e) => { e.preventDefault(); onSubmit(quizId, questions); localStorage.removeItem(DRAFT_KEY); onClose(); };
+    const handleSubmit = (e) => { 
+        e.preventDefault(); 
+        onSubmit(quizId, questions); 
+        DataService.deleteDraft(DRAFT_KEY).catch(err => console.error("Gagal menghapus draf kuis:", err));
+        onClose(); 
+    };
 
     if (!isOpen) return null;
 

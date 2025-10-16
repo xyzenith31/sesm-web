@@ -1,8 +1,8 @@
-// src/components/QuestionFormModal.jsx
-
+// contoh-sesm-web/components/mod/QuestionFormModal.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
+import DataService from '../../services/dataService';
 
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -48,64 +48,53 @@ const TextPreview = ({ text, onRemove }) => (
 );
 
 const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
-    const DRAFT_KEY = `question_draft_${chapterId}`;
+    const DRAFT_KEY = `materi_${chapterId}`;
     const [questions, setQuestions] = useState([]);
     const [linkInput, setLinkInput] = useState({ qIndex: null, value: '' });
     const [textInput, setTextInput] = useState({ qIndex: null, value: '' });
 
     const getNewQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', media: [], links: [], texts: [], subQuestions: [], id: Date.now() + Math.random() });
     const getNewSubQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', id: Date.now() + Math.random() + '_sub' });
-
-    // Fungsi untuk menyimpan draft ke localStorage
-    const saveDraftToLocalStorage = (draftData) => {
+    
+    const saveDraftToBackend = async (draftData) => {
         try {
-            const draftToSave = {
-                lastSaved: new Date().toISOString(),
-                questions: draftData.map(({ media, ...rest }) => ({ ...rest, media: media.map(f => ({ name: f.name, type: f.type, size: f.size }))}))
-            };
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(draftToSave));
+            const serializableData = draftData.map(({ media, ...rest }) => rest);
+            await DataService.saveDraft(DRAFT_KEY, serializableData);
         } catch (error) {
-            console.error("Gagal menyimpan draf:", error);
+            console.error("Gagal menyimpan draf ke server:", error);
         }
     };
     
-    // Autosave menggunakan debounce
-    const debouncedQuestions = useDebounce(questions, 1500);
+    const debouncedQuestions = useDebounce(questions, 2000);
+
     useEffect(() => {
         if (isOpen && debouncedQuestions.length > 0 && debouncedQuestions.some(q => q.question.trim() !== '')) {
-            saveDraftToLocalStorage(debouncedQuestions);
+            saveDraftToBackend(debouncedQuestions);
         }
     }, [debouncedQuestions, DRAFT_KEY, isOpen]);
 
-    // Memuat draft saat modal dibuka
     useEffect(() => {
         if (isOpen) {
-            try {
-                const savedDraft = localStorage.getItem(DRAFT_KEY);
-                if (savedDraft) {
-                    const loadedDraft = JSON.parse(savedDraft);
-                    if (loadedDraft.questions && loadedDraft.questions.length > 0) {
-                        setQuestions(loadedDraft.questions.map(q => ({ ...getNewQuestion(), ...q, media: [], links: q.links || [], texts: q.texts || [], subQuestions: q.subQuestions || [] })));
+            DataService.getDraft(DRAFT_KEY)
+                .then(response => {
+                    if (response.data && response.data.content && response.data.content.length > 0) {
+                        setQuestions(response.data.content.map(q => ({...getNewQuestion(), ...q, media: [] })));
                     } else {
-                         setQuestions([getNewQuestion()]);
+                        setQuestions([getNewQuestion()]);
                     }
-                } else {
+                })
+                .catch(() => {
                     setQuestions([getNewQuestion()]);
-                }
-            } catch (error) {
-                 console.error("Gagal memuat draf:", error);
-                 setQuestions([getNewQuestion()]);
-            }
+                });
         }
-    }, [isOpen, chapterId]);
+    }, [isOpen, DRAFT_KEY]);
 
-    // Handler untuk tombol "Simpan Sementara"
     const handleSaveDraft = () => {
         if (questions.length === 0 || questions.every(q => q.question.trim() === '')) {
             alert('Tidak ada soal untuk disimpan sebagai draf.');
             return;
         }
-        saveDraftToLocalStorage(questions);
+        saveDraftToBackend(questions);
         alert('Draf berhasil disimpan!');
         onClose();
     };
@@ -113,11 +102,10 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const handleSubmit = (e) => { 
         e.preventDefault(); 
         onSubmit(questions); 
-        localStorage.removeItem(DRAFT_KEY); 
+        DataService.deleteDraft(DRAFT_KEY).catch(err => console.error("Gagal menghapus draft:", err));
         onClose(); 
     };
 
-    // Handler lainnya (tidak berubah)
     const handleQuestionChange = (index, field, value) => { const newQuestions = [...questions]; newQuestions[index][field] = value; setQuestions(newQuestions); };
     const handleOptionChange = (qIndex, oIndex, value) => { const newQuestions = [...questions]; newQuestions[qIndex].options[oIndex] = value; if (newQuestions[qIndex].correctAnswer === questions[qIndex].options[oIndex]) { newQuestions[qIndex].correctAnswer = value; } setQuestions(newQuestions); };
     const addOptionField = (qIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].options.push(''); setQuestions(newQuestions); };
