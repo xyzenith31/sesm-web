@@ -135,6 +135,11 @@ const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [mainFilePreview, setMainFilePreview] = useState('');
     const [coverImagePreview, setCoverImagePreview] = useState('');
+    const [mediaSourceType, setMediaSourceType] = useState('file');
+    
+    // State untuk Notifikasi & Konfirmasi di dalam Modal
+    const [modalNotif, setModalNotif] = useState({ isOpen: false, message: '', success: false, title: '' });
+    const [confirmTaskDelete, setConfirmTaskDelete] = useState({ isOpen: false, index: null });
 
     const getNewQuestionObject = () => ({ id: Date.now() + Math.random(), type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '' });
 
@@ -148,6 +153,8 @@ const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
                     grading_type: initialData.grading_type || 'manual', recommended_level: initialData.recommended_level || 'Semua'
                 });
                 
+                setMediaSourceType(initialData.type === 'video_link' ? 'link' : 'file');
+                
                 const initialTasks = (initialData.tasks || []).map((task, index) => {
                     if (typeof task === 'string') {
                         if (initialData.grading_type === 'otomatis' && task.includes('@@')) {
@@ -158,11 +165,11 @@ const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
                     }
                     return { ...getNewQuestionObject(), ...task, id: task.id || index };
                 });
-                setTasks(initialTasks.length > 0 ? initialTasks : [getNewQuestionObject()]);
+                setTasks(initialTasks.length > 0 ? initialTasks : []);
 
             } else {
                 setFormData({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
-                setTasks([getNewQuestionObject()]);
+                setTasks([]);
             }
             setMainFile(null); setCoverImage(null); setMainFilePreview(''); setCoverImagePreview('');
         }
@@ -174,11 +181,21 @@ const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
     
     const updateTask = (index, updatedTask) => setTasks(prev => prev.map((task, i) => i === index ? updatedTask : task));
     const addTask = () => setTasks(prev => [...prev, getNewQuestionObject()]);
-    const removeTask = (index) => setTasks(prev => prev.filter((_, i) => i !== index));
+    
+    const requestTaskDeletion = (index) => {
+        setConfirmTaskDelete({ isOpen: true, index: index });
+    };
+    
+    const confirmTaskDeletion = () => {
+        if (confirmTaskDelete.index !== null) {
+            setTasks(prev => prev.filter((_, i) => i !== confirmTaskDelete.index));
+        }
+        setConfirmTaskDelete({ isOpen: false, index: null });
+    };
 
     const navigateToStep = (targetStep) => {
         if (targetStep > 1 && (!formData.title.trim() || !formData.subject.trim())) {
-            alert("Judul dan Mapel wajib diisi sebelum melanjutkan.");
+            setModalNotif({ isOpen: true, message: "Judul dan Mapel wajib diisi sebelum melanjutkan.", success: false, title: "Data Belum Lengkap" });
             return;
         }
         setStep(targetStep);
@@ -186,22 +203,40 @@ const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsSaving(true);
-        const data = new FormData(); // Selalu gunakan FormData untuk upload file
         
-        // Gabungkan data form
+        if (step === 2 && !isEditMode) {
+             if (mediaSourceType === 'file' && !mainFile) {
+                setModalNotif({ isOpen: true, message: "Silakan pilih file utama untuk diunggah.", success: false, title: "Validasi Gagal" });
+                return;
+            }
+            if (mediaSourceType === 'link' && !formData.url_link.trim()) {
+                setModalNotif({ isOpen: true, message: "Silakan masukkan link video.", success: false, title: "Validasi Gagal" });
+                return;
+            }
+        }
+
+        if (step < 3) {
+            navigateToStep(step + 1);
+            return;
+        }
+
+        const hasAtLeastOneTask = tasks.some(t => t.question && t.question.trim() !== '');
+        if (!hasAtLeastOneTask) {
+            setModalNotif({ isOpen: true, message: 'Anda harus menambahkan setidaknya satu soal/tugas sebelum menyimpan.', success: false, title: "Validasi Gagal" });
+            return;
+        }
+
+        setIsSaving(true);
+        const data = new FormData();
+        
         Object.keys(formData).forEach(key => data.append(key, formData[key]));
         
-        // Proses tasks
-        let finalTasks = tasks;
-        if (formData.grading_type === 'otomatis') {
-            finalTasks = tasks.map(q => `${q.question}@@${q.type.includes('esai') ? q.essayAnswer : q.correctAnswer}`);
-        }
-        data.append('tasks', JSON.stringify(finalTasks));
+        data.append('tasks', JSON.stringify(tasks));
         
-        // Tambahkan file jika ada
         if (mainFile) data.append('mainFile', mainFile);
         if (coverImage) data.append('coverImage', coverImage);
+        
+        if (mediaSourceType === 'file') data.delete('url_link');
         
         await onSave(data, initialData?.id);
         setIsSaving(false);
@@ -213,29 +248,11 @@ const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
     const renderStepContent = () => {
         switch(step) {
             case 1:
-                return (
-                    <motion.div key={1} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
-                        <div><label className="font-semibold text-sm">Judul</label><input type="text" name="title" value={formData.title} onChange={handleFormChange} className={inputStyle} required /></div>
-                        <div><label className="font-semibold text-sm">Mapel</label><input type="text" name="subject" value={formData.subject} onChange={handleFormChange} className={inputStyle} required /></div>
-                        <div><label className="font-semibold text-sm">Disarankan Untuk</label><select name="recommended_level" value={formData.recommended_level} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="Semua">Semua Jenjang</option><option value="TK">TK</option><option value="SD 1-2">SD Kelas 1-2</option><option value="SD 3-4">SD Kelas 3-4</option><option value="SD 5-6">SD Kelas 5-6</option></select></div>
-                        <div><label className="font-semibold text-sm">Deskripsi</label><textarea name="description" value={formData.description} onChange={handleFormChange} className={`${inputStyle} h-24`}></textarea></div>
-                    </motion.div>
-                );
+                return ( <motion.div key={1} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> <div><label className="font-semibold text-sm">Judul</label><input type="text" name="title" value={formData.title} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Mapel</label><input type="text" name="subject" value={formData.subject} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Disarankan Untuk</label><select name="recommended_level" value={formData.recommended_level} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="Semua">Semua Jenjang</option><option value="TK">TK</option><option value="SD 1-2">SD Kelas 1-2</option><option value="SD 3-4">SD Kelas 3-4</option><option value="SD 5-6">SD Kelas 5-6</option></select></div> <div><label className="font-semibold text-sm">Deskripsi</label><textarea name="description" value={formData.description} onChange={handleFormChange} className={`${inputStyle} h-24`}></textarea></div> </motion.div> );
             case 2:
-                return (
-                     <motion.div key={2} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
-                        <div><label className="font-semibold text-sm">File Utama (PDF, Video, dll.)</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="main-upload" className="hidden" onChange={handleMainFileChange} /><label htmlFor="main-upload" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1"><FiPlus /><span>{mainFilePreview || "Pilih file..."}</span></label></div></div>
-                        <div><label className="font-semibold text-sm">Atau Link Video</label><input type="url" name="url_link" value={formData.url_link} onChange={handleFormChange} className={inputStyle} placeholder="https://www.youtube.com/..." /></div>
-                        <div><label className="font-semibold text-sm">Gambar Sampul</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="cover-upload" className="hidden" onChange={handleCoverImageChange} accept="image/*" /><label htmlFor="cover-upload" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1">{coverImagePreview ? <img src={coverImagePreview} alt="Preview" className="h-24 rounded-md mb-2 object-cover" /> : <FiPlus />}<span>{coverImage ? coverImage.name : "Pilih gambar..."}</span></label></div></div>
-                     </motion.div>
-                );
+                return ( <motion.div key={2} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> <div className="space-y-2"> <label className="font-semibold text-sm">Sumber Materi</label> <div className="flex gap-4"> <label className="flex items-center gap-2"><input type="radio" name="mediaSource" value="file" checked={mediaSourceType === 'file'} onChange={(e) => setMediaSourceType(e.target.value)} /> File</label> <label className="flex items-center gap-2"><input type="radio" name="mediaSource" value="link" checked={mediaSourceType === 'link'} onChange={(e) => setMediaSourceType(e.target.value)} /> Link Video</label> </div> </div> <AnimatePresence mode="wait"> <motion.div key={mediaSourceType} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> {mediaSourceType === 'file' ? ( <div><label className="font-semibold text-sm">File Utama (PDF, Video, dll.)</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="main-upload" className="hidden" onChange={handleMainFileChange} /><label htmlFor="main-upload" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1"><FiPlus /><span>{mainFilePreview || "Pilih file..."}</span></label></div></div> ) : ( <div><label className="font-semibold text-sm">Link Video</label><input type="url" name="url_link" value={formData.url_link} onChange={handleFormChange} className={inputStyle} placeholder="https://www.youtube.com/..." /></div> )} </motion.div> </AnimatePresence> <div><label className="font-semibold text-sm">Gambar Sampul</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="cover-upload" className="hidden" onChange={handleCoverImageChange} accept="image/*" /><label htmlFor="cover-upload" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1">{coverImagePreview ? <img src={coverImagePreview} alt="Preview" className="h-24 rounded-md mb-2 object-cover" /> : <FiPlus />}<span>{coverImage ? coverImage.name : "Pilih gambar..."}</span></label></div></div> </motion.div> );
             case 3:
-                return (
-                    <motion.div key={3} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-3">
-                        <div><label className="font-semibold text-sm">Tipe Penilaian</label><select name="grading_type" value={formData.grading_type} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="manual">Manual (Guru menilai)</option><option value="otomatis">Otomatis (hanya PG)</option></select><p className="text-xs text-gray-500 mt-1">{formData.grading_type === 'otomatis' ? 'Jawaban esai tidak akan dinilai otomatis.' : 'Semua jenis soal akan dinilai manual oleh guru.'}</p></div>
-                        <div className="border-t pt-4"><h4 className="font-semibold">Soal & Tugas</h4><div className="space-y-3 mt-2 max-h-[280px] overflow-y-auto pr-2">{tasks.map((task, index) => (<QuestionItem key={task.id} q={task} qIndex={index} onUpdate={updateTask} onRemove={() => removeTask(index)} />))}<button type="button" onClick={addTask} className="text-sm font-semibold text-sesm-teal mt-2"><FiPlus className="inline"/> Tambah Soal</button></div></div>
-                    </motion.div>
-                );
+                return ( <motion.div key={3} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-3"> <div><label className="font-semibold text-sm">Tipe Penilaian</label><select name="grading_type" value={formData.grading_type} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="manual">Manual (Guru menilai)</option><option value="otomatis">Otomatis (hanya PG)</option></select><p className="text-xs text-gray-500 mt-1">{formData.grading_type === 'otomatis' ? 'Jawaban esai tidak akan dinilai otomatis.' : 'Semua jenis soal akan dinilai manual oleh guru.'}</p></div> <div className="border-t pt-4"><h4 className="font-semibold">Soal & Tugas</h4><div className="space-y-3 mt-2 max-h-[280px] overflow-y-auto pr-2">{tasks.map((task, index) => (<QuestionItem key={task.id} q={task} qIndex={index} onUpdate={updateTask} onRemove={() => requestTaskDeletion(index)} />))}<button type="button" onClick={addTask} className="text-sm font-semibold text-sesm-deep mt-2"><FiPlus className="inline"/> Tambah Soal</button></div></div> </motion.div> );
             default:
                 return null;
         }
@@ -245,6 +262,23 @@ const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
+            <Notification
+                isOpen={notif.isOpen}
+                onClose={() => setNotif({ ...notif, isOpen: false })}
+                title={notif.title}
+                message={notif.message}
+                success={notif.success}
+            />
+             <Notification
+                isOpen={confirmTaskDelete.isOpen}
+                onClose={() => setConfirmTaskDelete({ isOpen: false, index: null })}
+                onConfirm={confirmTaskDeletion}
+                title="Konfirmasi Hapus Soal"
+                message="Anda yakin ingin menghapus soal ini?"
+                isConfirmation={true}
+                success={false}
+                confirmText="Ya, Hapus"
+            />
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col">
                 <form onSubmit={handleSubmit}>
                     <header className="p-6 border-b flex justify-between items-center">
@@ -266,7 +300,7 @@ const MaterialFormModal = ({ isOpen, onClose, onSave, initialData }) => {
                         {step < 3 ? (
                             <button type="button" onClick={() => navigateToStep(step + 1)} className="px-5 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-opacity-90">Lanjutkan</button>
                         ) : (
-                            <button type="submit" disabled={isSaving} className="px-5 py-2 bg-sesm-deep text-white rounded-lg flex items-center gap-2 disabled:bg-gray-400">{isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}{isSaving ? 'Menyimpan...' : 'Simpan Materi'}</button>
+                            <button type="submit" disabled={isSaving} className="px-5 py-2 bg-sesm-deep text-white rounded-lg flex items-center gap-2 disabled:bg-gray-400">{isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}{isSaving ? 'Menyimpan...' : 'Publish Materi'}</button>
                         )}
                     </footer>
                 </form>
@@ -281,7 +315,8 @@ const ManajemenBookmark = () => {
     const [bookmarks, setBookmarks] = useState([]);
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [notif, setNotif] = useState({ isOpen: false, message: '', success: true });
+    const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
+    const [confirmDeleteNotif, setConfirmDeleteNotif] = useState({ isOpen: false, onConfirm: () => {} });
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMaterial, setEditingMaterial] = useState(null);
@@ -301,7 +336,7 @@ const ManajemenBookmark = () => {
                 }
             }
         } catch (error) {
-            setNotif({ isOpen: true, message: "Gagal memuat materi.", success: false });
+            setNotif({ isOpen: true, message: "Gagal memuat materi.", success: false, title: "Error" });
         } finally {
             setLoading(false);
         }
@@ -315,10 +350,10 @@ const ManajemenBookmark = () => {
         try {
             if (id) {
                 await BookmarkService.updateBookmark(id, data);
-                setNotif({ isOpen: true, message: "Materi berhasil diperbarui!", success: true });
+                setNotif({ isOpen: true, message: "Materi berhasil diperbarui!", success: true, title: "Sukses" });
             } else {
                 await BookmarkService.createBookmark(data);
-                setNotif({ isOpen: true, message: "Materi baru berhasil ditambahkan!", success: true });
+                setNotif({ isOpen: true, message: "Materi baru berhasil ditambahkan!", success: true, title: "Sukses" });
             }
             setIsModalOpen(false);
             fetchBookmarks(id);
@@ -326,20 +361,34 @@ const ManajemenBookmark = () => {
             setNotif({ 
                 isOpen: true, 
                 message: error.response?.data?.message || "Gagal menyimpan. Periksa kembali isian Anda.", 
-                success: false 
+                success: false,
+                title: "Gagal Menyimpan"
             });
         }
     };
     
-    const handleDelete = async (id, title) => {
-        if (window.confirm(`Yakin ingin menghapus materi "${title}"?`)) {
-            try {
-                await BookmarkService.deleteBookmark(id);
-                setNotif({ isOpen: true, message: "Materi berhasil dihapus.", success: true });
-                setBookmarks(prev => prev.filter(b => b.id !== id));
-            } catch (error) {
-                setNotif({ isOpen: true, message: "Gagal menghapus materi.", success: false });
+    const handleDelete = (id, title) => {
+        setConfirmDeleteNotif({
+            isOpen: true,
+            onConfirm: () => confirmDeleteAction(id),
+            title: `Hapus Materi "${title}"?`,
+            message: "Tindakan ini tidak dapat diurungkan. Semua data terkait materi ini akan dihapus secara permanen."
+        });
+    };
+
+    const confirmDeleteAction = async (id) => {
+        try {
+            await BookmarkService.deleteBookmark(id);
+            setNotif({ isOpen: true, message: "Materi berhasil dihapus.", success: true, title: "Sukses" });
+            setBookmarks(prev => prev.filter(b => b.id !== id));
+            if (selectedBookmarkId === id) {
+                setSelectedBookmarkId(null);
+                setSubmissions([]);
             }
+        } catch (error) {
+            setNotif({ isOpen: true, message: "Gagal menghapus materi.", success: false, title: "Error" });
+        } finally {
+            setConfirmDeleteNotif({ isOpen: false, onConfirm: () => {} });
         }
     };
 
@@ -360,7 +409,17 @@ const ManajemenBookmark = () => {
                 {isModalOpen && <MaterialFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} initialData={editingMaterial} />}
                 {selectedSubmission && <SubmissionDetailModal submission={selectedSubmission} onClose={() => setSelectedSubmission(null)} onGradeSubmitted={() => { setSelectedSubmission(null); handleSelectBookmarkForGrading(selectedBookmarkId); }} />}
             </AnimatePresence>
-            <Notification isOpen={notif.isOpen} onClose={() => setNotif({ ...notif, isOpen: false })} title={notif.success ? "Sukses" : "Error"} message={notif.message} success={notif.success} />
+            <Notification isOpen={notif.isOpen} onClose={() => setNotif({ ...notif, isOpen: false })} title={notif.title} message={notif.message} success={notif.success} />
+            <Notification
+                isOpen={confirmDeleteNotif.isOpen}
+                onClose={() => setConfirmDeleteNotif({ isOpen: false })}
+                onConfirm={confirmDeleteNotif.onConfirm}
+                title={confirmDeleteNotif.title}
+                message={confirmDeleteNotif.message}
+                isConfirmation={true}
+                success={false}
+                confirmText="Ya, Hapus"
+            />
 
             <div className="bg-white p-6 rounded-xl shadow-lg flex-grow flex flex-col h-full">
                 <div className="flex justify-between items-start mb-4 pb-4 border-b">

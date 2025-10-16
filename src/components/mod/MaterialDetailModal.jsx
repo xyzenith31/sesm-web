@@ -1,36 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-// --- PERBAIKAN DI SINI: FiLoader dan ikon lainnya ditambahkan ---
 import { FiX, FiExternalLink, FiHelpCircle, FiCheck, FiXCircle, FiFileText, FiSave, FiCheckCircle, FiLoader } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
 
+// Komponen internal untuk menampilkan soal yang lebih kompleks
+const TaskItem = ({ task, index, onAnswerChange, userAnswer, isSubmitted }) => {
+    const { type, question, options = [] } = task;
+
+    const getOptionClass = (option) => {
+        if (!isSubmitted) {
+            return userAnswer.mc === option ? 'bg-sesm-teal text-white border-sesm-teal' : 'bg-white hover:bg-gray-100 border-gray-300';
+        }
+        // Logika setelah disubmit (jika ada penilaian otomatis)
+        return 'bg-white opacity-60 border-gray-300'; // Default disabled state
+    };
+
+    return (
+        <div className="bg-gray-50 p-4 rounded-lg border">
+            <p className="font-semibold text-gray-800 mb-3">{index + 1}. {question}</p>
+            
+            {/* Opsi Pilihan Ganda */}
+            {(type === 'pilihan-ganda' || type === 'pilihan-ganda-esai') && (
+                <div className="space-y-2 mb-3">
+                    {options.map((opt, optIndex) => (
+                        <button
+                            key={optIndex}
+                            onClick={() => onAnswerChange(index, 'mc', opt)}
+                            disabled={isSubmitted}
+                            className={`w-full text-left p-3 rounded-lg font-semibold transition-all border-2 ${getOptionClass(opt)}`}
+                        >
+                            {opt}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Input Esai */}
+            {(type === 'esai' || type === 'pilihan-ganda-esai') && (
+                <div>
+                    <textarea
+                        value={userAnswer.essay || ''}
+                        onChange={(e) => onAnswerChange(index, 'essay', e.target.value)}
+                        disabled={isSubmitted}
+                        placeholder="Tulis jawaban esai di sini..."
+                        className="w-full h-24 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal"
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
+
+
 const MaterialDetailModal = ({ material, onClose }) => {
   const API_URL = 'http://localhost:8080';
-
-  // State untuk jawaban, status submit, dan hasil
-  const [answers, setAnswers] = useState(Array(material.tasks?.length || 0).fill(''));
-  const [pristineStates, setPristineStates] = useState(Array(material.tasks?.length || 0).fill(true));
+  
+  const [answers, setAnswers] = useState(() => Array(material.tasks?.length || 0).fill({ mc: '', essay: '' }));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState(null);
 
-  // Handler untuk mengubah jawaban
-  const handleAnswerChange = (e, index) => {
+  const handleAnswerChange = (taskIndex, type, value) => {
     const newAnswers = [...answers];
-    newAnswers[index] = e.target.value;
+    newAnswers[taskIndex] = { ...newAnswers[taskIndex], [type]: value };
     setAnswers(newAnswers);
-
-    if (pristineStates[index]) {
-      const newPristineStates = [...pristineStates];
-      newPristineStates[index] = false;
-      setPristineStates(newPristineStates);
-    }
   };
   
-  // Handler untuk mengirim jawaban ke backend
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-        const response = await BookmarkService.submitAnswers(material.id, answers);
+        // Gabungkan jawaban MC dan Esai menjadi satu string per soal
+        const formattedAnswers = answers.map(ans => {
+            if (ans.mc && ans.essay) return `${ans.mc} | ${ans.essay}`;
+            return ans.mc || ans.essay || "";
+        });
+        const response = await BookmarkService.submitAnswers(material.id, formattedAnswers);
         setSubmissionResult(response.data);
     } catch (error) {
         setSubmissionResult({ message: error.response?.data?.message || "Gagal mengirim jawaban." });
@@ -39,14 +82,6 @@ const MaterialDetailModal = ({ material, onClose }) => {
     }
   };
   
-  // Ikon untuk feedback input
-  const getAnswerIcon = (index) => {
-    if (pristineStates[index]) return <FiHelpCircle className="text-gray-400" />;
-    if (answers[index] && answers[index].trim() !== '') return <FiCheck className="text-green-500" />;
-    return <FiXCircle className="text-red-500" />;
-  };
-  
-  // Helper untuk mengubah URL YouTube
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -54,7 +89,6 @@ const MaterialDetailModal = ({ material, onClose }) => {
     return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : url;
   };
   
-  // Fungsi untuk merender konten media
   const renderContent = () => {
     const fullUrl = `${API_URL}/${material.url}`;
     switch (material.type) {
@@ -71,7 +105,6 @@ const MaterialDetailModal = ({ material, onClose }) => {
     }
   };
 
-  // Tampilan setelah submit berhasil
   if (submissionResult) {
     return (
         <motion.div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -106,18 +139,14 @@ const MaterialDetailModal = ({ material, onClose }) => {
                 <h3 className="font-bold text-gray-800 mb-3">Tugas</h3>
                 <div className="space-y-4">
                     {material.tasks.map((task, index) => (
-                        <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-sm font-semibold text-gray-700 mb-2">{index + 1}. {task.split('@@')[0]}</p>
-                            <div className="relative">
-                                <textarea
-                                    value={answers[index] || ''}
-                                    onChange={(e) => handleAnswerChange(e, index)}
-                                    placeholder="Tulis jawabanmu di sini..."
-                                    className="w-full h-20 p-2 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal"
-                                />
-                                <div className="absolute top-2.5 right-2.5 text-2xl">{getAnswerIcon(index)}</div>
-                            </div>
-                        </div>
+                        <TaskItem
+                            key={task.id || index}
+                            task={task}
+                            index={index}
+                            userAnswer={answers[index]}
+                            onAnswerChange={handleAnswerChange}
+                            isSubmitted={isSubmitting || !!submissionResult}
+                        />
                     ))}
                 </div>
             </div>
