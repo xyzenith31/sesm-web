@@ -87,27 +87,24 @@ const updateQuestion = (questionId, questionData) => {
 const deleteChapter = (materiKey) => { return apiClient.delete(`/admin/materi/chapters/${materiKey}`); };
 const deleteQuestion = (questionId) => { return apiClient.delete(`/admin/materi/questions/${questionId}`); };
 
-// --- DIPERBAIKI: getChaptersForSubject ---
 const getChaptersForSubject = (jenjang, kelas, subjectName) => {
     let url = `/mapel/${jenjang}`;
-    // Hanya tambahkan kelas jika jenjang SD dan kelas valid (bukan null/undefined)
     if (jenjang && jenjang.toLowerCase() === 'sd' && kelas) {
       url += `/${kelas}`;
     }
-    // Selalu tambahkan nama mapel setelah jenjang (dan kelas jika ada)
     url += `/${encodeURIComponent(subjectName)}`;
-    console.log("Fetching chapters URL:", url); // Tambahkan log ini
     return apiClient.get(url);
 };
-// ------------------------------------
 
 const addQuestionsFromBankToChapter = (materiKey, questionIds) => {
     return apiClient.post(`/admin/materi/${materiKey}/add-from-bank`, { questionIds });
 };
+
+// --- ✅ FUNGSI BARU UNTUK KONEKSI KE BACKEND ---
 const updateChapterSettings = (chapterId, settings) => {
     return apiClient.put(`/admin/materi/chapters/${chapterId}/settings`, settings);
 };
-// Perbaiki path updateGradingMode jika perlu (sesuaikan dengan backend routes)
+
 const updateGradingMode = (chapterId, mode) => { return apiClient.put(`/admin/chapters/${chapterId}/grading-mode`, { mode }); };
 const getAllSubmissionsForChapter = (chapterId) => { return apiClient.get(`/admin/nilai/chapter/${chapterId}`); };
 const getSubmissionDetails = (submissionId) => { return apiClient.get(`/admin/nilai/submission/${submissionId}`); };
@@ -156,12 +153,10 @@ const updateQuizSettings = (quizId, settings) => {
     return apiClient.put(`/admin/quizzes/${quizId}/settings`, settings);
 };
 
-// --- FUNGSI BARU UNTUK BANK SOAL BOOKMARK ---
 const addQuestionsFromBankToBookmark = (bookmarkId, questionIds) => {
     return apiClient.post(`/admin/bookmarks/${bookmarkId}/add-from-bank`, { questionIds });
 };
 
-// --- FUNGSI POIN & LEADERBOARD ---
 const getPointsSummary = () => { return apiClient.get('/points/summary'); };
 const getPointsHistory = () => { return apiClient.get('/points/history'); };
 const getLeaderboard = () => { return apiClient.get('/leaderboard'); };
@@ -170,7 +165,6 @@ const getSubjectHistory = (subjectName) => {
     return apiClient.get(`/points/subject-history/${encodeURIComponent(subjectName)}`);
 };
 
-// --- FUNGSI BUKU HARIAN (DIARY) ---
 const getDiaryEntries = () => {
     return apiClient.get('/diary');
 };
@@ -184,7 +178,6 @@ const deleteDiaryEntry = (id) => {
     return apiClient.delete(`/diary/${id}`);
 };
 
-// --- FUNGSI DRAFT ---
 const saveDraft = (draftKey, content) => {
     return apiClient.post('/drafts', { draftKey, content });
 };
@@ -198,7 +191,6 @@ const deleteDraft = (draftKey) => {
     return apiClient.delete(`/drafts/${draftKey}`);
 };
 
-// --- FUNGSI SISWA (LANJUTAN) ---
 const getStudentSubmissionDetails = (submissionId) => {
     return apiClient.get(`/materi/submission/${submissionId}`);
 };
@@ -221,7 +213,7 @@ const DataService = {
   deleteQuestion,
   getChaptersForSubject,
   addQuestionsFromBankToChapter,
-  updateChapterSettings,
+  updateChapterSettings, // <-- ✅ EKSPOR FUNGSI BARU
   getAllUsers,
   createUserByAdmin,
   updateUserByAdmin,
@@ -236,7 +228,7 @@ const DataService = {
   createQuiz,
   getSubmissionsForQuiz,
   deleteQuiz,
-  deleteAllQuestionsFromQuiz, // Pertimbangkan lagi implementasinya
+  deleteAllQuestionsFromQuiz,
   addQuestionToQuiz,
   updateQuestionInQuiz,
   deleteQuestionFromQuiz,

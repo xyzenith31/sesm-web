@@ -1,6 +1,6 @@
 // contoh-sesm-web/components/admin/ChapterSettingsModal.jsx
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiSave, FiLoader } from 'react-icons/fi';
 
 // Komponen Toggle Switch internal
@@ -29,14 +29,22 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
         setting_strict_zero_on_wrong: false,
         setting_fail_on_any_wrong: false,
     });
+    
+    // ✅ 1. State baru untuk saklar timer
+    const [isTimeLimitEnabled, setIsTimeLimitEnabled] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (chapterData && chapterData.settings) {
+            const timeLimit = chapterData.settings.setting_time_limit_minutes;
+            
+            // ✅ 2. Atur status saklar berdasarkan data dari server
+            setIsTimeLimitEnabled(timeLimit !== null && timeLimit !== undefined && timeLimit !== '');
+
             setSettings({
-                ...settings, // Ambil defaultnya
-                ...chapterData.settings, // Timpa dengan data dari props
-                setting_time_limit_minutes: chapterData.settings.setting_time_limit_minutes || ''
+                ...settings,
+                ...chapterData.settings,
+                setting_time_limit_minutes: timeLimit || ''
             });
         }
     }, [chapterData]);
@@ -52,10 +60,10 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // Kirim hanya nilai yang valid (angka atau null) untuk batas waktu
+            // ✅ 3. Sesuaikan data yang dikirim berdasarkan status saklar
             const settingsToSave = {
                 ...settings,
-                setting_time_limit_minutes: settings.setting_time_limit_minutes === '' ? null : parseInt(settings.setting_time_limit_minutes, 10)
+                setting_time_limit_minutes: isTimeLimitEnabled ? (parseInt(settings.setting_time_limit_minutes, 10) || null) : null
             };
             await onSave(chapterData.chapter_id, settingsToSave);
         } catch (error) {
@@ -79,6 +87,7 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
                 </header>
 
                 <main className="flex-grow overflow-y-auto p-6 space-y-4">
+                    {/* ... Opsi pengaturan lainnya tidak berubah ... */}
                     <ToggleSwitch
                         label="Penalti Jawaban Salah"
                         description="Jika aktif, jawaban salah akan mengurangi total skor siswa."
@@ -115,18 +124,37 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
                         enabled={settings.setting_show_correct_answers}
                         onToggle={() => handleToggle('setting_show_correct_answers')}
                     />
-                    <div className="p-4 rounded-lg bg-gray-100">
-                         <label className="font-semibold text-gray-800">Batas Waktu Pengerjaan (Menit)</label>
-                         <p className="text-xs text-gray-500 mb-2">Kosongkan jika tidak ada batas waktu.</p>
-                         <input
-                            type="number"
-                            value={settings.setting_time_limit_minutes}
-                            onChange={handleTimeChange}
-                            className="w-full p-2 border rounded-md"
-                            placeholder="Contoh: 20"
-                            min="0"
-                         />
-                    </div>
+                    
+                    {/* ✅ 4. Tambahkan saklar untuk batas waktu */}
+                    <ToggleSwitch
+                        label="Aktifkan Batas Waktu"
+                        description="Jika aktif, siswa akan memiliki batas waktu total untuk mengerjakan semua soal."
+                        enabled={isTimeLimitEnabled}
+                        onToggle={() => setIsTimeLimitEnabled(prev => !prev)}
+                    />
+
+                    {/* ✅ 5. Tampilkan input waktu secara kondisional */}
+                    <AnimatePresence>
+                        {isTimeLimitEnabled && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                                animate={{ height: 'auto', opacity: 1, marginTop: '1rem' }}
+                                exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                                className="p-4 rounded-lg bg-gray-100 overflow-hidden"
+                            >
+                                 <label className="font-semibold text-gray-800">Batas Waktu Pengerjaan (Menit)</label>
+                                 <p className="text-xs text-gray-500 mb-2">Masukkan angka saja. Contoh: 20</p>
+                                 <input
+                                    type="number"
+                                    value={settings.setting_time_limit_minutes}
+                                    onChange={handleTimeChange}
+                                    className="w-full p-2 border rounded-md"
+                                    placeholder="Contoh: 20"
+                                    min="1"
+                                 />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </main>
 
                 <footer className="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t">
