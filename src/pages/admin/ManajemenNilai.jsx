@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FiLoader, FiSearch, FiClock, FiStar, FiBarChart2, FiCheckCircle, FiEdit, FiArrowLeft } from 'react-icons/fi';
+import { FiLoader, FiSearch, FiStar, FiBarChart2, FiCheckCircle, FiEdit, FiArrowLeft } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import DataService from '../../services/dataService';
 import SubmissionDetailModal from '../../components/mod/SubmissionDetailModal';
+import CustomSelect from '../../components/ui/CustomSelect';
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -13,6 +14,11 @@ const jenjangOptions = {
     'SD Kelas 5': { jenjang: 'SD', kelas: 5 },
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
+
+const jenjangSelectOptions = Object.keys(jenjangOptions).map(key => ({
+    value: key,
+    label: key,
+}));
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
     <div className="bg-gray-50 p-4 rounded-lg flex-1 border">
@@ -26,7 +32,6 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
     </div>
 );
 
-// Terima prop 'onNavigate'
 const ManajemenNilai = ({ onNavigate }) => {
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
     const [materiList, setMateriList] = useState({});
@@ -61,7 +66,12 @@ const ManajemenNilai = ({ onNavigate }) => {
     }, [selectedChapterId]);
     
     const chapterOptions = useMemo(() => {
-        return Object.values(materiList).flatMap(mapel => mapel.chapters);
+        return Object.values(materiList).flatMap(mapel => 
+            mapel.chapters.map(chapter => ({
+                value: chapter.chapter_id,
+                label: chapter.judul
+            }))
+        );
     }, [materiList]);
 
     const filteredSubmissions = useMemo(() => {
@@ -107,7 +117,6 @@ const ManajemenNilai = ({ onNavigate }) => {
                 />
             )}
             <div>
-                {/* --- HEADER BARU DENGAN TOMBOL KEMBALI --- */}
                 <div className="flex items-center gap-4 mb-6">
                      <motion.button 
                         onClick={() => onNavigate('manajemenMateri')} 
@@ -127,18 +136,20 @@ const ManajemenNilai = ({ onNavigate }) => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pb-6 border-b border-gray-200">
                         <div>
                             <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Jenjang & Kelas</label>
-                            <select value={selectedFilterKey} onChange={(e) => setSelectedFilterKey(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal">
-                                {Object.keys(jenjangOptions).map(key => (<option key={key} value={key}>{key}</option>))}
-                            </select>
+                            <CustomSelect
+                                options={jenjangSelectOptions}
+                                value={selectedFilterKey}
+                                onChange={setSelectedFilterKey}
+                            />
                         </div>
                          <div>
                             <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Materi</label>
-                            <select value={selectedChapterId} onChange={(e) => setSelectedChapterId(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal" disabled={loading}>
-                                <option value="">-- {loading ? 'Memuat...' : 'Pilih Materi'} --</option>
-                                {chapterOptions.map(chap => (
-                                    <option key={chap.chapter_id} value={chap.chapter_id}>{chap.judul}</option>
-                                ))}
-                            </select>
+                            <CustomSelect
+                                options={chapterOptions}
+                                value={selectedChapterId}
+                                onChange={setSelectedChapterId}
+                                placeholder={loading ? 'Memuat...' : '-- Pilih Materi --'}
+                            />
                         </div>
                         <div className="relative">
                              <label className="block text-sm font-bold text-gray-600 mb-1">Cari Nama Siswa</label>
@@ -206,8 +217,13 @@ const ManajemenNilai = ({ onNavigate }) => {
                                                 </td>
                                                 <td className="px-6 py-4 font-bold text-lg text-sesm-teal text-right">{sub.score ?? '--'}</td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <button onClick={() => setSelectedSubmission(sub)} className="font-medium text-sesm-deep hover:underline flex items-center gap-1 mx-auto">
-                                                        <FiEdit size={14}/> {sub.status === 'dinilai' ? 'Lihat/Ubah' : 'Beri Nilai'}
+                                                    {/* --- PERBAIKAN DESAIN TOMBOL DI SINI --- */}
+                                                    <button 
+                                                        onClick={() => setSelectedSubmission(sub)} 
+                                                        className="flex items-center gap-1.5 mx-auto px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-sesm-teal/10 text-sesm-deep hover:bg-sesm-teal/20"
+                                                    >
+                                                        <FiEdit size={14} /> 
+                                                        {sub.status === 'dinilai' ? 'Lihat/Ubah' : 'Beri Nilai'}
                                                     </button>
                                                 </td>
                                             </motion.tr>

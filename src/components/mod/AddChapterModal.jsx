@@ -1,19 +1,18 @@
-// contoh-sesm-web/src/components/AddChapterModal.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
+import CustomSelect from '../ui/CustomSelect'; // 1. Impor CustomSelect
 
 const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
     const [selectedSubjectId, setSelectedSubjectId] = useState('');
     const [judulBab, setJudulBab] = useState('');
 
     useEffect(() => {
-        if (isOpen && mapelList.length > 0) {
-            // Jangan otomatis pilih, biarkan user memilih
+        if (isOpen) {
             setSelectedSubjectId('');
             setJudulBab('');
         }
-    }, [isOpen, mapelList]);
+    }, [isOpen]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -22,8 +21,15 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
             return;
         }
         onSubmit({ subjectId: selectedSubjectId, judul: judulBab.trim() });
-        // Biarkan parent component yang menutup modal setelah submit berhasil
     };
+
+    // 2. Format data mapelList agar sesuai dengan prop 'options' di CustomSelect
+    const mapelOptions = useMemo(() => {
+        return mapelList.map(m => ({
+            value: m.subject_id,
+            label: m.nama_mapel
+        }));
+    }, [mapelList]);
 
     if (!isOpen) return null;
 
@@ -32,7 +38,6 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            // --- PERBAIKAN DI SINI ---
             className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"
         >
             <motion.div 
@@ -54,19 +59,13 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
                         <div className="space-y-5">
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Pilih Mata Pelajaran (Mapel)</label>
-                                <select 
-                                    value={selectedSubjectId} 
-                                    onChange={(e) => setSelectedSubjectId(e.target.value)} 
-                                    className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal"
-                                    required
-                                >
-                                     <option value="" disabled>-- Pilih Mata Pelajaran --</option>
-                                    {mapelList.length > 0 ? (
-                                        mapelList.map(m => <option key={m.subject_id} value={m.subject_id}>{m.nama_mapel}</option>)
-                                    ) : (
-                                        <option disabled>Tidak ada mapel tersedia</option>
-                                    )}
-                                </select>
+                                {/* 3. Ganti <select> dengan <CustomSelect> */}
+                                <CustomSelect
+                                    options={mapelOptions}
+                                    value={selectedSubjectId}
+                                    onChange={setSelectedSubjectId}
+                                    placeholder="Pilih Mata Pelajaran"
+                                />
                             </div>
                             
                             <div>

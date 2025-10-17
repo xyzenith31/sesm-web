@@ -1,9 +1,10 @@
-// contoh-sesm-web/components/mod/QuestionFormModal.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
 import DataService from '../../services/dataService';
+import CustomSelect from '../ui/CustomSelect'; // 1. Impor CustomSelect
 
+// ... (Komponen MediaPreview, LinkPreview, TextPreview, dan hook useDebounce tidak berubah)
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -47,7 +48,16 @@ const TextPreview = ({ text, onRemove }) => (
     </div>
 );
 
+
 const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
+    // 2. Siapkan opsi untuk tipe soal
+    const questionTypeOptions = [
+        { value: 'pilihan-ganda', label: 'Pilihan Ganda' },
+        { value: 'esai', label: 'Esai' },
+        { value: 'pilihan-ganda-esai', label: 'Pilihan Ganda & Esai' }
+    ];
+    
+    // ... (Semua state dan fungsi lainnya tetap sama)
     const DRAFT_KEY = `materi_${chapterId}`;
     const [questions, setQuestions] = useState([]);
     const [linkInput, setLinkInput] = useState({ qIndex: null, value: '' });
@@ -139,14 +149,17 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                     <div className="flex-grow space-y-4">
                                         <div className="flex items-center gap-4">
                                             <span className="font-bold text-lg">{qIndex + 1}.</span>
-                                            <select value={q.type} onChange={(e) => handleQuestionChange(qIndex, 'type', e.target.value)} className="p-2 border rounded-md">
-                                                <option value="pilihan-ganda">Pilihan Ganda</option>
-                                                <option value="esai">Esai</option>
-                                                <option value="pilihan-ganda-esai">Pilihan Ganda & Esai</option>
-                                            </select>
+                                            {/* 3. Ganti <select> Tipe Soal */}
+                                            <CustomSelect
+                                                options={questionTypeOptions}
+                                                value={q.type}
+                                                onChange={(value) => handleQuestionChange(qIndex, 'type', value)}
+                                            />
                                             <button type="button" onClick={() => addSubQuestion(qIndex)} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-200"><FiPlus size={16}/> Tambah Sub Soal</button>
                                         </div>
                                         <textarea value={q.question} onChange={(e) => handleQuestionChange(qIndex, 'question', e.target.value)} placeholder="Tulis pertanyaan utama di sini..." className="w-full p-2 border rounded-md h-24" required />
+                                        
+                                        {/* ... (bagian lampiran media tidak berubah) ... */}
                                         <div>
                                             <div className="flex flex-wrap items-center gap-2 mb-2">
                                                 <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors cursor-pointer">
@@ -195,9 +208,17 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                                 <legend className="text-sm font-medium px-1">Opsi Pilihan Ganda</legend>
                                                 {q.options.map((opt, oIndex) => (<div key={oIndex} className="flex items-center gap-2"><input type="text" value={opt} onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)} placeholder={`Pilihan ${oIndex + 1}`} className="w-full p-2 border rounded-md" required/><button type="button" onClick={() => removeOptionField(qIndex, oIndex)} disabled={q.options.length <= 2} className="p-2 text-gray-400 hover:text-red-600 disabled:text-gray-300 disabled:cursor-not-allowed"><FiTrash2/></button></div>))}
                                                 <button type="button" onClick={() => addOptionField(qIndex)} className="text-sm font-semibold flex items-center gap-1 px-3 py-1 bg-gray-100 border rounded-md hover:bg-gray-200 transition-colors"><FiPlus size={16}/> Tambah Opsi</button>
-                                                <select value={q.correctAnswer} onChange={(e) => handleQuestionChange(qIndex, 'correctAnswer', e.target.value)} className="w-full p-2 border rounded-md mt-2" required><option value="" disabled>-- Pilih Jawaban Benar --</option>{q.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (<option key={oIndex} value={opt}>{opt}</option>))}</select>
+                                                
+                                                {/* 4. Ganti <select> Jawaban Benar */}
+                                                <CustomSelect
+                                                    options={q.options.filter(opt => opt.trim() !== '').map(opt => ({ value: opt, label: opt }))}
+                                                    value={q.correctAnswer}
+                                                    onChange={(value) => handleQuestionChange(qIndex, 'correctAnswer', value)}
+                                                    placeholder="Pilih Jawaban Benar"
+                                                />
                                             </fieldset>
                                         )}
+                                        {/* ... (sisa kode tidak berubah) ... */}
                                         {(q.type === 'esai' || q.type === 'pilihan-ganda-esai') && (
                                             <fieldset className="border p-3 rounded-md">
                                                 <legend className="text-sm font-medium px-1">Jawaban Esai</legend>
@@ -213,7 +234,12 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                                         <legend className="text-sm font-medium px-1">Opsi Pilihan Ganda Sub Soal</legend>
                                                         {subQ.options.map((opt, oIndex) => (<div key={oIndex} className="flex items-center gap-2"><input type="text" value={opt} onChange={(e) => handleSubOptionChange(qIndex, subQIndex, oIndex, e.target.value)} placeholder={`Pilihan ${oIndex + 1}`} className="w-full p-2 border rounded-md" required/><button type="button" onClick={() => removeSubOptionField(qIndex, subQIndex, oIndex)} disabled={subQ.options.length <= 2} className="p-2 text-gray-400 hover:text-red-600 disabled:text-gray-300 disabled:cursor-not-allowed"><FiTrash2/></button></div>))}
                                                         <button type="button" onClick={() => addSubOptionField(qIndex, subQIndex)} className="text-sm font-semibold flex items-center gap-1 px-3 py-1 bg-gray-100 border rounded-md hover:bg-gray-200 transition-colors"><FiPlus size={16}/> Tambah Opsi Sub Soal</button>
-                                                        <select value={subQ.correctAnswer} onChange={(e) => handleSubQuestionChange(qIndex, subQIndex, 'correctAnswer', e.target.value)} className="w-full p-2 border rounded-md mt-2" required><option value="" disabled>-- Pilih Jawaban Benar --</option>{subQ.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (<option key={oIndex} value={opt}>{opt}</option>))}</select>
+                                                        <CustomSelect 
+                                                            options={subQ.options.filter(opt => opt.trim() !== '').map(opt => ({ value: opt, label: opt }))}
+                                                            value={subQ.correctAnswer}
+                                                            onChange={(value) => handleSubQuestionChange(qIndex, subQIndex, 'correctAnswer', value)}
+                                                            placeholder="Pilih Jawaban Benar"
+                                                        />
                                                     </fieldset>
                                                 </motion.div>
                                             ))}

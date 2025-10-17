@@ -1,4 +1,3 @@
-// contoh-sesm-web/pages/admin/ManajemenMateri.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,6 +13,7 @@ import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal';
 import EditQuestionModal from '../../components/admin/EditQuestionModal';
 import ChapterSettingsModal from '../../components/admin/ChapterSettingsModal';
 import Notification from '../../components/ui/Notification';
+import CustomSelect from '../../components/ui/CustomSelect'; // 1. Impor CustomSelect
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -24,6 +24,13 @@ const jenjangOptions = {
     'SD Kelas 5': { jenjang: 'SD', kelas: 5 },
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
+
+// 2. Format opsi untuk CustomSelect
+const jenjangSelectOptions = Object.keys(jenjangOptions).map(key => ({
+    value: key,
+    label: key,
+}));
+
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
     <div className="bg-gray-100 p-4 rounded-lg flex-1 border hover:border-sesm-teal transition-colors">
@@ -291,9 +298,12 @@ const ManajemenMateri = ({ onNavigate }) => {
                     <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
                         <div className="p-4 border-b">
                             <label className="text-sm font-bold text-gray-600 mb-1 block">Pilih Jenjang & Kelas</label>
-                            <select value={selectedFilterKey} onChange={e => setSelectedFilterKey(e.target.value)} className="w-full p-2 border rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal">
-                                {Object.keys(jenjangOptions).map(key => <option key={key} value={key}>{key}</option>)}
-                            </select>
+                            {/* 3. Ganti <select> dengan <CustomSelect> */}
+                            <CustomSelect
+                                options={jenjangSelectOptions}
+                                value={selectedFilterKey}
+                                onChange={setSelectedFilterKey}
+                            />
                         </div>
                         <div className="flex-grow overflow-y-auto p-2">
                             {isLoading ? <div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl" /></div> : error ? <div className="p-4 text-red-500 text-center"><FiAlertCircle className="mx-auto mb-2" />{error}</div> :
