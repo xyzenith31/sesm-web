@@ -1,3 +1,4 @@
+// contoh-sesm-web/pages/admin/ManajemenNilai.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { FiLoader, FiSearch, FiStar, FiBarChart2, FiCheckCircle, FiEdit, FiArrowLeft } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -111,7 +112,7 @@ const ManajemenNilai = ({ onNavigate }) => {
             {selectedSubmission && (
                 <SubmissionDetailModal 
                     submission={selectedSubmission}
-                    isViewOnly={selectedSubmission.status === 'dinilai'}
+                    isViewOnly={false} // <-- ✅ PERBAIKAN DI SINI
                     onClose={() => setSelectedSubmission(null)}
                     onGradeSubmitted={handleGradeSubmitted}
                 />
@@ -217,7 +218,6 @@ const ManajemenNilai = ({ onNavigate }) => {
                                                 </td>
                                                 <td className="px-6 py-4 font-bold text-lg text-sesm-teal text-right">{sub.score ?? '--'}</td>
                                                 <td className="px-6 py-4 text-center">
-                                                    {/* --- PERBAIKAN DESAIN TOMBOL DI SINI --- */}
                                                     <button 
                                                         onClick={() => setSelectedSubmission(sub)} 
                                                         className="flex items-center gap-1.5 mx-auto px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-sesm-teal/10 text-sesm-deep hover:bg-sesm-teal/20"

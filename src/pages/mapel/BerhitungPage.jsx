@@ -2,9 +2,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiAward, FiTarget, FiCheckCircle, FiBarChart2 } from 'react-icons/fi';
-import { FaCalculator } from 'react-icons/fa'; // Icon spesifik mapel
+import { FaCalculator } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
+import StudentSubmissionDetailModal from '../../components/mod/StudentSubmissionDetailModal'; // ✅ Impor komponen baru
 
 // --- Komponen UI Umum ---
 const ChapterButton = ({ chapter, onClick, Icon, themeStyles }) => (
@@ -36,15 +37,6 @@ const HistoryCard = ({ item, onSelect }) => (
             <div className="flex items-center space-x-2"><FiTarget className="text-blue-500" /><div><p className="text-lg font-bold text-sesm-deep">{item.score ?? 'N/A'}</p><p className="text-xs text-gray-500 -mt-1">Nilai</p></div></div>
             <div className="flex items-center space-x-2"><FiAward className="text-yellow-500" /><div><p className="text-lg font-bold text-sesm-deep">+{item.points}</p><p className="text-xs text-gray-500 -mt-1">Poin</p></div></div>
         </div>
-    </motion.div>
-);
-
-const DetailModal = ({ item, onClose }) => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose} >
-        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()} >
-            <header className="p-4 border-b flex justify-between items-center"><h3 className="text-lg font-bold text-sesm-deep">Detail Pengerjaan</h3><button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX /></button></header>
-            <main className="p-6 overflow-y-auto"><p className="text-center text-gray-500">Detail per soal belum tersedia untuk riwayat.</p></main>
-        </motion.div>
     </motion.div>
 );
 
@@ -87,7 +79,6 @@ const BerhitungPage = ({ onNavigate, onNavigateToWorksheet }) => {
         desktopTabText: 'text-teal-800'
     };
     const NAVIGATION_KEY = 'berhitung';
-    // ---------------------------
 
     useEffect(() => {
         let isMounted = true;
@@ -141,7 +132,8 @@ const BerhitungPage = ({ onNavigate, onNavigateToWorksheet }) => {
     return (
         <>
             <AnimatePresence>
-                {selectedHistory && <DetailModal item={selectedHistory} onClose={() => setSelectedHistory(null)} />}
+                {/* ✅ Ganti DetailModal dengan StudentSubmissionDetailModal */}
+                {selectedHistory && <StudentSubmissionDetailModal submission={selectedHistory} onClose={() => setSelectedHistory(null)} />}
             </AnimatePresence>
 
             {/* --- Tampilan Mobile --- */}

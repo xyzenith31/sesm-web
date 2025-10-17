@@ -111,7 +111,11 @@ const updateChapterSettings = (chapterId, settings) => {
 const updateGradingMode = (chapterId, mode) => { return apiClient.put(`/admin/chapters/${chapterId}/grading-mode`, { mode }); };
 const getAllSubmissionsForChapter = (chapterId) => { return apiClient.get(`/admin/nilai/chapter/${chapterId}`); };
 const getSubmissionDetails = (submissionId) => { return apiClient.get(`/admin/nilai/submission/${submissionId}`); };
-const gradeSubmission = (submissionId, score) => { return apiClient.post(`/admin/nilai/submission/${submissionId}`, { score }); };
+
+const gradeSubmission = (submissionId, score, answers) => { 
+  return apiClient.post(`/admin/nilai/submission/${submissionId}`, { score, answers }); 
+};
+
 const overrideAnswer = (answerId, isCorrect) => { return apiClient.patch(`/admin/nilai/answer/${answerId}`, { isCorrect }); };
 const getAllQuizzes = () => { return apiClient.get('/quizzes'); };
 const getQuizDetailsForAdmin = (quizId) => { return apiClient.get(`/admin/quizzes/${quizId}/details`); };
@@ -194,6 +198,11 @@ const deleteDraft = (draftKey) => {
     return apiClient.delete(`/drafts/${draftKey}`);
 };
 
+// --- FUNGSI SISWA (LANJUTAN) ---
+const getStudentSubmissionDetails = (submissionId) => {
+    return apiClient.get(`/materi/submission/${submissionId}`);
+};
+
 const DataService = {
   getSubjects,
   updateLevelAndClass,
@@ -205,6 +214,7 @@ const DataService = {
   getMateriForAdmin,
   getDetailMateriForAdmin,
   addChapter,
+  getStudentSubmissionDetails,
   addQuestion,
   updateQuestion,
   deleteChapter,

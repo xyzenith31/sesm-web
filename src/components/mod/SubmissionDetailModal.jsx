@@ -1,10 +1,10 @@
-// contoh-sesm-web/components/SubmissionDetailModal.jsx
+// contoh-sesm-web/components/mod/SubmissionDetailModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiX, FiCheckCircle, FiXCircle, FiLoader, FiSave, FiThumbsUp, FiThumbsDown, FiEdit } from 'react-icons/fi';
+import { FiX, FiCheckCircle, FiXCircle, FiLoader, FiSave, FiThumbsUp, FiThumbsDown } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 
-const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitted }) => {
+const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {
     const [details, setDetails] = useState([]);
     const [loading, setLoading] = useState(true);
     const [score, setScore] = useState(submission.score ?? '');
@@ -20,7 +20,8 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
                     setDetails(response.data);
                     const initialCorrections = {};
                     response.data.forEach(item => {
-                        initialCorrections[item.answerId] = '';
+                        // Isi state dengan umpan balik yang sudah ada dari database
+                        initialCorrections[item.answerId] = item.correction_text || '';
                     });
                     setCorrectionText(initialCorrections);
                 })
@@ -35,11 +36,21 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
     const handleOverride = async (answerId, newStatus) => {
         setOverridingId(answerId);
         try {
-            const response = await DataService.overrideAnswer(answerId, newStatus);
-            setScore(response.data.newScore);
-            setDetails(prevDetails =>
-                prevDetails.map(d => d.answerId === answerId ? { ...d, is_correct: newStatus } : d)
+            await DataService.overrideAnswer(answerId, newStatus);
+            const newDetails = details.map(d =>
+                d.answerId === answerId ? { ...d, is_correct: newStatus } : d
             );
+            setDetails(newDetails);
+
+            const mcqQuestions = newDetails.filter(d => d.tipe_soal && d.tipe_soal.includes('pilihan-ganda'));
+            const totalMcqCount = mcqQuestions.length;
+            const correctMcqCount = mcqQuestions.filter(d => d.is_correct === true).length;
+            
+            if (totalMcqCount > 0) {
+                const newScore = Math.round((correctMcqCount / totalMcqCount) * 100);
+                setScore(newScore);
+            }
+            
         } catch (error) {
             alert("Gagal mengubah status jawaban.");
         } finally {
@@ -51,45 +62,39 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
         setCorrectionText(prev => ({ ...prev, [answerId]: text }));
     };
 
-    const handleSaveCorrection = (answerId) => {
-        alert(`Koreksi untuk jawaban #${answerId} disimpan:\n"${correctionText[answerId]}"`);
-    };
-
     const handleClose = () => {
-        if (String(score) !== String(submission.score)) {
-            onGradeSubmitted();
-        } else {
-            onClose();
-        }
+        onGradeSubmitted(); // Selalu refresh data saat ditutup
     };
 
     const handleSubmitGrade = async () => {
-        if (score === '' || isNaN(score)) {
-            alert("Harap masukkan nilai yang valid."); return;
+        if (score === '' || isNaN(score) || score < 0 || score > 100) {
+            alert("Harap masukkan nilai yang valid antara 0 dan 100."); return;
         }
         setIsSaving(true);
         try {
-            await DataService.gradeSubmission(submission.id, parseInt(score));
-            alert("Nilai berhasil disimpan!");
-            onGradeSubmitted();
+            // Siapkan payload umpan balik dari state
+            const answersPayload = Object.entries(correctionText).map(([answerId, text]) => ({
+                answerId: parseInt(answerId),
+                correction_text: text,
+            }));
+
+            // Kirim skor dan payload umpan balik
+            await DataService.gradeSubmission(submission.id, parseInt(score), answersPayload);
+            alert("Nilai dan umpan balik berhasil disimpan!");
+            onGradeSubmitted(); // Tutup modal dan refresh data
         } catch (error) {
             alert("Gagal menyimpan nilai.");
         } finally {
             setIsSaving(false);
         }
     };
-
-    // --- FUNGSI BARU UNTUK MENDAPATKAN LABEL TIPE SOAL ---
+    
     const getTypeLabel = (tipe_soal) => {
         switch (tipe_soal) {
-            case 'pilihan-ganda':
-                return { label: 'Pilihan Ganda', color: 'bg-blue-100 text-blue-800' };
-            case 'esai':
-                return { label: 'Esai', color: 'bg-orange-100 text-orange-800' };
-            case 'pilihan-ganda-esai':
-                return { label: 'PG & Esai', color: 'bg-purple-100 text-purple-800' };
-            default:
-                return { label: 'Lainnya', color: 'bg-gray-100 text-gray-800' };
+            case 'pilihan-ganda': return { label: 'Pilihan Ganda', color: 'bg-blue-100 text-blue-800' };
+            case 'esai': return { label: 'Esai', color: 'bg-orange-100 text-orange-800' };
+            case 'pilihan-ganda-esai': return { label: 'PG & Esai', color: 'bg-purple-100 text-purple-800' };
+            default: return { label: 'Lainnya', color: 'bg-gray-100 text-gray-800' };
         }
     };
 
@@ -115,21 +120,14 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
                         <div className="space-y-4">
                             {details.map((item, index) => {
                                 const correctAnswer = item.correct_mcq || item.correct_essay;
-                                const typeInfo = getTypeLabel(item.tipe_soal); // Dapatkan info tipe soal
+                                const typeInfo = getTypeLabel(item.tipe_soal);
                                 return (
                                     <div key={item.answerId} className="bg-white p-4 rounded-lg border">
                                         <div className="flex justify-between items-start mb-2">
                                             <p className="font-bold text-gray-800 flex-grow pr-4">{index + 1}. {item.pertanyaan}</p>
                                             <div className="flex items-center gap-2 flex-shrink-0">
-                                                {/* --- LABEL TIPE SOAL DITAMBAHKAN DI SINI --- */}
-                                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${typeInfo.color}`}>
-                                                    {typeInfo.label}
-                                                </span>
-                                                {item.is_correct !== null && (
-                                                    item.is_correct
-                                                        ? <FiCheckCircle className="text-green-500 text-2xl" title="Benar" />
-                                                        : <FiXCircle className="text-red-500 text-2xl" title="Salah" />
-                                                )}
+                                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${typeInfo.color}`}>{typeInfo.label}</span>
+                                                {item.is_correct !== null && (item.is_correct ? <FiCheckCircle className="text-green-500 text-2xl" title="Benar" /> : <FiXCircle className="text-red-500 text-2xl" title="Salah" />)}
                                             </div>
                                         </div>
                                         <div className="mt-3 bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
@@ -151,18 +149,17 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
                                                 className="w-full h-24 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal"
                                             />
                                             <div className="mt-3 flex items-center justify-end gap-2">
-                                                <button onClick={() => handleSaveCorrection(item.answerId)} className="flex items-center gap-2 text-xs font-semibold text-blue-600 bg-blue-100 px-3 py-2 rounded-md hover:bg-blue-200">
-                                                    <FiSave size={14} /> Simpan Koreksi
-                                                </button>
                                                 {overridingId === item.answerId ? <FiLoader className="animate-spin" /> : (
-                                                    item.is_correct ? (
-                                                        <button onClick={() => handleOverride(item.answerId, false)} className="flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-100 px-3 py-2 rounded-md hover:bg-red-200">
-                                                            <FiThumbsDown size={14} /> Tandai Salah
-                                                        </button>
-                                                    ) : (
-                                                        <button onClick={() => handleOverride(item.answerId, true)} className="flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-100 px-3 py-2 rounded-md hover:bg-green-200">
-                                                            <FiThumbsUp size={14} /> Benarkan Jawaban
-                                                        </button>
+                                                    item.tipe_soal.includes('pilihan-ganda') && (
+                                                        item.is_correct ? (
+                                                            <button onClick={() => handleOverride(item.answerId, false)} className="flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-100 px-3 py-2 rounded-md hover:bg-red-200 transition-colors">
+                                                                <FiThumbsDown size={14} /> Tandai Salah
+                                                            </button>
+                                                        ) : (
+                                                            <button onClick={() => handleOverride(item.answerId, true)} className="flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-100 px-3 py-2 rounded-md hover:bg-green-200 transition-colors">
+                                                                <FiThumbsUp size={14} /> Benarkan Jawaban
+                                                            </button>
+                                                        )
                                                     )
                                                 )}
                                             </div>
@@ -175,26 +172,14 @@ const SubmissionDetailModal = ({ submission, isViewOnly, onClose, onGradeSubmitt
                 </main>
 
                 <footer className="p-5 border-t flex justify-between items-center bg-white flex-shrink-0">
-                    {!isViewOnly ? (
-                        <>
-                            <div className="flex items-center gap-3">
-                                <label htmlFor="score" className="font-bold text-lg text-sesm-deep">Nilai Akhir:</label>
-                                <input
-                                    type="number" id="score" value={score} onChange={(e) => setScore(e.target.value)}
-                                    className="w-32 p-2 text-lg font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal"
-                                    placeholder="0-100" min="0" max="100"
-                                />
-                            </div>
-                            <button onClick={handleSubmitGrade} disabled={isSaving} className="flex items-center gap-2 px-6 py-3 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:bg-gray-400">
-                                {isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}
-                                <span>{isSaving ? 'Menyimpan...' : 'Simpan Nilai'}</span>
-                            </button>
-                        </>
-                    ) : (
-                        <div className='w-full text-center'>
-                           <p className="text-gray-600">Skor Akhir Siswa: <span className="font-bold text-2xl text-sesm-deep">{score}</span></p>
-                        </div>
-                    )}
+                     <div className="flex items-center gap-3">
+                        <label htmlFor="score" className="font-bold text-lg text-sesm-deep">Nilai Akhir:</label>
+                        <input type="number" id="score" value={score} onChange={(e) => setScore(e.target.value)} className="w-32 p-2 text-lg font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal" placeholder="0-100" min="0" max="100"/>
+                    </div>
+                    <button onClick={handleSubmitGrade} disabled={isSaving} className="flex items-center gap-2 px-6 py-3 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:bg-gray-400">
+                        {isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}
+                        <span>{isSaving ? 'Menyimpan...' : 'Simpan Nilai'}</span>
+                    </button>
                 </footer>
             </motion.div>
         </motion.div>

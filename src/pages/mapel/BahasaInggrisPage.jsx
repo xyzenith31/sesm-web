@@ -2,9 +2,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiAward, FiTarget, FiCheckCircle, FiBarChart2 } from 'react-icons/fi';
-import { FaLanguage } from 'react-icons/fa'; // Icon spesifik mapel
+import { FaLanguage } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
+import StudentSubmissionDetailModal from '../../components/mod/StudentSubmissionDetailModal'; // ✅ Impor komponen baru
 
 // --- Komponen UI Umum ---
 const ChapterButton = ({ chapter, onClick, Icon, themeStyles }) => (
@@ -39,15 +40,6 @@ const HistoryCard = ({ item, onSelect }) => (
     </motion.div>
 );
 
-const DetailModal = ({ item, onClose }) => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose} >
-        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()} >
-            <header className="p-4 border-b flex justify-between items-center"><h3 className="text-lg font-bold text-sesm-deep">Detail Pengerjaan</h3><button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX /></button></header>
-            <main className="p-6 overflow-y-auto"><p className="text-center text-gray-500">Detail per soal belum tersedia untuk riwayat.</p></main>
-        </motion.div>
-    </motion.div>
-);
-
 const StatCard = ({ icon: Icon, value, label, color }) => (
     <div className="bg-white p-3 rounded-xl shadow-sm flex-1 border">
         <div className="flex items-center">
@@ -73,7 +65,6 @@ const BahasaInggrisPage = ({ onNavigate, onNavigateToWorksheet }) => {
     const [selectedHistory, setSelectedHistory] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // --- Detail Spesifik Mapel ---
     const SUBJECT_NAME = 'Bahasa Inggris';
     const HEADER_TITLE = 'B. INGGRIS';
     const ICON = FaLanguage;
@@ -87,7 +78,6 @@ const BahasaInggrisPage = ({ onNavigate, onNavigateToWorksheet }) => {
         desktopTabText: 'text-purple-800'
     };
     const NAVIGATION_KEY = 'bahasaInggris';
-    // ---------------------------
 
     useEffect(() => {
         let isMounted = true;
@@ -141,10 +131,9 @@ const BahasaInggrisPage = ({ onNavigate, onNavigateToWorksheet }) => {
     return (
         <>
             <AnimatePresence>
-                {selectedHistory && <DetailModal item={selectedHistory} onClose={() => setSelectedHistory(null)} />}
+                {selectedHistory && <StudentSubmissionDetailModal submission={selectedHistory} onClose={() => setSelectedHistory(null)} />}
             </AnimatePresence>
 
-            {/* --- Tampilan Mobile --- */}
             <div className={`md:hidden flex flex-col min-h-screen bg-gray-50 pb-28`}>
                 <header className={`bg-gradient-to-b from-sesm-teal to-sesm-deep rounded-b-[2.5rem] p-6 pt-10 text-white z-10 shadow-lg flex-shrink-0`}>
                     <div className="flex justify-between items-center mb-4">
@@ -182,7 +171,6 @@ const BahasaInggrisPage = ({ onNavigate, onNavigateToWorksheet }) => {
                 </main>
             </div>
 
-            {/* --- Tampilan Desktop --- */}
             <div className={`hidden md:flex flex-col min-h-screen ${THEME_STYLES.desktopBg} p-8`}>
                 <motion.div
                     className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-2xl flex flex-col flex-grow overflow-hidden"
