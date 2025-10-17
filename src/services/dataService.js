@@ -4,6 +4,7 @@ import apiClient from '../utils/apiClient';
 // --- FUNGSI SISWA ---
 const getSubjects = (jenjang, kelas) => {
   let url = `/subjects/${jenjang}`;
+  // Hanya tambahkan kelas jika jenjang SD dan kelas ada
   if (jenjang && jenjang.toLowerCase() === 'sd' && kelas) {
     url += `/${kelas}`;
   }
@@ -48,41 +49,65 @@ const getDetailMateriForAdmin = (materiKey) => { return apiClient.get(`/admin/ma
 const addChapter = (chapterData) => { return apiClient.post('/admin/materi/chapters', chapterData); };
 const addQuestion = (materiKey, questionData) => {
   const formData = new FormData();
-  formData.append('type', questionData.type);
-  formData.append('question', questionData.question);
-  formData.append('correctAnswer', questionData.correctAnswer);
-  formData.append('essayAnswer', questionData.essayAnswer || '');
-  if (questionData.options) { formData.append('options', JSON.stringify(questionData.options)); }
-  if (questionData.media && questionData.media.length > 0) { questionData.media.forEach(file => { formData.append('media', file); }); }
-  if (questionData.links && questionData.links.length > 0) { formData.append('links', JSON.stringify(questionData.links)); }
-  if (questionData.texts && questionData.texts.length > 0) { formData.append('texts', JSON.stringify(questionData.texts)); }
+   Object.keys(questionData).forEach(key => {
+      if (key === 'options' || key === 'media_urls' || key === 'links' || key === 'texts' || key === 'media') { // Tambahkan 'media' di sini
+          // Handle array/object types
+          if(key === 'media' && Array.isArray(questionData.media)) {
+             questionData.media.forEach(file => formData.append('media', file)); // Append each file individually
+          } else {
+             formData.append(key, JSON.stringify(questionData[key]));
+          }
+      } else {
+          formData.append(key, questionData[key]);
+      }
+  });
   return apiClient.post(`/admin/materi/${materiKey}/questions`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 };
 const updateQuestion = (questionId, questionData) => {
     const formData = new FormData();
+     // Append existing attachments (non-file)
+    if (questionData.attachments) {
+        formData.append('attachments', JSON.stringify(questionData.attachments));
+    }
+    // Append new files
+    if (questionData.newMedia && questionData.newMedia.length > 0) {
+        questionData.newMedia.forEach(file => { formData.append('media', file); });
+    }
+    // Append other fields
     formData.append('type', questionData.type);
     formData.append('question', questionData.question);
-    formData.append('correctAnswer', questionData.correctAnswer);
     formData.append('essayAnswer', questionData.essayAnswer || '');
-    if (questionData.options) { formData.append('options', JSON.stringify(questionData.options)); }
-    if (questionData.attachments) { formData.append('attachments', JSON.stringify(questionData.attachments)); }
-    if (questionData.newMedia && questionData.newMedia.length > 0) { questionData.newMedia.forEach(file => { formData.append('media', file); }); }
+    if (questionData.options) {
+        formData.append('options', JSON.stringify(questionData.options));
+        formData.append('correctAnswer', questionData.correctAnswer || ''); // Pastikan correctAnswer dikirim
+    }
+
     return apiClient.put(`/admin/materi/questions/${questionId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }, });
 };
 const deleteChapter = (materiKey) => { return apiClient.delete(`/admin/materi/chapters/${materiKey}`); };
 const deleteQuestion = (questionId) => { return apiClient.delete(`/admin/materi/questions/${questionId}`); };
+
+// --- DIPERBAIKI: getChaptersForSubject ---
 const getChaptersForSubject = (jenjang, kelas, subjectName) => {
     let url = `/mapel/${jenjang}`;
-    if (kelas) { url += `/${kelas}`; }
+    // Hanya tambahkan kelas jika jenjang SD dan kelas valid (bukan null/undefined)
+    if (jenjang && jenjang.toLowerCase() === 'sd' && kelas) {
+      url += `/${kelas}`;
+    }
+    // Selalu tambahkan nama mapel setelah jenjang (dan kelas jika ada)
     url += `/${encodeURIComponent(subjectName)}`;
+    console.log("Fetching chapters URL:", url); // Tambahkan log ini
     return apiClient.get(url);
 };
+// ------------------------------------
+
 const addQuestionsFromBankToChapter = (materiKey, questionIds) => {
     return apiClient.post(`/admin/materi/${materiKey}/add-from-bank`, { questionIds });
 };
 const updateChapterSettings = (chapterId, settings) => {
     return apiClient.put(`/admin/materi/chapters/${chapterId}/settings`, settings);
 };
+// Perbaiki path updateGradingMode jika perlu (sesuaikan dengan backend routes)
 const updateGradingMode = (chapterId, mode) => { return apiClient.put(`/admin/chapters/${chapterId}/grading-mode`, { mode }); };
 const getAllSubmissionsForChapter = (chapterId) => { return apiClient.get(`/admin/nilai/chapter/${chapterId}`); };
 const getSubmissionDetails = (submissionId) => { return apiClient.get(`/admin/nilai/submission/${submissionId}`); };
@@ -93,15 +118,29 @@ const getQuizDetailsForAdmin = (quizId) => { return apiClient.get(`/admin/quizze
 const createQuiz = (formData) => { return apiClient.post('/admin/quizzes', formData, { headers: { 'Content-Type': 'multipart/form-data' } }); };
 const getSubmissionsForQuiz = (quizId) => { return apiClient.get(`/admin/quizzes/${quizId}/submissions`); };
 const deleteQuiz = (quizId) => { return apiClient.delete(`/admin/quizzes/${quizId}`); };
-const deleteAllQuestionsFromQuiz = (quizId) => { return apiClient.delete(`/admin/quizzes/${quizId}/questions`); };
+const deleteAllQuestionsFromQuiz = (quizId) => { console.warn("Delete all questions functionality should be handled server-side."); return Promise.reject("Not implemented client-side"); };
 const addQuestionToQuiz = (quizId, formData) => { return apiClient.post(`/admin/quizzes/${quizId}/questions`, formData, { headers: { 'Content-Type': 'multipart/form-data' }, }); };
 const updateQuestionInQuiz = (questionId, questionData) => {
     const formData = new FormData();
     formData.append('question_text', questionData.question);
     formData.append('question_type', questionData.type);
-    const formattedOptions = questionData.options.map(opt => ({ text: opt, isCorrect: opt === questionData.correctAnswer }));
-    formData.append('options', JSON.stringify(formattedOptions));
-    formData.append('existingMedia', JSON.stringify(questionData.media));
+    if (questionData.options) {
+        const formattedOptions = questionData.options.map(opt => ({
+            text: opt,
+            isCorrect: opt === questionData.correctAnswer
+        }));
+        formData.append('options', JSON.stringify(formattedOptions));
+    }
+     // Handle existing media (assuming structure { type: 'file'/'link', url: '...' })
+    const existingMediaUrls = questionData.media.filter(m => m.type !== 'new-file' && m.url); // Filter yg url nya ada
+    formData.append('existingMedia', JSON.stringify(existingMediaUrls));
+
+    // Handle new files to upload
+    const newFiles = questionData.media.filter(m => m.type === 'new-file').map(m => m.file);
+    newFiles.forEach(file => formData.append('mediaFiles', file)); // Use 'mediaFiles' as expected by backend
+
+    formData.append('essayAnswer', questionData.essayAnswer || ''); // Include essay answer
+
     return apiClient.put(`/admin/quizzes/questions/${questionId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }, });
 };
 const deleteQuestionFromQuiz = (questionId) => { return apiClient.delete(`/admin/quizzes/questions/${questionId}`); };
@@ -173,23 +212,27 @@ const DataService = {
   getChaptersForSubject,
   addQuestionsFromBankToChapter,
   updateChapterSettings,
-  getAllQuizzes,
-  getQuizDetailsForAdmin,
-  createQuiz,
-  getSubmissionsForQuiz,
-  deleteQuiz,
-  deleteAllQuestionsFromQuiz,
-  addQuestionToQuiz,
-  updateQuestionInQuiz,
-  deleteQuestionFromQuiz,
-  getAllQuestionsForBank,
-  addQuestionsFromBank,
+  getAllUsers,
+  createUserByAdmin,
+  updateUserByAdmin,
+  deleteUserByAdmin,
   updateGradingMode,
   getAllSubmissionsForChapter,
   getSubmissionDetails,
   gradeSubmission,
   overrideAnswer,
-  updateQuizSettings, 
+  getAllQuizzes,
+  getQuizDetailsForAdmin,
+  createQuiz,
+  getSubmissionsForQuiz,
+  deleteQuiz,
+  deleteAllQuestionsFromQuiz, // Pertimbangkan lagi implementasinya
+  addQuestionToQuiz,
+  updateQuestionInQuiz,
+  deleteQuestionFromQuiz,
+  getAllQuestionsForBank,
+  addQuestionsFromBank,
+  updateQuizSettings,
   getPointsSummary,
   getPointsHistory,
   getLeaderboard,
@@ -199,15 +242,11 @@ const DataService = {
   addDiaryEntry,
   updateDiaryEntry,
   deleteDiaryEntry,
-  getAllUsers,
-  createUserByAdmin,
-  updateUserByAdmin,
-  deleteUserByAdmin,
   saveDraft,
   getDraft,
   getAllDrafts,
   deleteDraft,
-  addQuestionsFromBankToBookmark, // <-- Tambahkan di sini
+  addQuestionsFromBankToBookmark,
 };
 
 export default DataService;

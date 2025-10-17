@@ -1,22 +1,23 @@
+// contoh-sesm-web/pages/mapel/MembacaPage.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiAward, FiTarget, FiCheckCircle, FiBarChart2 } from 'react-icons/fi';
-import { FaBookReader } from 'react-icons/fa';
+import { FaBookReader } from 'react-icons/fa'; // Icon spesifik mapel
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
 
-// Komponen-komponen UI (Tidak ada perubahan di sini)
-const ChapterButton = ({ chapter, onClick, Icon }) => (
+// --- Komponen UI Umum ---
+const ChapterButton = ({ chapter, onClick, Icon, themeStyles }) => (
     <motion.button
         onClick={onClick}
-        className="w-full bg-white rounded-2xl p-4 flex items-center space-x-4 shadow-md border border-gray-200/60 text-left transition-all duration-300 hover:shadow-xl hover:border-indigo-300 hover:-translate-y-1"
+        className={`w-full bg-white rounded-2xl p-4 flex items-center space-x-4 shadow-md border border-gray-200/60 text-left transition-all duration-300 hover:shadow-xl ${themeStyles.hoverBorder} hover:-translate-y-1`}
         whileTap={{ scale: 0.98 }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
     >
-        <div className="w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex-shrink-0 shadow-inner">
-            <Icon size={32} className="text-indigo-500" />
+        <div className={`w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br ${themeStyles.bgGradient} flex-shrink-0 shadow-inner`}>
+            <Icon size={32} className={themeStyles.color} />
         </div>
         <div className="flex-1">
             <h4 className="font-bold text-sesm-deep text-base">{chapter.judul}</h4>
@@ -59,8 +60,7 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
     </div>
 );
 
-
-// Halaman Utama MembacaPage
+// --- Halaman Utama Mapel ---
 const MembacaPage = ({ onNavigate, onNavigateToWorksheet }) => {
     const { user } = useAuth();
     const [chapters, setChapters] = useState([]);
@@ -68,24 +68,46 @@ const MembacaPage = ({ onNavigate, onNavigateToWorksheet }) => {
     const [loading, setLoading] = useState(true);
     const [historyLoading, setHistoryLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [historyError, setHistoryError] = useState(null);
     const [activeTab, setActiveTab] = useState('materi');
     const [selectedHistory, setSelectedHistory] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // --- Detail Spesifik Mapel ---
     const SUBJECT_NAME = 'Membaca';
     const HEADER_TITLE = 'MEMBACA';
     const ICON = FaBookReader;
+    const THEME_STYLES = {
+        color: 'text-indigo-500',
+        hoverBorder: 'hover:border-indigo-300',
+        bgGradient: 'from-indigo-100 to-indigo-200',
+        desktopBg: 'bg-indigo-50',
+        desktopHeaderGradient: 'from-indigo-400 to-indigo-600',
+        desktopTabBg: 'bg-indigo-100/70',
+        desktopTabText: 'text-indigo-800'
+    };
+    const NAVIGATION_KEY = 'membaca';
+    // ---------------------------
 
     useEffect(() => {
+        let isMounted = true;
         if (user?.jenjang) {
-            setLoading(true); setError(null);
-            DataService.getChaptersForSubject(user.jenjang, user.kelas, SUBJECT_NAME).then(res => setChapters(res.data)).catch(err => setError("Gagal memuat daftar bab.")).finally(() => setLoading(false));
+            setLoading(true); setError(null); setHistoryError(null);
+            DataService.getChaptersForSubject(user.jenjang, user.kelas, SUBJECT_NAME)
+                .then(res => { if (isMounted) setChapters(res.data); })
+                .catch(err => { console.error("Gagal memuat chapters:", err); if (isMounted) setError(`Gagal memuat daftar bab. ${err.response?.data?.message || err.message}`); })
+                .finally(() => { if (isMounted) setLoading(false); });
+
             setHistoryLoading(true);
-            DataService.getSubjectHistory(SUBJECT_NAME).then(res => setHistory(res.data)).catch(err => console.error("Gagal memuat riwayat", err)).finally(() => setHistoryLoading(false));
+            DataService.getSubjectHistory(SUBJECT_NAME)
+                .then(res => { if (isMounted) setHistory(res.data); })
+                .catch(err => { console.error("Gagal memuat riwayat:", err); if (isMounted) setHistoryError(`Gagal memuat riwayat nilai. ${err.response?.data?.message || err.message}`); })
+                .finally(() => { if (isMounted) setHistoryLoading(false); });
         } else {
             setError("Informasi jenjang/kelas pengguna tidak ditemukan."); setLoading(false); setHistoryLoading(false);
         }
-    }, [user]);
+        return () => { isMounted = false };
+    }, [user, SUBJECT_NAME]);
 
     const stats = useMemo(() => {
         const gradedHistory = history.filter(h => h.score !== null);
@@ -101,15 +123,17 @@ const MembacaPage = ({ onNavigate, onNavigateToWorksheet }) => {
     }, [chapters, searchTerm]);
 
     const renderContent = () => {
-        if (loading || historyLoading) return <div className="flex justify-center items-center h-48 pt-12"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
-        if (error) return <div className="text-center text-red-500 p-4 bg-red-50 rounded-lg mt-12"><FiAlertCircle className="mx-auto text-3xl mb-2"/><p>{error}</p></div>;
-        
+        if (loading) return <div className="flex justify-center items-center h-48 pt-12"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
+        if (error && activeTab === 'materi') return <div className="text-center text-red-500 p-4 bg-red-50 rounded-lg mt-12"><FiAlertCircle className="mx-auto text-3xl mb-2"/><p>{error}</p></div>;
+        if (historyError && activeTab === 'nilai') return <div className="text-center text-red-500 p-4 bg-red-50 rounded-lg mt-12"><FiAlertCircle className="mx-auto text-3xl mb-2"/><p>{historyError}</p></div>;
+
         if (activeTab === 'materi') {
             if (filteredChapters.length === 0) return <div className="text-center text-gray-500 mt-12"><p>{searchTerm ? 'Bab tidak ditemukan.' : 'Belum ada bab untuk mata pelajaran ini.'}</p></div>;
-            return <div className="space-y-4">{filteredChapters.map((chapter) => <ChapterButton key={chapter.id} chapter={chapter} onClick={() => onNavigateToWorksheet({ materiKey: chapter.materiKey, chapterTitle: chapter.judul, subjectName: SUBJECT_NAME, navigationKey: 'membaca' })} Icon={ICON} />)}</div>;
+            return <div className="space-y-4">{filteredChapters.map((chapter) => <ChapterButton key={chapter.id} chapter={chapter} onClick={() => onNavigateToWorksheet({ materiKey: chapter.materiKey, chapterTitle: chapter.judul, subjectName: SUBJECT_NAME, navigationKey: NAVIGATION_KEY })} Icon={ICON} themeStyles={THEME_STYLES} />)}</div>;
         }
         if (activeTab === 'nilai') {
-            if (history.length === 0) return <div className="text-center text-gray-500 mt-12"><p>Anda belum pernah mengerjakan bab apapun.</p></div>;
+            if (historyLoading) return <div className="flex justify-center items-center h-48 pt-12"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
+            if (history.length === 0 && !historyError) return <div className="text-center text-gray-500 mt-12"><p>Anda belum pernah mengerjakan bab apapun.</p></div>;
             return <div className="space-y-4">{history.map(item => <HistoryCard key={item.id} item={item} onSelect={setSelectedHistory} />)}</div>;
         }
     };
@@ -119,39 +143,30 @@ const MembacaPage = ({ onNavigate, onNavigateToWorksheet }) => {
             <AnimatePresence>
                 {selectedHistory && <DetailModal item={selectedHistory} onClose={() => setSelectedHistory(null)} />}
             </AnimatePresence>
-            
-            {/* === Tampilan Mobile (DIPERBAIKI) === */}
-            <div className="md:hidden flex flex-col min-h-screen bg-gray-50 pb-28"> {/* Padding bawah untuk ruang BottomNav */}
-                <header className="bg-gradient-to-b from-sesm-teal to-sesm-deep rounded-b-[2.5rem] p-6 pt-10 text-white z-10 shadow-lg flex-shrink-0">
+
+            {/* --- Tampilan Mobile --- */}
+            <div className={`md:hidden flex flex-col min-h-screen bg-gray-50 pb-28`}>
+                <header className={`bg-gradient-to-b from-sesm-teal to-sesm-deep rounded-b-[2.5rem] p-6 pt-10 text-white z-10 shadow-lg flex-shrink-0`}>
                     <div className="flex justify-between items-center mb-4">
-                        <motion.button onClick={() => onNavigate('home')} className="p-2 -ml-2" whileTap={{ scale: 0.9 }}>
-                            <FiArrowLeft size={24}/>
-                        </motion.button>
+                        <motion.button onClick={() => onNavigate('home')} className="p-2 -ml-2" whileTap={{ scale: 0.9 }}><FiArrowLeft size={24}/></motion.button>
                         <div className="w-8"></div>
                     </div>
                     <div className="relative">
                         <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-                        <input
-                            type="text"
-                            placeholder={`Cari di ${HEADER_TITLE}...`}
-                            className="w-full bg-white text-gray-800 placeholder:text-gray-500 rounded-full py-3 pl-12 pr-4 text-sm border-none focus:outline-none focus:ring-2 focus:ring-white/50"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                        <input type="text" placeholder={`Cari di ${HEADER_TITLE}...`} className="w-full bg-white text-gray-800 placeholder:text-gray-500 rounded-full py-3 pl-12 pr-4 text-sm border-none focus:outline-none focus:ring-2 focus:ring-white/50" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
                 </header>
-
                 <main className="flex-1 flex flex-col p-6 pt-4 overflow-hidden">
                      <div className="bg-white rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden">
                         <div className="p-6">
                             <div className="flex justify-between items-center mb-4">
                                 <h1 className="text-2xl font-bold text-sesm-deep">{HEADER_TITLE}</h1>
-                                <ICON size={40} className="text-indigo-500 opacity-80"/>
+                                <ICON size={40} className={`${THEME_STYLES.color} opacity-80`}/>
                             </div>
                             <div className="flex flex-col space-y-3">
                                 <StatCard label="Materi Dikerjakan" value={historyLoading ? '...' : stats.completedCount} icon={FiCheckCircle} color="text-green-500"/>
-                                <StatCard label="Nilai Rata-rata" value={historyLoading ? '...' : stats.avgScore} icon={FiBarChart2} color="text-blue-500"/>
-                                <StatCard label="Akurasi Terbaik" value={historyLoading ? '...' : `${stats.bestScore}%`} icon={FiTarget} color="text-orange-500"/>
+                                <StatCard label="Nilai Rata-rata" value={historyLoading || historyError ? '...' : stats.avgScore} icon={FiBarChart2} color="text-blue-500"/>
+                                <StatCard label="Akurasi Terbaik" value={historyLoading || historyError ? '...' : `${stats.bestScore}%`} icon={FiTarget} color="text-orange-500"/>
                             </div>
                         </div>
                         <div className="px-6 pb-4 flex-shrink-0">
@@ -166,10 +181,10 @@ const MembacaPage = ({ onNavigate, onNavigateToWorksheet }) => {
                     </div>
                 </main>
             </div>
-            
-            {/* Tampilan Desktop (Tidak Berubah) */}
-            <div className="hidden md:flex flex-col min-h-screen bg-indigo-50 p-8">
-                <motion.div 
+
+            {/* --- Tampilan Desktop --- */}
+            <div className={`hidden md:flex flex-col min-h-screen ${THEME_STYLES.desktopBg} p-8`}>
+                <motion.div
                     className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-2xl flex flex-col flex-grow overflow-hidden"
                     initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }}
                 >
@@ -177,12 +192,18 @@ const MembacaPage = ({ onNavigate, onNavigateToWorksheet }) => {
                         <div className="flex items-center gap-4">
                             <motion.button onClick={() => onNavigate('home')} className="p-3 rounded-full bg-gray-100 hover:bg-gray-200" whileTap={{ scale: 0.9 }}><FiArrowLeft size={24} className="text-gray-700"/></motion.button>
                             <div className='flex-grow'><h1 className="text-3xl font-bold text-sesm-deep tracking-wide">{HEADER_TITLE}</h1><p className='text-gray-500'>Tingkatkan kemampuan membacamu di sini!</p></div>
-                            <div className="w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex-shrink-0 shadow-lg"><ICON size={32} className="text-white"/></div>
+                            <div className={`w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br ${THEME_STYLES.desktopHeaderGradient} flex-shrink-0 shadow-lg`}><ICON size={32} className="text-white"/></div>
                         </div>
                     </header>
-                    <div className="px-6 mb-6"><div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4"><StatCard label="Materi Dikerjakan" value={historyLoading ? '...' : stats.completedCount} icon={FiCheckCircle} color="text-green-500"/><StatCard label="Nilai Rata-rata" value={historyLoading ? '...' : stats.avgScore} icon={FiBarChart2} color="text-blue-500"/><StatCard label="Akurasi Terbaik" value={historyLoading ? '...' : `${stats.bestScore}%`} icon={FiTarget} color="text-orange-500"/></div></div>
+                     <div className="px-6 mb-6">
+                        <div className="relative max-w-md">
+                            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                            <input type="text" placeholder={`Cari bab ${HEADER_TITLE}...`} className="w-full bg-white border-2 border-gray-200 rounded-full py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal focus:border-transparent transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="px-6 mb-6"><div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4"><StatCard label="Materi Dikerjakan" value={historyLoading ? '...' : stats.completedCount} icon={FiCheckCircle} color="text-green-500"/><StatCard label="Nilai Rata-rata" value={historyLoading || historyError ? '...' : stats.avgScore} icon={FiBarChart2} color="text-blue-500"/><StatCard label="Akurasi Terbaik" value={historyLoading || historyError ? '...' : `${stats.bestScore}%`} icon={FiTarget} color="text-orange-500"/></div></div>
                     <div className="flex-grow flex flex-col overflow-hidden">
-                        <div className="px-6 pb-4"><div className="flex items-center bg-indigo-100/70 rounded-full p-1.5 max-w-sm mx-auto"><button onClick={() => setActiveTab('materi')} className={`w-1/2 py-2.5 text-sm font-bold rounded-full transition-all ${activeTab === 'materi' ? 'bg-white text-sesm-deep shadow-md' : 'text-indigo-800'}`}><FiBookOpen className="inline mr-2 mb-0.5"/> Daftar Bab</button><button onClick={() => setActiveTab('nilai')} className={`w-1/2 py-2.5 text-sm font-bold rounded-full transition-all ${activeTab === 'nilai' ? 'bg-white text-sesm-deep shadow-md' : 'text-indigo-800'}`}><FiClipboard className="inline mr-2 mb-0.5"/> Riwayat & Nilai</button></div></div>
+                        <div className="px-6 pb-4"><div className={`flex items-center ${THEME_STYLES.desktopTabBg} rounded-full p-1.5 max-w-sm mx-auto`}><button onClick={() => setActiveTab('materi')} className={`w-1/2 py-2.5 text-sm font-bold rounded-full transition-all ${activeTab === 'materi' ? 'bg-white text-sesm-deep shadow-md' : THEME_STYLES.desktopTabText}`}><FiBookOpen className="inline mr-2 mb-0.5"/> Daftar Bab</button><button onClick={() => setActiveTab('nilai')} className={`w-1/2 py-2.5 text-sm font-bold rounded-full transition-all ${activeTab === 'nilai' ? 'bg-white text-sesm-deep shadow-md' : THEME_STYLES.desktopTabText}`}><FiClipboard className="inline mr-2 mb-0.5"/> Riwayat & Nilai</button></div></div>
                         <main className="flex-1 overflow-y-auto p-6 pt-2"><AnimatePresence mode="wait"><motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>{renderContent()}</motion.div></AnimatePresence></main>
                     </div>
                 </motion.div>
