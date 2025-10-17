@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
-import DataService from '../../services/dataService'; // Impor DataService
+import DataService from '../../services/dataService';
+import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
 
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (file) => {
@@ -38,6 +39,12 @@ const getNewQuestion = () => ({
 const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
     const [isLinkInputVisible, setLinkInputVisible] = useState(false);
     const [linkValue, setLinkValue] = useState('');
+
+    const questionTypeOptions = [
+        { value: 'pilihan-ganda', label: 'Pilihan Ganda' },
+        { value: 'esai', label: 'Esai' },
+        { value: 'pilihan-ganda-esai', label: 'Pilihan Ganda & Esai' }
+    ];
 
     const handleInputChange = (field, value) => onUpdate(index, { ...question, [field]: value });
     const handleOptionChange = (optIndex, value) => {
@@ -87,11 +94,11 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
             <div className="flex-grow space-y-4">
                 <div className="flex items-center gap-4">
                     <span className="font-bold text-lg text-gray-700">{index + 1}.</span>
-                    <select value={question.type} onChange={(e) => handleInputChange('type', e.target.value)} className="p-2 border rounded-md bg-gray-50">
-                        <option value="pilihan-ganda">Pilihan Ganda</option>
-                        <option value="esai">Esai</option>
-                        <option value="pilihan-ganda-esai">Pilihan Ganda & Esai</option>
-                    </select>
+                    <CustomSelect
+                        options={questionTypeOptions}
+                        value={question.type}
+                        onChange={(value) => handleInputChange('type', value)}
+                    />
                 </div>
                 <textarea value={question.question} onChange={(e) => handleInputChange('question', e.target.value)} placeholder="Tulis pertanyaan..." className="w-full p-2 border rounded-md h-24" required />
                 <div className="space-y-2">
@@ -133,12 +140,12 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
                         <button type="button" onClick={addOption} className="text-sm font-semibold flex items-center gap-1 px-3 py-1 bg-gray-100 border rounded-md hover:bg-gray-200">
                             <FiPlus size={16} /> Tambah Opsi
                         </button>
-                        <select value={question.correctAnswer} onChange={(e) => handleInputChange('correctAnswer', e.target.value)} className="w-full p-2 border rounded-md mt-2 bg-white" required>
-                            <option value="" disabled>-- Pilih Jawaban Benar --</option>
-                            {question.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (
-                                <option key={oIndex} value={opt}>{opt}</option>
-                            ))}
-                        </select>
+                        <CustomSelect
+                            options={question.options.filter(opt => opt.trim() !== '').map(opt => ({ value: opt, label: opt }))}
+                            value={question.correctAnswer}
+                            onChange={(value) => handleInputChange('correctAnswer', value)}
+                            placeholder="Pilih Jawaban Benar"
+                        />
                     </fieldset>
                 )}
 
@@ -173,12 +180,11 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         }
     };
     
-    // PERBAIKAN: Hapus `useDebounce` dan simpan setiap ada perubahan `questions`
     useEffect(() => {
         if (isOpen && questions.length > 0 && questions.some(q => q.question.trim() !== '')) {
             saveDraft(questions);
         }
-    }, [questions, DRAFT_KEY, isOpen]); // Dependensi diubah ke `questions`
+    }, [questions, DRAFT_KEY, isOpen]);
 
     useEffect(() => {
         if (isOpen) {

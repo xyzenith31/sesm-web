@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiSave, FiX, FiPaperclip, FiLink, FiImage, FiFilm, FiMusic, FiFile, FiTrash2, FiPlus } from 'react-icons/fi';
+import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
 
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -37,13 +38,17 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
     const [isLinkInputVisible, setLinkInputVisible] = useState(false);
     const [linkValue, setLinkValue] = useState('');
 
-    // Fungsi untuk menyimpan draft
+    const questionTypeOptions = [
+        { value: 'pilihan-ganda', label: 'Pilihan Ganda' },
+        { value: 'esai', label: 'Esai' },
+        { value: 'pilihan-ganda-esai', label: 'Pilihan Ganda & Esai' }
+    ];
+
     const saveDraft = (data) => {
         if (!data) return;
         localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
     };
 
-    // Debounce untuk autosave
     const debouncedQuestion = useDebounce(question, 1500);
     useEffect(() => {
         if (isOpen) {
@@ -127,11 +132,11 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                         <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX/></button>
                     </div>
                     <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                        <select value={question.type} onChange={(e) => handleUpdate('type', e.target.value)} className="w-full p-2 border rounded-md bg-gray-50">
-                            <option value="pilihan-ganda">Pilihan Ganda</option>
-                            <option value="esai">Esai</option>
-                            <option value="pilihan-ganda-esai">Pilihan Ganda & Esai</option>
-                        </select>
+                        <CustomSelect
+                            options={questionTypeOptions}
+                            value={question.type}
+                            onChange={(value) => handleUpdate('type', value)}
+                        />
                         <div>
                             <label className="font-semibold text-sm mb-1 block">Teks Pertanyaan</label>
                             <textarea value={question.question} onChange={(e) => handleUpdate('question', e.target.value)} className="w-full p-2 border rounded-md h-24" required />
@@ -167,10 +172,12 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                                     </div>
                                 ))}
                                 <button type="button" onClick={addOption} className="text-sm font-semibold flex items-center gap-1 px-3 py-1 bg-gray-100 border rounded-md hover:bg-gray-200"><FiPlus size={16}/> Tambah Opsi</button>
-                                <select value={question.correctAnswer} onChange={(e) => handleUpdate('correctAnswer', e.target.value)} className="w-full p-2 border rounded-md mt-2 bg-white" required>
-                                    <option value="" disabled>-- Pilih Jawaban Benar --</option>
-                                    {question.options.filter(opt => opt && opt.trim() !== '').map((opt, oIndex) => (<option key={oIndex} value={opt}>{opt}</option>))}
-                                </select>
+                                <CustomSelect
+                                    options={question.options.filter(opt => opt && opt.trim() !== '').map(opt => ({ value: opt, label: opt }))}
+                                    value={question.correctAnswer}
+                                    onChange={(value) => handleUpdate('correctAnswer', value)}
+                                    placeholder="Pilih Jawaban Benar"
+                                />
                             </fieldset>
                         )}
 

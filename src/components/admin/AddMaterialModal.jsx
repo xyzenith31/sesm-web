@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiPlus, FiSave, FiLoader, FiTrash2 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
+import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
 
 // Helper untuk mengubah indeks menjadi huruf
 const toAlpha = (num) => String.fromCharCode(65 + num);
@@ -31,18 +32,28 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
 
     const inputStyle = "w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal";
 
+    const questionTypeOptions = [
+        { value: 'pilihan-ganda', label: 'Pilihan Ganda' },
+        { value: 'esai', label: 'Esai' },
+        { value: 'pilihan-ganda-esai', label: 'Pilihan Ganda & Esai' }
+    ];
+
+    const answerOptions = q.options
+        .filter(opt => opt.trim() !== '')
+        .map((opt, index) => ({ value: opt, label: `${toAlpha(index)}. ${opt}` }));
+
     return (
         <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-sesm-teal space-y-3">
             <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full">
                     <span className="font-bold text-gray-700">{qIndex + 1}.</span>
-                    <select value={q.type} onChange={(e) => handleInputChange('type', e.target.value)} className="p-2 border rounded-md bg-white text-sm">
-                        <option value="pilihan-ganda">Pilihan Ganda</option>
-                        <option value="esai">Esai</option>
-                        <option value="pilihan-ganda-esai">Pilihan Ganda & Esai</option>
-                    </select>
+                    <CustomSelect
+                        options={questionTypeOptions}
+                        value={q.type}
+                        onChange={(value) => handleInputChange('type', value)}
+                    />
                 </div>
-                <button type="button" onClick={onRemove} className="p-2 text-red-500 hover:bg-red-100 rounded-full"><FiTrash2 size={16}/></button>
+                <button type="button" onClick={onRemove} className="p-2 text-red-500 hover:bg-red-100 rounded-full ml-2"><FiTrash2 size={16}/></button>
             </div>
             <textarea value={q.question} onChange={(e) => handleInputChange('question', e.target.value)} placeholder="Tulis pertanyaan..." className={`${inputStyle} h-20`} required />
             {(q.type === 'pilihan-ganda' || q.type === 'pilihan-ganda-esai') && (
@@ -55,12 +66,14 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
                         </div>
                     ))}
                     <button type="button" onClick={addOption} className="text-sm font-semibold text-sesm-deep"><FiPlus className="inline"/> Tambah Opsi</button>
-                    <select value={q.correctAnswer} onChange={(e) => handleInputChange('correctAnswer', e.target.value)} className={`${inputStyle} mt-2`} required>
-                        <option value="" disabled>-- Pilih Jawaban Benar --</option>
-                        {q.options.filter(opt => opt.trim() !== '').map((opt, oIndex) => (
-                            <option key={oIndex} value={opt}>{toAlpha(oIndex)}. {opt}</option>
-                        ))}
-                    </select>
+                    <div className="mt-2">
+                        <CustomSelect
+                            options={answerOptions}
+                            value={q.correctAnswer}
+                            onChange={(value) => handleInputChange('correctAnswer', value)}
+                            placeholder="-- Pilih Jawaban Benar --"
+                        />
+                    </div>
                 </div>
             )}
             {(q.type === 'esai' || q.type === 'pilihan-ganda-esai') && (
@@ -95,6 +108,19 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
     const [mainFilePreview, setMainFilePreview] = useState('');
     const [coverImagePreview, setCoverImagePreview] = useState('');
     const [mediaSourceType, setMediaSourceType] = useState('file');
+
+    const levelOptions = [
+        { value: 'Semua', label: 'Semua Jenjang' },
+        { value: 'TK', label: 'TK' },
+        { value: 'SD 1-2', label: 'SD Kelas 1-2' },
+        { value: 'SD 3-4', label: 'SD Kelas 3-4' },
+        { value: 'SD 5-6', label: 'SD Kelas 5-6' }
+    ];
+
+    const gradingTypeOptions = [
+        { value: 'manual', label: 'Manual (Guru menilai)' },
+        { value: 'otomatis', label: 'Otomatis (hanya PG)' },
+    ];
 
     const getNewQuestionObject = () => ({ id: Date.now() + Math.random(), type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '' });
 
@@ -171,11 +197,11 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
     const renderStepContent = () => {
         switch(step) {
             case 1:
-                return ( <motion.div key={1} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> <div><label className="font-semibold text-sm">Judul</label><input type="text" name="title" value={formData.title} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Mapel</label><input type="text" name="subject" value={formData.subject} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Disarankan Untuk</label><select name="recommended_level" value={formData.recommended_level} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="Semua">Semua Jenjang</option><option value="TK">TK</option><option value="SD 1-2">SD Kelas 1-2</option><option value="SD 3-4">SD Kelas 3-4</option><option value="SD 5-6">SD Kelas 5-6</option></select></div> <div><label className="font-semibold text-sm">Deskripsi</label><textarea name="description" value={formData.description} onChange={handleFormChange} className={`${inputStyle} h-24`}></textarea></div> </motion.div> );
+                return ( <motion.div key={1} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> <div><label className="font-semibold text-sm">Judul</label><input type="text" name="title" value={formData.title} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Mapel</label><input type="text" name="subject" value={formData.subject} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Disarankan Untuk</label><CustomSelect name="recommended_level" options={levelOptions} value={formData.recommended_level} onChange={(value) => setFormData(prev => ({...prev, recommended_level: value}))} /></div> <div><label className="font-semibold text-sm">Deskripsi</label><textarea name="description" value={formData.description} onChange={handleFormChange} className={`${inputStyle} h-24`}></textarea></div> </motion.div> );
             case 2:
                 return ( <motion.div key={2} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> <div className="space-y-2"> <label className="font-semibold text-sm">Sumber Materi</label> <div className="flex gap-4"> <label className="flex items-center gap-2"><input type="radio" name="mediaSource" value="file" checked={mediaSourceType === 'file'} onChange={(e) => setMediaSourceType(e.target.value)} /> File</label> <label className="flex items-center gap-2"><input type="radio" name="mediaSource" value="link" checked={mediaSourceType === 'link'} onChange={(e) => setMediaSourceType(e.target.value)} /> Link Video</label> </div> </div> <AnimatePresence mode="wait"> <motion.div key={mediaSourceType} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> {mediaSourceType === 'file' ? ( <div><label className="font-semibold text-sm">File Utama (PDF, Video, dll.)</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="main-upload" className="hidden" onChange={handleMainFileChange} /><label htmlFor="main-upload" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1"><FiPlus /><span>{mainFilePreview || "Pilih file..."}</span></label></div></div> ) : ( <div><label className="font-semibold text-sm">Link Video</label><input type="url" name="url_link" value={formData.url_link} onChange={handleFormChange} className={inputStyle} placeholder="https://www.youtube.com/..." /></div> )} </motion.div> </AnimatePresence> <div><label className="font-semibold text-sm">Gambar Sampul</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="cover-upload" className="hidden" onChange={handleCoverImageChange} accept="image/*" /><label htmlFor="cover-upload" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1">{coverImagePreview ? <img src={coverImagePreview} alt="Preview" className="h-24 rounded-md mb-2 object-cover" /> : <FiPlus />}<span>{coverImage ? coverImage.name : "Pilih gambar..."}</span></label></div></div> </motion.div> );
             case 3:
-                return ( <motion.div key={3} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-3"> <div><label className="font-semibold text-sm">Tipe Penilaian</label><select name="grading_type" value={formData.grading_type} onChange={handleFormChange} className={`${inputStyle} mt-1`}><option value="manual">Manual (Guru menilai)</option><option value="otomatis">Otomatis (hanya PG)</option></select><p className="text-xs text-gray-500 mt-1">{formData.grading_type === 'otomatis' ? 'Jawaban esai tidak akan dinilai otomatis.' : 'Semua jenis soal akan dinilai manual oleh guru.'}</p></div> <div className="border-t pt-4"><h4 className="font-semibold">Soal & Tugas</h4><div className="space-y-3 mt-2 max-h-[280px] overflow-y-auto pr-2">{tasks.map((task, index) => (<QuestionItem key={task.id} q={task} qIndex={index} onUpdate={updateTask} onRemove={() => removeTask(index)} />))}<button type="button" onClick={addTask} className="text-sm font-semibold text-sesm-deep mt-2"><FiPlus className="inline"/> Tambah Soal</button></div></div> </motion.div> );
+                return ( <motion.div key={3} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-3"> <div><label className="font-semibold text-sm">Tipe Penilaian</label><CustomSelect name="grading_type" options={gradingTypeOptions} value={formData.grading_type} onChange={(value) => setFormData(prev => ({...prev, grading_type: value}))} /><p className="text-xs text-gray-500 mt-1">{formData.grading_type === 'otomatis' ? 'Jawaban esai tidak akan dinilai otomatis.' : 'Semua jenis soal akan dinilai manual oleh guru.'}</p></div> <div className="border-t pt-4"><h4 className="font-semibold">Soal & Tugas</h4><div className="space-y-3 mt-2 max-h-[280px] overflow-y-auto pr-2">{tasks.map((task, index) => (<QuestionItem key={task.id} q={task} qIndex={index} onUpdate={updateTask} onRemove={() => removeTask(index)} />))}<button type="button" onClick={addTask} className="text-sm font-semibold text-sesm-deep mt-2"><FiPlus className="inline"/> Tambah Soal</button></div></div> </motion.div> );
             default:
                 return null;
         }

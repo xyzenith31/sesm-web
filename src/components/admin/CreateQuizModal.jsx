@@ -1,6 +1,8 @@
+// contoh-sesm-web/components/admin/CreateQuizModal.jsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiUpload } from 'react-icons/fi';
+import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
 
 const CreateQuizModal = ({ isOpen, onClose, onSubmit }) => {
     const [title, setTitle] = useState('');
@@ -8,6 +10,14 @@ const CreateQuizModal = ({ isOpen, onClose, onSubmit }) => {
     const [coverImage, setCoverImage] = useState(null);
     const [preview, setPreview] = useState('');
     const [recommendedLevel, setRecommendedLevel] = useState('Semua');
+
+    const levelOptions = [
+        { value: 'Semua', label: 'Semua Jenjang' },
+        { value: 'TK', label: 'TK' },
+        { value: 'SD 1-2', label: 'SD Kelas 1-2' },
+        { value: 'SD 3-4', label: 'SD Kelas 3-4' },
+        { value: 'SD 5-6', label: 'SD Kelas 5-6' }
+    ];
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -28,7 +38,6 @@ const CreateQuizModal = ({ isOpen, onClose, onSubmit }) => {
         }
         onSubmit(formData);
         
-        // Reset state setelah submit
         setTitle('');
         setDescription('');
         setCoverImage(null);
@@ -44,7 +53,6 @@ const CreateQuizModal = ({ isOpen, onClose, onSubmit }) => {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
-            // --- PERBAIKAN DI SINI ---
             className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"
         >
             <motion.div 
@@ -66,13 +74,13 @@ const CreateQuizModal = ({ isOpen, onClose, onSubmit }) => {
                             </div>
                             <div>
                                 <label className="font-semibold text-sm">Disarankan Untuk</label>
-                                <select value={recommendedLevel} onChange={(e) => setRecommendedLevel(e.target.value)} className="w-full p-2 border rounded-md mt-1 bg-white">
-                                    <option value="Semua">Semua Jenjang</option>
-                                    <option value="TK">TK</option>
-                                    <option value="SD 1-2">SD Kelas 1-2</option>
-                                    <option value="SD 3-4">SD Kelas 3-4</option>
-                                    <option value="SD 5-6">SD Kelas 5-6</option>
-                                </select>
+                                <div className="mt-1">
+                                    <CustomSelect
+                                        options={levelOptions}
+                                        value={recommendedLevel}
+                                        onChange={setRecommendedLevel}
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="font-semibold text-sm">Deskripsi Singkat</label>

@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiSearch, FiLoader, FiInbox, FiBarChart2, FiCheckCircle, FiStar, FiEdit } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
-import SubmissionDetailBookmarkModal from '../../components/admin/SubmissionDetailBookmarkModal'; // Komponen Modal Baru
+import SubmissionDetailBookmarkModal from '../../components/admin/SubmissionDetailBookmarkModal';
+import CustomSelect from '../../components/ui/CustomSelect'; // 1. Impor CustomSelect
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
     <div className="bg-gray-50 p-4 rounded-lg flex-1 border">
@@ -53,6 +54,14 @@ const ManajemenNilaiBookmark = ({ onNavigate }) => {
     useEffect(() => {
         fetchSubmissions();
     }, [selectedBookmarkId, fetchSubmissions]);
+
+    // 2. Format data bookmark untuk CustomSelect
+    const bookmarkOptions = useMemo(() => 
+        bookmarks.map(bm => ({
+            value: bm.id,
+            label: bm.title
+        })), 
+    [bookmarks]);
 
     const filteredSubmissions = useMemo(() => {
         if (!searchTerm) return submissions;
@@ -106,12 +115,13 @@ const ManajemenNilaiBookmark = ({ onNavigate }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
                         <div>
                             <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Materi Bookmark</label>
-                            <select value={selectedBookmarkId} onChange={(e) => setSelectedBookmarkId(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-sesm-teal" disabled={loading}>
-                                <option value="">-- {loading ? 'Memuat...' : 'Pilih Materi'} --</option>
-                                {bookmarks.map(bm => (
-                                    <option key={bm.id} value={bm.id}>{bm.title}</option>
-                                ))}
-                            </select>
+                            {/* 3. Ganti <select> dengan <CustomSelect> */}
+                            <CustomSelect
+                                options={bookmarkOptions}
+                                value={selectedBookmarkId}
+                                onChange={setSelectedBookmarkId}
+                                placeholder={loading ? 'Memuat...' : '-- Pilih Materi --'}
+                            />
                         </div>
                         <div className="relative">
                             <label className="block text-sm font-bold text-gray-600 mb-1">Cari Nama Siswa</label>
