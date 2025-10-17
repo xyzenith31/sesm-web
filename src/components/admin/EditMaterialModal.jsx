@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiPlus, FiSave, FiLoader, FiTrash2 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 
+// Helper untuk mengubah indeks menjadi huruf
+const toAlpha = (num) => String.fromCharCode(65 + num);
+
 // Komponen-komponen internal (QuestionItem, StepIndicator) disalin dari AddMaterialModal untuk konsistensi
 const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => onUpdate(qIndex, { ...q, [field]: value });
@@ -47,7 +50,8 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
                 <div className="space-y-2 pt-2 border-t">
                     {q.options.map((opt, oIndex) => (
                         <div key={oIndex} className="flex items-center gap-2">
-                            <input type="text" value={opt} onChange={(e) => handleOptionChange(oIndex, e.target.value)} placeholder={`Pilihan ${oIndex + 1}`} className="w-full p-2 border rounded-md bg-white" required />
+                            <span className="font-bold text-gray-600">{toAlpha(oIndex)}.</span>
+                            <input type="text" value={opt} onChange={(e) => handleOptionChange(oIndex, e.target.value)} placeholder={`Pilihan ${toAlpha(oIndex)}`} className="w-full p-2 border rounded-md bg-white" required />
                             <button type="button" onClick={() => removeOption(oIndex)} disabled={q.options.length <= 2} className="p-2 text-gray-400 hover:text-red-600 disabled:text-gray-300"><FiTrash2 /></button>
                         </div>
                     ))}
@@ -55,7 +59,7 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
                     <select value={q.correctAnswer} onChange={(e) => handleInputChange('correctAnswer', e.target.value)} className={`${inputStyle} mt-2`} required>
                         <option value="" disabled>-- Pilih Jawaban Benar --</option>
                         {q.options.filter(opt => opt && opt.trim() !== '').map((opt, oIndex) => (
-                            <option key={oIndex} value={opt}>{opt}</option>
+                            <option key={oIndex} value={opt}>{toAlpha(oIndex)}. {opt}</option>
                         ))}
                     </select>
                 </div>

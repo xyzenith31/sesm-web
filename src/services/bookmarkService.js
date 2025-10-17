@@ -10,9 +10,13 @@ const deleteBookmark = (bookmarkId) => apiClient.delete(`/admin/bookmarks/${book
 const submitAnswers = (bookmarkId, answers) => apiClient.post(`/bookmarks/${bookmarkId}/submit`, { answers });
 const getSubmissions = (bookmarkId) => apiClient.get(`/admin/bookmarks/${bookmarkId}/submissions`);
 const getSubmissionDetails = (submissionId) => apiClient.get(`/admin/bookmarks/submissions/${submissionId}`);
-const gradeSubmission = (submissionId, score, answers) => apiClient.post(`/admin/bookmarks/submissions/${submissionId}/grade`, { score, answers });
+
+// --- FUNGSI YANG DIPERBARUI ---
+const gradeSubmission = (submissionId, score, answers) => {
+    return apiClient.post(`/admin/bookmarks/submissions/${submissionId}/grade`, { score, answers });
+};
+
 const getMySubmissions = () => apiClient.get('/bookmarks/my-submissions');
-// --- FUNGSI BARU UNTUK SISWA MELIHAT DETAIL NILAI ---
 const getStudentSubmissionDetails = (submissionId) => apiClient.get(`/bookmarks/submissions/${submissionId}`);
 
 
@@ -24,9 +28,9 @@ const BookmarkService = {
   submitAnswers,
   getSubmissions,
   getSubmissionDetails,
-  gradeSubmission,
+  gradeSubmission, // Pastikan ini yang terbaru
   getMySubmissions,
-  getStudentSubmissionDetails, // <-- Export fungsi baru
+  getStudentSubmissionDetails,
 };
 
 export default BookmarkService;

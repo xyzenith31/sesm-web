@@ -1,7 +1,11 @@
+// contoh-sesm-web/components/mod/MaterialDetailModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiExternalLink, FiHelpCircle, FiCheck, FiXCircle, FiFileText, FiSave, FiCheckCircle, FiLoader } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
+
+// Helper untuk mengubah indeks menjadi huruf
+const toAlpha = (num) => String.fromCharCode(65 + num);
 
 // Komponen internal untuk menampilkan soal yang lebih kompleks
 const TaskItem = ({ task, index, onAnswerChange, userAnswer, isSubmitted }) => {
@@ -27,9 +31,10 @@ const TaskItem = ({ task, index, onAnswerChange, userAnswer, isSubmitted }) => {
                             key={optIndex}
                             onClick={() => onAnswerChange(index, 'mc', opt)}
                             disabled={isSubmitted}
-                            className={`w-full text-left p-3 rounded-lg font-semibold transition-all border-2 ${getOptionClass(opt)}`}
+                            className={`w-full text-left p-3 rounded-lg font-semibold transition-all border-2 flex items-start gap-3 ${getOptionClass(opt)}`}
                         >
-                            {opt}
+                            <span className="font-bold">{toAlpha(optIndex)}.</span>
+                            <span>{opt}</span>
                         </button>
                     ))}
                 </div>

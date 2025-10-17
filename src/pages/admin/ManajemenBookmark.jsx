@@ -9,11 +9,19 @@ import AddMaterialModal from '../../components/admin/AddMaterialModal';
 import EditMaterialModal from '../../components/admin/EditMaterialModal';
 import DraftBookmarkModal from '../../components/admin/DraftBookmarkModal';
 import BankSoalBookmarkModal from '../../components/admin/BankSoalBookmarkModal';
+import ManajemenNilaiBookmark from './ManajemenNilaiBookmark';
 
 const ManajemenBookmark = ({ onNavigate }) => {
     const [bookmarks, setBookmarks] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
+    const [notif, setNotif] = useState({ 
+        isOpen: false, 
+        message: '', 
+        success: true, 
+        title: '',
+        isConfirmation: false,
+        onConfirm: () => {}
+    });
     
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -26,7 +34,8 @@ const ManajemenBookmark = ({ onNavigate }) => {
     const [drafts, setDrafts] = useState([]);
     const [showDraftsNotification, setShowDraftsNotification] = useState(false);
     const [hasDismissedDraftNotif, setHasDismissedDraftNotif] = useState(false);
-
+    
+    const [view, setView] = useState('list');
 
     const fetchBookmarks = useCallback(async () => {
         setLoading(true);
@@ -65,7 +74,6 @@ const ManajemenBookmark = ({ onNavigate }) => {
             if (allDrafts.length > 0 && !hasDismissedDraftNotif) {
                 setShowDraftsNotification(true);
             }
-
         } catch (error) {
             console.error("Gagal mengambil draf:", error);
         }
@@ -108,23 +116,43 @@ const ManajemenBookmark = ({ onNavigate }) => {
                 success: false,
                 title: "Gagal Menyimpan"
             });
-            throw error;
-        }
-    };
-    
-    const handleDelete = (id, title) => {
-        if (window.confirm(`Hapus Materi "${title}"? Tindakan ini tidak dapat diurungkan.`)) {
-             confirmDeleteAction(id);
+            throw error; // Lemparkan error agar modal tidak tertutup
         }
     };
 
-    const confirmDeleteAction = async (id) => {
+    // Fungsi untuk menampilkan modal konfirmasi hapus
+    const handleDelete = (id, title) => {
+        setNotif({
+            isOpen: true,
+            title: "Konfirmasi Hapus",
+            message: `Anda yakin ingin menghapus materi "${title}"? Tindakan ini tidak dapat diurungkan.`,
+            isConfirmation: true,
+            success: false, // Warna merah untuk aksi berbahaya
+            onConfirm: () => confirmDeleteAction(id, title),
+            confirmText: "Ya, Hapus"
+        });
+    };
+
+    // Fungsi yang dijalankan setelah konfirmasi hapus
+    const confirmDeleteAction = async (id, title) => {
         try {
             await BookmarkService.deleteBookmark(id);
-            setNotif({ isOpen: true, message: "Materi berhasil dihapus.", success: true, title: "Sukses" });
+            setNotif({ 
+                isOpen: true, 
+                message: `Materi "${title}" berhasil dihapus.`, 
+                success: true, 
+                title: "Sukses",
+                isConfirmation: false 
+            });
             setBookmarks(prev => prev.filter(b => b.id !== id));
         } catch (error) {
-            setNotif({ isOpen: true, message: "Gagal menghapus materi.", success: false, title: "Error" });
+            setNotif({ 
+                isOpen: true, 
+                message: "Gagal menghapus materi.", 
+                success: false, 
+                title: "Error",
+                isConfirmation: false
+            });
         }
     };
     
@@ -136,7 +164,7 @@ const ManajemenBookmark = ({ onNavigate }) => {
             if(materialToEdit) {
                 handleOpenEditModal(materialToEdit);
             } else {
-                alert("Materi asli untuk draf ini tidak ditemukan, mungkin telah dihapus. Draf ini akan dihapus.");
+                setNotif({ isOpen: true, title: "Gagal Memuat Draf", message: "Materi asli untuk draf ini tidak ditemukan, mungkin telah dihapus.", success: false });
                 DataService.deleteDraft(draft.draft_key);
                 localStorage.removeItem(draft.draft_key);
                 fetchDrafts();
@@ -151,11 +179,19 @@ const ManajemenBookmark = ({ onNavigate }) => {
         setHasDismissedDraftNotif(true);
     }
 
-    const handleQuestionsFromBankAdded = (updatedBookmarkId) => {
+    const handleQuestionsFromBankAdded = () => {
         setIsBankSoalOpen(false);
         setNotif({ isOpen: true, title: "Sukses", message: "Soal berhasil ditambahkan dari bank!", success: true });
         fetchBookmarks();
     };
+    
+    const closeNotification = () => {
+        setNotif({ ...notif, isOpen: false });
+    };
+
+    if (view === 'grading') {
+        return <ManajemenNilaiBookmark onNavigate={() => setView('list')} />;
+    }
 
     return (
         <>
@@ -163,16 +199,19 @@ const ManajemenBookmark = ({ onNavigate }) => {
                 {isAddModalOpen && <AddMaterialModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSave={(data) => handleSave(data, null)} initialDraft={selectedDraft} />}
                 {isEditModalOpen && <EditMaterialModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={handleSave} initialData={editingMaterial} />}
                 {isDraftModalOpen && <DraftBookmarkModal isOpen={isDraftModalOpen} onClose={() => setIsDraftModalOpen(false)} drafts={drafts} onContinue={handleContinueDraft} onDraftDeleted={fetchDrafts} />}
-                {isBankSoalOpen && (
-                    <BankSoalBookmarkModal 
-                        isOpen={isBankSoalOpen}
-                        onClose={() => setIsBankSoalOpen(false)}
-                        onQuestionsAdded={handleQuestionsFromBankAdded}
-                    />
-                )}
+                {isBankSoalOpen && <BankSoalBookmarkModal isOpen={isBankSoalOpen} onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
             </AnimatePresence>
             
-            <Notification isOpen={notif.isOpen} onClose={() => setNotif({ ...notif, isOpen: false })} title={notif.title} message={notif.message} success={notif.success} />
+            <Notification 
+                isOpen={notif.isOpen} 
+                onClose={closeNotification} 
+                title={notif.title} 
+                message={notif.message} 
+                success={notif.success}
+                isConfirmation={notif.isConfirmation}
+                onConfirm={notif.onConfirm}
+                confirmText={notif.confirmText}
+            />
             
             <Notification
                 isOpen={showDraftsNotification}
@@ -189,7 +228,6 @@ const ManajemenBookmark = ({ onNavigate }) => {
             />
 
             <div className="bg-white p-6 rounded-xl shadow-lg flex-grow flex flex-col h-full">
-                {/* --- PERBAIKAN STRUKTUR HEADER DIMULAI DI SINI --- */}
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                     <h1 className="text-3xl font-bold text-sesm-deep flex items-center gap-3"><FiBookmark /> Manajemen Bookmark</h1>
                     <p className="text-gray-500 mt-1">Kelola materi, soal, dan penilaian untuk siswa.</p>
@@ -198,14 +236,13 @@ const ManajemenBookmark = ({ onNavigate }) => {
                         <motion.button 
                             whileTap={{ scale: 0.95 }} 
                             onClick={() => setIsDraftModalOpen(true)} 
-                            disabled={drafts.length === 0}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 rounded-lg font-bold hover:bg-yellow-500 shadow-sm disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">
+                            className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 rounded-lg font-bold hover:bg-yellow-500 shadow-sm">
                             <FiFileText /> Draf {drafts.length > 0 && `(${drafts.length})`}
                         </motion.button>
                         <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm">
                             <FiBookOpen/> Bank Soal
                         </motion.button>
-                        <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm">
+                        <motion.button whileTap={{ scale: 0.95 }} onClick={() => setView('grading')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm">
                             <FiTrendingUp /> Manajemen Nilai
                         </motion.button>
                         <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleOpenAddModal(null)} className="flex items-center gap-2 px-5 py-2.5 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-sesm-deep shadow-sm">
@@ -215,8 +252,6 @@ const ManajemenBookmark = ({ onNavigate }) => {
                 </motion.div>
                 
                 <div className="border-t-2 border-dashed border-gray-200 mb-6"></div>
-                {/* --- BATAS AKHIR PERBAIKAN STRUKTUR --- */}
-
 
                 <AnimatePresence mode="wait">
                     {loading ? (
