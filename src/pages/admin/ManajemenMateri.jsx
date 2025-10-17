@@ -1,3 +1,4 @@
+// contoh-sesm-web/pages/admin/ManajemenMateri.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -13,7 +14,7 @@ import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal';
 import EditQuestionModal from '../../components/admin/EditQuestionModal';
 import ChapterSettingsModal from '../../components/admin/ChapterSettingsModal';
 import Notification from '../../components/ui/Notification';
-import CustomSelect from '../../components/ui/CustomSelect'; // 1. Impor CustomSelect
+import CustomSelect from '../../components/ui/CustomSelect';
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -25,12 +26,10 @@ const jenjangOptions = {
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
 
-// 2. Format opsi untuk CustomSelect
 const jenjangSelectOptions = Object.keys(jenjangOptions).map(key => ({
     value: key,
     label: key,
 }));
-
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
     <div className="bg-gray-100 p-4 rounded-lg flex-1 border hover:border-sesm-teal transition-colors">
@@ -212,7 +211,7 @@ const ManajemenMateri = ({ onNavigate }) => {
     };
 
     const handleGradingModeChange = async (chapterId, currentMode) => {
-        const newMode = currentMode === 'otomatis' ? 'manual' : 'otomatis';
+        const newMode = currentMode === 'manual' ? 'otomatis' : 'manual';
         try {
             await DataService.updateGradingMode(chapterId, newMode);
             fetchMateriList(selectedKey);
@@ -298,7 +297,6 @@ const ManajemenMateri = ({ onNavigate }) => {
                     <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
                         <div className="p-4 border-b">
                             <label className="text-sm font-bold text-gray-600 mb-1 block">Pilih Jenjang & Kelas</label>
-                            {/* 3. Ganti <select> dengan <CustomSelect> */}
                             <CustomSelect
                                 options={jenjangSelectOptions}
                                 value={selectedFilterKey}
@@ -358,7 +356,10 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                     </div>
                                                     <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
                                                         <div><p className="font-semibold text-sm">Penilaian Manual {selectedMateri.grading_mode === 'manual' ? 'Aktif' : 'Nonaktif'}</p><p className="text-xs text-gray-500">{selectedMateri.grading_mode === 'manual' ? 'Guru akan menilai jawaban esai.' : 'Sistem menilai otomatis (hanya PG).'}</p></div>
-                                                        <ToggleSwitch enabled={selectedMateri.grading_mode === 'manual'} onToggle={() => handleGradingModeChange(selectedMateri.chapter_id, selectedMateri.grading_mode)} />
+                                                        <ToggleSwitch 
+                                                            enabled={selectedMateri.grading_mode === 'manual'} 
+                                                            onToggle={() => handleGradingModeChange(selectedMateri.chapter_id, selectedMateri.grading_mode)} 
+                                                        />
                                                     </div>
                                                 </div>
                                                 <div className="flex justify-between items-center mb-4">
