@@ -5,63 +5,90 @@ export const NavigationContext = createContext();
 
 export const NavigationProvider = ({ children }) => {
   const { user, loading } = useAuth();
-  const [currentView, setCurrentView] = useState(null);
+  // Gunakan state untuk currentView, inisialisasi dari localStorage jika ada
+  const [currentView, setCurrentView] = useState(() => {
+    // Coba ambil view terakhir dari localStorage saat inisialisasi
+    return localStorage.getItem('lastView') || null;
+  });
   const [viewProps, setViewProps] = useState({});
 
   useEffect(() => {
-    if (loading) return;
+    if (loading) return; // Jangan lakukan apa-apa jika AuthContext masih loading
 
     const authenticatedStudentViews = [
-        'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz', 'matematika', 
-        'membaca', 'menulis', 'berhitung', 'pai', 'bahasaIndonesia', 'bahasaInggris', 
-        'pkn', 'ipa', 'ips', 'accountSettings', 'dailyChallenge', 'creativeZone', 
+        'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz', 'matematika',
+        'membaca', 'menulis', 'berhitung', 'pai', 'bahasaIndonesia', 'bahasaInggris',
+        'pkn', 'ipa', 'ips', 'accountSettings', 'dailyChallenge', 'creativeZone',
         'interactiveStory', 'diary', 'studyReport', 'worksheet', 'quizForm', 'drawing', 'writing'
     ];
-    
+
     const authenticatedGuruViews = [
-        'dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis'
+        'dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 'evaluasiKuis',
+        'manajemenPengguna', 'manajemenBookmark', 'manajemenCerita', 'teacherProfile' // Pastikan teacherProfile ada di sini
     ];
+
+    let targetView = currentView; // Defaultnya tetap view saat ini
 
     if (!user) {
       const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
       if (!hasSeenWelcome) {
-        setCurrentView('welcome');
+        targetView = 'welcome';
       } else {
-        // Jika tidak ada user dan view saat ini adalah halaman yang butuh login,
-        // arahkan ke login. Ini mencegah user stuck di halaman seperti 'home' setelah logout.
+        // Jika tidak ada user dan view saat ini BUTUH login, arahkan ke login
         if ([...authenticatedStudentViews, ...authenticatedGuruViews].includes(currentView)) {
-            setCurrentView('login');
-        } else if (!currentView) { // Jika baru pertama kali load tanpa user
-            setCurrentView('login');
+            targetView = 'login';
+        } else if (!currentView) { // Jika baru pertama kali load tanpa user & view
+            targetView = 'login';
         }
+        // Jika view saat ini tidak butuh login (misal 'login' atau 'register'), biarkan saja
       }
-    } else {
+    } else { // Jika ada user (sudah login)
       if (user.role === 'guru') {
+        // Jika view saat ini BUKAN view guru yang valid, arahkan ke dashboard guru
         if (!authenticatedGuruViews.includes(currentView)) {
-           setCurrentView('dashboardGuru');
+           targetView = 'dashboardGuru';
         }
+        // Jika SUDAH di view guru yang valid (termasuk teacherProfile), JANGAN redirect
       } else { // Siswa
-        if (user.jenjang) {
+        if (!user.jenjang) { // Jika siswa belum pilih jenjang
+            targetView = 'levelSelection';
+        } else { // Jika siswa sudah punya jenjang
+          // Jika view saat ini BUKAN view siswa yang valid, arahkan ke home siswa
           if (!authenticatedStudentViews.includes(currentView)) {
-            setCurrentView('home');
+            targetView = 'home';
           }
-        } else {
-          setCurrentView('levelSelection');
+          // Jika SUDAH di view siswa yang valid, JANGAN redirect
         }
       }
     }
-  // [PERBAIKAN] Hapus `currentView` dari dependency array.
-  // Ini memastikan logika di atas hanya berjalan saat status `user` atau `loading` berubah,
-  // bukan setiap kali navigasi terjadi.
-  }, [user, loading]); 
+
+    // Hanya update state jika targetView berbeda dari currentView
+    // atau jika currentView belum diinisialisasi
+    if (targetView !== currentView || !currentView) {
+      setCurrentView(targetView);
+    }
+
+  // Hapus `currentView` dari dependency array untuk mencegah loop
+  // useEffect ini hanya perlu dijalankan ketika status `user` atau `loading` berubah.
+  }, [user, loading]);
 
   const navigate = (view, props = {}) => {
     if (view === 'login') {
       localStorage.setItem('hasSeenWelcome', 'true');
     }
+    // Simpan view terakhir ke localStorage sebelum navigasi
+    localStorage.setItem('lastView', view);
     setViewProps(props);
-    setCurrentView(view);
+    setCurrentView(view); // Update state view saat navigasi
   };
+
+  // Simpan view ke localStorage setiap kali berubah
+  useEffect(() => {
+    if (currentView) {
+      localStorage.setItem('lastView', currentView);
+    }
+  }, [currentView]);
+
 
   const value = {
     currentView,
@@ -69,10 +96,14 @@ export const NavigationProvider = ({ children }) => {
     viewProps,
   };
 
+  // Tampilkan loading indicator atau null jika context auth belum siap atau view belum ditentukan
+  if (loading || !currentView) {
+      return null; // Atau tampilkan spinner global jika diinginkan
+  }
+
   return (
     <NavigationContext.Provider value={value}>
-      {/* Tampilkan children hanya jika currentView sudah di-set */}
-      {currentView ? children : null}
+      {children}
     </NavigationContext.Provider>
   );
 };
