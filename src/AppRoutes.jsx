@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+// contoh-sesm-web/AppRoutes.jsx
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigation } from './hooks/useNavigation';
 
-// --- Impor semua halaman yang ada ---
+// --- Impor semua halaman ---
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import VerifyCodePage from './pages/VerifyCodePage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import LevelSelectionPage from './pages/LevelSelectionPage';
 import ChooseSelectionPage from './pages/ChooseSelectionPage';
 import HomePage from './pages/HomePage';
@@ -13,8 +16,8 @@ import ProfilePage from './pages/ProfilePage';
 import QuizPage from './pages/QuizPage';
 import RankPage from './pages/RankPage';
 import ExplorePage from './pages/ExplorePage';
-
-// --- Impor halaman-halaman Mapel ---
+import AccountSettingsPage from './pages/AccountSettingsPage';
+import BookmarkPage from './pages/BookmarkPage';
 import MatematikaPage from './pages/mapel/MatematikaPage';
 import MembacaPage from './pages/mapel/MembacaPage';
 import MenulisPage from './pages/mapel/MenulisPage';
@@ -25,28 +28,41 @@ import BahasaInggrisPage from './pages/mapel/BahasaInggrisPage';
 import PKNPage from './pages/mapel/PKNPage';
 import IPAPage from './pages/mapel/IPAPage';
 import IPSPage from './pages/mapel/IPSPage';
-
-// Komponen dan layout
+import WorksheetPage from './pages/WorksheetPage';
+import AdminLayout from './layouts/AdminLayout';
+import DashboardGuru from './pages/admin/DashboardGuru';
+import ManajemenMateri from './pages/admin/ManajemenMateri';
+import ManajemenNilai from './pages/admin/ManajemenNilai';
+import ManajemenKuis from './pages/admin/ManajemenKuis';
+import EvaluasiKuis from './pages/admin/EvaluasiKuis';
 import MainLayout from './layouts/MainLayout';
-import QuizForm from './components/QuizForm';
-
-const pageVariants = {
-  initial: { opacity: 0, scale: 0.98 },
-  in: { opacity: 1, scale: 1 },
-  out: { opacity: 0, scale: 0.98 },
-};
-
-const pageTransition = {
-  type: 'tween',
-  ease: 'easeInOut',
-  duration: 0.4,
-};
+import QuizForm from './components/auth/QuizForm';
+import DailyChallengePage from './pages/DailyChallengePage';
+import CreativeZonePage from './pages/CreativeZonePage';
+import InteractiveStoryPage from './pages/InteractiveStoryPage';
+import DrawingPage from './pages/DrawingPage';
+import WritingPage from './pages/WritingPage';
+import DiaryPage from './pages/DiaryPage';
+import StudyReportPage from './pages/StudyReportPage';
+import ManajemenPengguna from './pages/admin/ManajemenPengguna';
+import ManajemenBookmark from './pages/admin/ManajemenBookmark';
+import ManajemenCerita from './pages/admin/ManajemenCerita';
+import TeacherProfilePage from './pages/admin/TeacherProfilePage';
 
 const AppRoutes = () => {
-  const { currentView, navigate } = useNavigation();
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const { currentView, navigate, viewProps, setIsLoading } = useNavigation();
 
-  const onLoginSuccess = () => {};
+  // Efek untuk mematikan loading bar setelah halaman baru siap
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 250); // Jeda singkat
+    return () => clearTimeout(timer);
+  }, [currentView, setIsLoading]);
+
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [selectedChapterInfo, setSelectedChapterInfo] = useState(null);
+  
+  const [resetIdentifier, setResetIdentifier] = useState(viewProps?.identifier || '');
+  const [resetCode, setResetCode] = useState(null);
 
   const handleSelectQuiz = (quizData) => {
     setSelectedQuiz(quizData);
@@ -58,70 +74,139 @@ const AppRoutes = () => {
     navigate('quiz');
   };
 
-  const renderView = () => {
-    // --- (1) DAFTARKAN SEMUA VIEW YANG MENGGUNAKAN MAINLAYOUT DI SINI ---
+  const handleNavigateToWorksheet = (chapterInfo) => {
+    setSelectedChapterInfo(chapterInfo);
+    navigate('worksheet');
+  };
+  
+  const renderedView = useMemo(() => {
+    const subjectPageProps = {
+        onNavigate: navigate,
+        onNavigateToWorksheet: handleNavigateToWorksheet,
+    };
+
     const viewsInMainLayout = [
       'home', 'explore', 'bookmark', 'profile', 'rank', 'quiz',
-      // Tambahkan semua kunci navigasi mapel ke dalam array ini
-      'matematika', 'membaca', 'menulis', 'berhitung', 'pai', 
-      'bahasaIndonesia', 'bahasaInggris', 'pkn', 'ipa', 'ips'
+      'matematika', 'membaca', 'menulis', 'berhitung', 'pai',
+      'bahasaIndonesia', 'bahasaInggris', 'pkn', 'ipa', 'ips',
+      'accountSettings', 'dailyChallenge', 'creativeZone', 'interactiveStory',
+      'diary', 'studyReport'
+    ];
+    
+    const viewsInAdminLayout = [
+        'dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 
+        'evaluasiKuis', 'manajemenPengguna', 'manajemenBookmark', 'manajemenCerita',
+        'teacherProfile'
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
-      let pageComponent;
-      
-      // --- (2) BUAT KONDISI UNTUK SETIAP HALAMAN ---
-      if (currentView === 'home') pageComponent = <HomePage onNavigate={navigate} />;
-      else if (currentView === 'explore') pageComponent = <ExplorePage onNavigate={navigate} />;
-      else if (currentView === 'profile') pageComponent = <ProfilePage onNavigate={navigate} />;
-      else if (currentView === 'quiz') pageComponent = <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />;
-      else if (currentView === 'rank') pageComponent = <RankPage onNavigate={navigate} />;
-      // --- Kondisi untuk Halaman Mapel ---
-      else if (currentView === 'matematika') pageComponent = <MatematikaPage onNavigate={navigate} />;
-      else if (currentView === 'membaca') pageComponent = <MembacaPage onNavigate={navigate} />;
-      else if (currentView === 'menulis') pageComponent = <MenulisPage onNavigate={navigate} />;
-      else if (currentView === 'berhitung') pageComponent = <BerhitungPage onNavigate={navigate} />;
-      else if (currentView === 'pai') pageComponent = <PendidikanAgamaIslamPage onNavigate={navigate} />;
-      else if (currentView === 'bahasaIndonesia') pageComponent = <BahasaIndonesiaPage onNavigate={navigate} />;
-      else if (currentView === 'bahasaInggris') pageComponent = <BahasaInggrisPage onNavigate={navigate} />;
-      else if (currentView === 'pkn') pageComponent = <PKNPage onNavigate={navigate} />;
-      else if (currentView === 'ipa') pageComponent = <IPAPage onNavigate={navigate} />;
-      else if (currentView === 'ips') pageComponent = <IPSPage onNavigate={navigate} />;
+      const pageMap = {
+        home: <HomePage onNavigate={navigate} />,
+        explore: <ExplorePage onNavigate={navigate} />,
+        profile: <ProfilePage onNavigate={navigate} />,
+        quiz: <QuizPage onNavigate={navigate} onSelectQuiz={handleSelectQuiz} />,
+        rank: <RankPage onNavigate={navigate} />,
+        bookmark: <BookmarkPage onNavigate={navigate} />,
+        accountSettings: <AccountSettingsPage onNavigate={navigate} />,
+        matematika: <MatematikaPage {...subjectPageProps} />,
+        membaca: <MembacaPage {...subjectPageProps} />,
+        menulis: <MenulisPage {...subjectPageProps} />,
+        berhitung: <BerhitungPage {...subjectPageProps} />,
+        pai: <PendidikanAgamaIslamPage {...subjectPageProps} />,
+        bahasaIndonesia: <BahasaIndonesiaPage {...subjectPageProps} />,
+        bahasaInggris: <BahasaInggrisPage {...subjectPageProps} />,
+        pkn: <PKNPage {...subjectPageProps} />,
+        ipa: <IPAPage {...subjectPageProps} />,
+        ips: <IPSPage {...subjectPageProps} />,
+        dailyChallenge: <DailyChallengePage onNavigate={navigate} />,
+        creativeZone: <CreativeZonePage onNavigate={navigate} />,
+        interactiveStory: <InteractiveStoryPage onNavigate={navigate} />,
+        diary: <DiaryPage onNavigate={navigate} />,
+        studyReport: <StudyReportPage onNavigate={navigate} />,
+      };
+      const pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
 
-      // --- (3) RENDER KOMPONEN DI DALAM MAINLAYOUT ---
       return (
         <MainLayout activePage={currentView} onNavigate={navigate}>
-          <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-            {pageComponent}
-          </motion.div>
+          {pageComponent}
         </MainLayout>
       );
     }
 
-    // Switch case untuk halaman yang TIDAK menggunakan MainLayout
+    if (viewsInAdminLayout.includes(currentView)) {
+      const pageMap = {
+          dashboardGuru: <DashboardGuru />,
+          manajemenMateri: <ManajemenMateri onNavigate={navigate} />,
+          manajemenNilai: <ManajemenNilai onNavigate={navigate} />,
+          manajemenKuis: <ManajemenKuis onNavigate={navigate} />,
+          evaluasiKuis: <EvaluasiKuis onNavigate={navigate} />,
+          manajemenPengguna: <ManajemenPengguna onNavigate={navigate} />,
+          manajemenBookmark: <ManajemenBookmark onNavigate={navigate} />,
+          manajemenCerita: <ManajemenCerita onNavigate={navigate} />,
+          teacherProfile: <TeacherProfilePage onNavigate={navigate} />
+      };
+      const pageComponent = pageMap[currentView];
+
+      return (
+        <AdminLayout activePage={currentView} onNavigate={navigate}>
+            {pageComponent}
+        </AdminLayout>
+      );
+    }
+
+    // Halaman tanpa layout utama
     switch (currentView) {
-      case 'login':
-        return <LoginPage onSwitchToRegister={() => navigate('register')} onLoginSuccess={onLoginSuccess} />;
-      case 'register':
+      case 'login': 
+        return <LoginPage onNavigate={navigate} onSwitchToRegister={() => navigate('register')} />;
+      case 'register': 
         return <RegisterPage onSwitchToLogin={() => navigate('login')} />;
-      case 'levelSelection':
+      case 'forgotPassword':
+        return <ForgotPasswordPage 
+          onNavigate={navigate} 
+          onCodeSent={(identifier) => {
+            setResetIdentifier(identifier);
+            navigate('verifyCode', { for: 'reset' });
+          }} 
+        />;
+      case 'verifyCode':
+        return <VerifyCodePage 
+          identifier={viewProps?.identifier || resetIdentifier}
+          onVerified={(code, identifier) => {
+            if(viewProps?.for === 'reset'){
+              setResetCode(code);
+              setResetIdentifier(identifier);
+              navigate('resetPassword');
+            }
+          }} 
+        />;
+      case 'resetPassword':
+        return <ResetPasswordPage 
+          code={resetCode}
+          identifier={resetIdentifier}
+          onPasswordReset={() => {
+            setResetIdentifier('');
+            setResetCode(null);
+          }} 
+        />;
+      
+      case 'levelSelection': 
         return <LevelSelectionPage onSelectSD={() => navigate('chooseSelection')} onSelectTK={() => navigate('home')} onExit={() => navigate('login')} />;
-      case 'chooseSelection':
+      case 'chooseSelection': 
         return <ChooseSelectionPage onExit={() => navigate('login')} onSelectClass1={() => navigate('home')} onSelectClass2={() => navigate('home')} onSelectClass3_4={() => navigate('home')} onSelectClass5={() => navigate('home')} onSelectClass6={() => navigate('home')} />;
-      case 'quizForm':
+      case 'quizForm': 
         return <QuizForm quizData={selectedQuiz} onCompleteQuiz={handleCompleteQuiz} />;
-      default:
+      case 'worksheet': 
+        return <WorksheetPage onNavigate={navigate} chapterInfo={selectedChapterInfo} />;
+      case 'drawing': 
+        return <DrawingPage onNavigate={navigate} />;
+      case 'writing': 
+        return <WritingPage onNavigate={navigate} />;
+      default: 
         return <WelcomePage onExplore={() => navigate('login')} />;
     }
-  };
+  }, [currentView, navigate, viewProps, selectedQuiz, selectedChapterInfo, resetIdentifier, resetCode]);
 
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div key={currentView} variants={pageVariants} initial="initial" animate="in" exit="out" transition={pageTransition}>
-        {renderView()}
-      </motion.div>
-    </AnimatePresence>
-  );
+  return renderedView;
 };
 
 export default AppRoutes;
