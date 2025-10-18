@@ -1,12 +1,14 @@
 // contoh-sesm-web/pages/admin/TeacherProfilePage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FiUser, FiSave, FiLoader, FiCamera, FiEdit2, FiTrash2 } from 'react-icons/fi'; // Added FiTrash2
+// Added FiTrash2 for the delete button
+import { FiUser, FiSave, FiLoader, FiCamera, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
-import Notification from '../../components/ui/Notification'; // Pastikan path ini benar
+import Notification from '../../components/ui/Notification'; // Make sure this path is correct
 
 const TeacherProfilePage = () => {
     // Make sure refreshUser is destructured correctly
+    // Added refreshUser here
     const { user, updateProfile, refreshUser } = useAuth();
     const [formData, setFormData] = useState({
         nama: '',
@@ -18,16 +20,18 @@ const TeacherProfilePage = () => {
         jurusan: '',
         tahun_lulus: '',
         password: '',
-        confirmPassword: ''
-        // No need for 'avatar' field here anymore if handling separately
+        confirmPassword: '',
+        // Added 'avatar' state within formData to track deletion intent
+        avatar: null
     });
-    const [avatarPreview, setAvatarPreview] = useState(null); // Initialize with null
+    const [avatarPreview, setAvatarPreview] = useState(null);
     const [avatarFile, setAvatarFile] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
     const fileInputRef = useRef(null);
 
     const API_URL = 'http://localhost:8080';
+    // Use user?.nama directly for potentially null user object
     const defaultAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${user?.nama || user?.username || 'Guru'}`;
 
     useEffect(() => {
@@ -42,16 +46,29 @@ const TeacherProfilePage = () => {
                 jurusan: user.jurusan || '',
                 tahun_lulus: user.tahun_lulus ?? '', // Handle null/undefined
                 password: '',
-                confirmPassword: ''
+                confirmPassword: '',
+                avatar: user.avatar // Store original avatar path or null
             });
-            const currentAvatar = user.avatar
-                ? (user.avatar.startsWith('http') ? user.avatar : `${API_URL}/${user.avatar}`)
-                : defaultAvatar;
+
+            let currentAvatar = defaultAvatar;
+            // *** FIX: Check if user.avatar is a string before using startsWith ***
+            if (user.avatar && typeof user.avatar === 'string') {
+                currentAvatar = user.avatar.startsWith('http') ? user.avatar : `${API_URL}/${user.avatar}`;
+            }
             setAvatarPreview(currentAvatar);
+            // Reset avatarFile state when user data changes
+            setAvatarFile(null);
         } else {
-            setAvatarPreview(defaultAvatar); // Set default if user is null initially
+             // Reset form data and preview if user becomes null (e.g., after logout)
+            setFormData({
+                nama: '', username: '', email: '', umur: '',
+                pendidikan_terakhir: '', institusi: '', jurusan: '', tahun_lulus: '',
+                password: '', confirmPassword: '', avatar: null
+            });
+            setAvatarPreview(defaultAvatar);
+            setAvatarFile(null);
         }
-    // Add defaultAvatar dependency to avoid potential stale closure
+    // Add defaultAvatar dependency
     }, [user, defaultAvatar]);
 
     const handleInputChange = (e) => {
@@ -62,17 +79,17 @@ const TeacherProfilePage = () => {
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Basic size check (e.g., 2MB)
-            if (file.size > 2 * 1024 * 1024) {
+            if (file.size > 2 * 1024 * 1024) { // Basic size check (e.g., 2MB)
                  setNotif({ isOpen: true, title: "Gagal", message: "Ukuran file terlalu besar (maks. 2MB).", success: false });
                  return;
             }
-            setAvatarFile(file);
-            setAvatarPreview(URL.createObjectURL(file));
+            setAvatarFile(file); // Stage the file for upload
+            setAvatarPreview(URL.createObjectURL(file)); // Show preview
+            // Signal that avatar is being updated (not deleted)
+            setFormData(prev => ({...prev, avatar: null})); // Clear deletion signal if user uploads new image
         }
     };
 
-    // --- MODIFIED handleSubmit ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.password && formData.password !== formData.confirmPassword) {
@@ -82,53 +99,40 @@ const TeacherProfilePage = () => {
 
         setIsSaving(true);
 
-        // 1. Prepare plain data object (for updating local storage via useAuth)
-        const plainData = { ...formData };
-        if (!plainData.password) { // Don't send empty passwords
-            delete plainData.password;
-            delete plainData.confirmPassword;
-        }
-         // If avatar wasn't changed and not marked for deletion, don't include it
-        if (!avatarFile && plainData.avatar !== 'DELETE') {
-            delete plainData.avatar;
+        // Prepare data object based on formData state
+        const dataToUpdate = { ...formData };
+        if (!dataToUpdate.password) { // Don't send empty passwords
+            delete dataToUpdate.password;
+            delete dataToUpdate.confirmPassword;
+        } else {
+             // Only keep the password field if it's set
+            delete dataToUpdate.confirmPassword;
         }
 
-
-        // 2. Prepare FormData (for sending to backend)
-        const updateData = new FormData();
-        Object.keys(plainData).forEach(key => {
-             // Skip confirmPassword and only send password if it's set
-            if (key === 'confirmPassword' || (key === 'password' && !plainData.password)) return;
-            // Handle null/undefined values, convert to empty string if needed by backend, otherwise skip
-            updateData.append(key, plainData[key] === null || plainData[key] === undefined ? '' : plainData[key]);
-        });
-        if (avatarFile) {
-            updateData.append('avatar', avatarFile); // Backend expects 'avatar'
-        } else if (formData.avatar === 'DELETE') {
-             updateData.append('avatar', 'DELETE'); // Send delete signal if avatarFile is null and delete was intended
-        }
+        // The 'avatar' field in dataToUpdate now holds either the original path, null, or 'DELETE'
+        // Pass the staged avatarFile separately to the updateProfile function
 
         try {
-            // Call updateProfile from useAuth, passing BOTH plain data and FormData
-            const result = await updateProfile(plainData, updateData);
+            // Call updateProfile from useAuth, passing the data object and the separate file
+            const result = await updateProfile(dataToUpdate, avatarFile);
 
             setNotif({ isOpen: true, title: "Sukses", message: result.message || "Profil berhasil diperbarui", success: true });
             setFormData(prev => ({ ...prev, password: '', confirmPassword: '' })); // Clear password fields
-            setAvatarFile(null); // Clear staged file
+            setAvatarFile(null); // Clear staged file after successful upload
 
-            // refreshUser is now available via useAuth
+            // Refresh user data in context after successful update
             if (typeof refreshUser === 'function') {
-                refreshUser(); // Refresh user data in context
+                refreshUser();
             } else {
-                console.error("refreshUser is not a function after updateProfile call");
+                 console.error("refreshUser is not available in useAuth");
             }
 
         } catch (error) {
-            // Error handling is now inside useAuth's updateProfile, but keep a fallback
             console.error("Error updating profile in component:", error);
             setNotif({
                 isOpen: true,
                 title: "Gagal",
+                // Use error message from updateProfile or a fallback
                 message: error.message || "Gagal memperbarui profil.",
                 success: false
             });
@@ -136,14 +140,14 @@ const TeacherProfilePage = () => {
             setIsSaving(false);
         }
     };
-    // --- END MODIFICATION ---
 
-     const handleDeleteAvatar = () => {
-        setAvatarPreview(defaultAvatar);
-        setAvatarFile(null);
-        // Add a temporary state or marker in formData if needed by updateProfile logic
-        setFormData(prev => ({...prev, avatar: 'DELETE'})); // Signal deletion
+    const handleDeleteAvatar = () => {
+        setAvatarPreview(defaultAvatar); // Show default avatar preview
+        setAvatarFile(null); // Clear any staged file
+        // Signal deletion in formData
+        setFormData(prev => ({...prev, avatar: 'DELETE'}));
     };
+
 
     const inputStyle = "w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal text-sm";
     const labelStyle = "block text-sm font-bold text-gray-600 mb-1";
@@ -166,12 +170,11 @@ const TeacherProfilePage = () => {
                     {/* Kolom Avatar */}
                     <div className="md:col-span-1 flex flex-col items-center pt-4">
                         <div className="relative mb-4">
-                            {/* Add fallback directly or ensure avatarPreview is never empty */}
                             <img
                                 src={avatarPreview || defaultAvatar}
                                 alt="Avatar Guru"
-                                className="w-40 h-40 rounded-full border-4 border-sesm-sky object-cover shadow-md bg-gray-200" // Added bg-gray-200 as visual fallback
-                                onError={(e) => { e.target.onerror = null; e.target.src=defaultAvatar }} // Handle broken image links
+                                className="w-40 h-40 rounded-full border-4 border-sesm-sky object-cover shadow-md bg-gray-200"
+                                onError={(e) => { e.target.onerror = null; e.target.src=defaultAvatar }}
                             />
                             <button
                                 type="button"
@@ -184,8 +187,9 @@ const TeacherProfilePage = () => {
                              {/* Added Delete Button */}
                             <button
                                 type="button"
+                                // Only show delete if there is a non-default avatar to delete
                                 onClick={handleDeleteAvatar}
-                                className="absolute -left-2 bottom-2 bg-red-500 text-white p-2 rounded-full border-2 border-white shadow-md hover:bg-red-700 transition-colors"
+                                className={`absolute -left-2 bottom-2 bg-red-500 text-white p-2 rounded-full border-2 border-white shadow-md hover:bg-red-700 transition-colors ${avatarPreview === defaultAvatar ? 'hidden' : ''}`}
                                 title="Hapus Avatar"
                             >
                                 <FiTrash2 size={18} />
