@@ -240,10 +240,6 @@ const TeacherProfilePage = () => {
                          {/* --- PERBAIKAN: Info Tambahan di Bawah Avatar --- */}
                         <div className="w-full mt-auto space-y-3 bg-gray-50 p-4 rounded-lg border">
                             <h4 className="text-center font-bold text-gray-700 mb-2">Informasi Akun</h4>
-                             <div className="text-sm">
-                                <span className="font-semibold text-gray-600">Bergabung:</span>
-                                <p className="text-gray-800 flex items-center gap-2"><FiCalendar size={14}/> {accountCreatedDate}</p>
-                            </div>
                              <hr className="border-dashed"/>
                             <div className="text-sm">
                                 <span className="font-semibold text-gray-600">Pendidikan:</span>
