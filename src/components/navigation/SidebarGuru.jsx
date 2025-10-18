@@ -1,163 +1,125 @@
-// contoh-sesm-web/components/navigation/SidebarGuru.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import {
-    FiBookOpen, FiLogOut, FiHelpCircle, FiAlertTriangle, FiUsers, FiBookmark, FiBook,
-    FiUser, FiSettings, FiChevronDown, FiChevronLeft, FiChevronRight, FiCalendar, FiClock, FiGrid
-} from 'react-icons/fi';
+import React, { useState } from 'react';
+// --- TAMBAHKAN FiUser DISINI ---
+import { FiBookOpen, FiLogOut, FiHelpCircle, FiAlertTriangle, FiUsers, FiBookmark, FiBook, FiUser } from 'react-icons/fi';
 import Logo from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
-import CalenderModal from '../mod/CalenderModal'; // Impor modal baru
 
-// --- Komponen Modal Konfirmasi Logout (Tidak berubah) ---
+// Komponen Modal Konfirmasi Logout
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
-    if (!isOpen) return null;
-    return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4" onClick={onClose}>
-                    <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-6 text-center">
-                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4"><FiAlertTriangle className="h-6 w-6 text-yellow-600" /></div>
-                            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-                            <p className="text-sm text-gray-500 mt-2">{message}</p>
-                        </div>
-                        <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-2xl">
-                            <button onClick={onConfirm} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200">Ya, Logout</button>
-                            <button onClick={onClose} type="button" className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm transition-colors duration-200">Batal</button>
-                        </div>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
+    if (!isOpen) return null;
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
+                    <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6 text-center">
+                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4"><FiAlertTriangle className="h-6 w-6 text-yellow-600" /></div>
+                            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+                            <p className="text-sm text-gray-500 mt-2">{message}</p>
+                        </div>
+                        <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-2xl">
+                            <button onClick={onConfirm} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Ya, Logout</button>
+                            <button onClick={onClose} type="button" className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Batal</button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 };
 
-// --- Komponen NavLink (Tidak berubah) ---
-const NavLink = ({ icon, label, isActive, onClick, isMinimized }) => (
-    <motion.button onClick={onClick} className={`flex items-center space-x-3 h-11 rounded-md transition-colors duration-200 w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sesm-teal focus-visible:ring-offset-1 group relative overflow-hidden ${isMinimized ? 'px-3 justify-center' : 'px-4'} ${isActive ? 'bg-sesm-teal text-white font-semibold shadow-sm' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 font-medium'}`} whileHover={{ backgroundColor: isActive ? '#0d9488' : '#f3f4f6' }} whileTap={{ scale: 0.98 }} title={isMinimized ? label : ''}>
-        {React.cloneElement(icon, { size: 20, className: `flex-shrink-0 transition-colors ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-700'}` })}
-        <AnimatePresence>
-            {!isMinimized && (
-                <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0, transition: { duration: 0.2, delay: 0.1 } }} exit={{ opacity: 0, x: -10, transition: { duration: 0.1 } }} className="flex-grow truncate whitespace-nowrap">{label}</motion.span>
-            )}
-        </AnimatePresence>
-    </motion.button>
+const NavLink = ({ icon, label, isActive, onClick, isLogout = false }) => (
+  <button
+    onClick={onClick}
+    className={`
+      flex items-center space-x-4 px-4 py-3 rounded-lg transition-colors duration-200 w-full text-left
+      ${isActive
+        ? 'bg-sesm-deep text-white shadow-lg'
+        : isLogout
+        ? 'text-red-600 hover:bg-red-50'
+        : 'text-gray-600 hover:bg-sesm-sky/20 hover:text-sesm-deep'
+      }
+    `}
+  >
+    {icon}
+    <span className="font-semibold">{label}</span>
+  </button>
 );
 
-// --- Komponen Dropdown Profil (Tidak berubah) ---
-const ProfileDropdown = ({ user, activePage, onNavigate, onLogoutClick, isMinimized }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef(null);
-    const API_URL = 'http://localhost:8080';
-    useEffect(() => { const handleClickOutside = (event) => { if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false); }; document.addEventListener("mousedown", handleClickOutside); return () => document.removeEventListener("mousedown", handleClickOutside); }, []);
-    const dropdownVariants = { hidden: { opacity: 0, y: -10, scale: 0.95 }, visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: "easeOut" } }, exit: { opacity: 0, y: -10, scale: 0.95, transition: { duration: 0.15, ease: "easeIn" } } };
-    const itemVariants = { hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } };
-    const getAvatarUrl = () => { if (!user || !user.avatar) return `https://api.dicebear.com/7.x/initials/svg?seed=${user?.nama || user?.username || 'G'}`; if (user.avatar.startsWith('http')) return user.avatar; return `${API_URL}/${user.avatar}`; };
-    const isActive = activePage === 'teacherProfile';
-    return (
-        <div className="relative" ref={dropdownRef}>
-            <motion.button onClick={() => !isMinimized && setIsOpen(!isOpen)} className={`flex items-center px-4 h-14 rounded-md transition-colors duration-200 w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sesm-teal focus-visible:ring-offset-1 group relative ${isMinimized ? 'justify-center' : 'space-x-3'} ${isOpen && !isMinimized ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 font-medium'}`} whileHover={{ backgroundColor: isOpen && !isMinimized ? '#e5e7eb' : '#f3f4f6' }} whileTap={{ scale: 0.98 }} title={isMinimized ? (user?.nama || user?.username || 'Profil') : ''}>
-                <img src={getAvatarUrl()} alt="Avatar" className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-gray-200" />
-                <AnimatePresence>
-                    {!isMinimized && (<motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0, transition: { duration: 0.2, delay: 0.1 } }} exit={{ opacity: 0, x: -10, transition: { duration: 0.1 } }} className="flex-grow truncate whitespace-nowrap">{user?.nama || user?.username || 'Profil'}</motion.span>)}
-                </AnimatePresence>
-                {!isMinimized && (<motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}><FiChevronDown size={18} className={`flex-shrink-0 transition-colors ${isOpen ? 'text-gray-700' : 'text-gray-400 group-hover:text-gray-700'}`} /></motion.div>)}
-            </motion.button>
-            <AnimatePresence>
-                {isOpen && !isMinimized && (
-                    <motion.div variants={dropdownVariants} initial="hidden" animate="visible" exit="exit" className="absolute bottom-full left-0 mb-2 w-full bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 z-10">
-                        <motion.ul variants={{ visible: { transition: { staggerChildren: 0.05 } } }}>
-                            <motion.li variants={itemVariants}><button onClick={() => { onNavigate('teacherProfile'); setIsOpen(false); }} className={`flex items-center space-x-3 px-4 py-3 w-full text-left text-sm font-medium hover:bg-gray-100 transition-colors duration-150 ${isActive ? 'text-sesm-deep bg-sesm-sky/15' : 'text-gray-700'}`}><FiSettings size={16} className={isActive ? 'text-sesm-deep' : 'text-gray-500'} /><span>Setting Akun</span></button></motion.li>
-                            <motion.li variants={itemVariants}><button onClick={() => { onLogoutClick(); setIsOpen(false); }} className="flex items-center space-x-3 px-4 py-3 w-full text-left text-sm font-medium text-red-600 hover:bg-red-50 transition-colors duration-150"><FiLogOut size={16} /><span>Logout</span></button></motion.li>
-                        </motion.ul>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-};
+const SidebarGuru = ({ activePage, onNavigate }) => {
+  const { logout } = useAuth();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-// --- Komponen Jam dan Tanggal (Diperbarui) ---
-const ClockCalendar = ({ isMinimized }) => {
-    const [time, setTime] = useState(new Date());
-    useEffect(() => { const timerId = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(timerId); }, []);
-    const formattedTime = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const formattedDate = time.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+  const handleLogoutConfirm = () => {
+    setIsLogoutModalOpen(false);
+    logout();
+  };
 
-    return (
-        <motion.div layout className={`px-4 pt-3 pb-2 border-t border-gray-100 ${isMinimized ? 'text-center' : ''}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-            <AnimatePresence>
-                {!isMinimized && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1, transition: { duration: 0.2, delay: 0.1 } }} exit={{ height: 0, opacity: 0, transition: { duration: 0.1 } }} className="overflow-hidden">
-                        <div className="flex items-center gap-1.5 text-gray-400 mb-1">
-                            <FiCalendar size={13}/>
-                            <span className="text-xs font-medium ">{formattedDate}</span>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            <div className={`flex items-center gap-1.5 ${isMinimized ? 'justify-center' : ''}`}>
-                <FiClock size={14} className="text-gray-400"/>
-                <span className="text-sm font-semibold text-gray-600 w-20">{formattedTime}</span>
-            </div>
-        </motion.div>
-    );
-};
+  return (
+    <>
+      <ConfirmationModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleLogoutConfirm}
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin keluar dari akun guru?"
+      />
+      <aside className="hidden md:flex flex-col w-64 h-screen bg-white shadow-xl fixed">
+        <div className="flex items-center justify-center p-6 border-b">
+          <img src={Logo} alt="SESM Logo" className="w-32" />
+        </div>
+        <nav className="flex-1 p-4 space-y-2">
+          <NavLink
+            icon={<FiBookOpen size={20} />}
+            label="Manajemen Materi"
+            isActive={activePage === 'manajemenMateri'}
+            onClick={() => onNavigate('manajemenMateri')}
+          />
+          <NavLink
+            icon={<FiBook size={20} />}
+            label="Manajemen Cerita"
+            isActive={activePage === 'manajemenCerita'}
+            onClick={() => onNavigate('manajemenCerita')}
+          />
+          <NavLink
+            icon={<FiHelpCircle size={20} />}
+            label="Manajemen Kuis"
+            isActive={activePage === 'manajemenKuis'}
+            onClick={() => onNavigate('manajemenKuis')}
+          />
+          <NavLink
+            icon={<FiBookmark size={20} />}
+            label="Manajemen Bookmark"
+            isActive={activePage === 'manajemenBookmark'}
+            onClick={() => onNavigate('manajemenBookmark')}
+          />
+          <NavLink
+            icon={<FiUsers size={20} />}
+            label="Manajemen Pengguna"
+            isActive={activePage === 'manajemenPengguna'}
+            onClick={() => onNavigate('manajemenPengguna')}
+          />
 
-// --- Komponen SidebarGuru Utama (Diperbarui) ---
-const SidebarGuru = ({ activePage, onNavigate, isMinimized, toggleMinimize }) => {
-    const { user, logout } = useAuth();
-    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-
-    const handleLogoutConfirm = () => {
-        setIsLogoutModalOpen(false);
-        logout();
-    };
-
-    const sidebarVariants = {
-        minimized: { width: '80px' },
-        maximized: { width: '288px' }, // Diperlebar sedikit
-    };
-
-    return (
-        <>
-            <ConfirmationModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} onConfirm={handleLogoutConfirm} title="Konfirmasi Logout" message="Apakah Anda yakin ingin keluar dari akun guru?" />
-            <AnimatePresence>
-                {isCalendarOpen && <CalenderModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />}
-            </AnimatePresence>
-            
-            <motion.aside variants={sidebarVariants} animate={isMinimized ? 'minimized' : 'maximized'} transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }} className="hidden md:flex flex-col h-screen bg-white shadow-lg fixed overflow-hidden border-r border-gray-200 z-30">
-                <div className="flex items-center justify-center h-28 border-b border-gray-100 flex-shrink-0 px-4 relative">
-                    <motion.button layout onClick={toggleMinimize} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-8 h-8 rounded-full bg-white border-2 border-gray-300 shadow-md text-gray-500 hover:bg-gray-100 hover:text-sesm-deep flex items-center justify-center transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sesm-teal" title={isMinimized ? "Perbesar Sidebar" : "Perkecil Sidebar"} whileTap={{ scale: 0.9 }} whileHover={{ scale: 1.1, rotate: 180 }}>
-                        {isMinimized ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}
-                    </motion.button>
-                     <AnimatePresence mode="wait">
-                        <motion.div key={isMinimized ? 'icon' : 'logo'} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 0.2 }}>
-                            {isMinimized ? ( <FiGrid size={28} className="text-sesm-deep" /> ) : ( <img src={Logo} alt="SESM Logo" className="h-20" /> )}
-                        </motion.div>
-                     </AnimatePresence>
-                </div>
-
-                <motion.nav layout className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
-                    <NavLink icon={<FiBookOpen />} label="Manajemen Materi" isActive={activePage === 'manajemenMateri'} onClick={() => onNavigate('manajemenMateri')} isMinimized={isMinimized} />
-                    <NavLink icon={<FiBook />} label="Manajemen Cerita" isActive={activePage === 'manajemenCerita'} onClick={() => onNavigate('manajemenCerita')} isMinimized={isMinimized} />
-                    <NavLink icon={<FiHelpCircle />} label="Manajemen Kuis" isActive={activePage === 'manajemenKuis'} onClick={() => onNavigate('manajemenKuis')} isMinimized={isMinimized} />
-                    <NavLink icon={<FiBookmark />} label="Manajemen Bookmark" isActive={activePage === 'manajemenBookmark'} onClick={() => onNavigate('manajemenBookmark')} isMinimized={isMinimized} />
-                    <NavLink icon={<FiUsers />} label="Manajemen Pengguna" isActive={activePage === 'manajemenPengguna'} onClick={() => onNavigate('manajemenPengguna')} isMinimized={isMinimized} />
-                </motion.nav>
-
-                <motion.button layout onClick={() => setIsCalendarOpen(true)} className="w-full text-left hover:bg-gray-50 transition-colors">
-                    <ClockCalendar isMinimized={isMinimized} />
-                </motion.button>
-                
-                <motion.div layout className="p-3 border-t border-gray-100">
-                    <ProfileDropdown user={user} activePage={activePage} onNavigate={onNavigate} onLogoutClick={() => setIsLogoutModalOpen(true)} isMinimized={isMinimized}/>
-                </motion.div>
-            </motion.aside>
-        </>
-    );
+          {/* --- TAMBAHKAN NAVLINK PROFIL DISINI --- */}
+          <NavLink
+            icon={<FiUser size={20} />}
+            label="Profil Saya"
+            isActive={activePage === 'teacherProfile'}
+            onClick={() => onNavigate('teacherProfile')}
+          />
+        </nav>
+        <div className="p-4 border-t">
+          <NavLink
+              icon={<FiLogOut size={20} />}
+              label="Logout"
+              isLogout={true}
+              onClick={() => setIsLogoutModalOpen(true)}
+          />
+        </div>
+      </aside>
+    </>
+  );
 };
 
 export default SidebarGuru;
