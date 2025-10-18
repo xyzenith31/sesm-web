@@ -1,8 +1,11 @@
+// contoh-sesm-web/components/admin/BankSoalMateriModal.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiSearch, FiLoader, FiInbox, FiCheckSquare, FiArrowRight, FiArrowLeft, FiPlus } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 import AddChapterModal from '../mod/AddChapterModal'; // Impor modal untuk menambah chapter
+import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
+import Notification from '../ui/Notification'; // Impor Notification
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -14,49 +17,72 @@ const jenjangOptions = {
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
 
+// Siapkan options untuk CustomSelect jenjang
+const jenjangSelectOptions = Object.keys(jenjangOptions).map(key => ({
+    value: key,
+    label: key,
+}));
+
 const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
     const [step, setStep] = useState(1);
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
-    const [error, setError] = useState(null);
+    // State error tidak digunakan langsung, diganti notif
+    // const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedSubject, setSelectedSubject] = useState('Semua');
     const [selectedQuestionIds, setSelectedQuestionIds] = useState(new Set());
-    const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
+    const [selectedFilterKey, setSelectedFilterKey] = useState('TK'); // Default TK
 
     // State untuk Step 2
-    const [targetFilterKey, setTargetFilterKey] = useState('TK');
+    const [targetFilterKey, setTargetFilterKey] = useState('TK'); // Default TK
     const [targetMateriList, setTargetMateriList] = useState({});
     const [targetMateriLoading, setTargetMateriLoading] = useState(false);
     const [targetSubjectId, setTargetSubjectId] = useState('');
     const [targetMateriKey, setTargetMateriKey] = useState('');
-    
+
     // State untuk membuka modal tambah materi
     const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState(false);
 
+    // State Notifikasi
+    const [notif, setNotif] = useState({ isOpen: false, title: '', message: '', success: true });
+
+    // Fungsi untuk menutup notifikasi
+    const handleCloseNotif = () => setNotif(prev => ({ ...prev, isOpen: false }));
 
     // Effect untuk Step 1 (Mengambil daftar soal dari bank)
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
-            setError(null);
-            
+            // setError(null); // Hapus setError
             const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
 
             DataService.getAllQuestionsForBank(jenjang, kelas)
                 .then(response => setQuestions(response.data))
-                .catch(err => setError("Gagal memuat bank soal."))
+                .catch(err => {
+                    // Tampilkan notifikasi error
+                     setNotif({
+                        isOpen: true,
+                        title: "Gagal Memuat Bank Soal",
+                        message: "Tidak dapat mengambil data bank soal dari server.",
+                        success: false
+                    });
+                     setQuestions([]); // Kosongkan soal jika error
+                })
                 .finally(() => setLoading(false));
-            
+
+            // Set filter jenjang target sama dengan filter sumber soal saat pertama kali buka
             setTargetFilterKey(selectedFilterKey);
 
-        } else {
+        } else { // Reset state saat modal ditutup
             setStep(1);
             setQuestions([]);
             setSelectedQuestionIds(new Set());
             setSearchTerm('');
             setSelectedSubject('Semua');
+            setTargetSubjectId('');
+            setTargetMateriKey('');
         }
     }, [isOpen, selectedFilterKey]);
 
@@ -69,6 +95,13 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
                 setTargetMateriList(response.data);
             })
             .catch(err => {
+                 // Tampilkan notifikasi error
+                setNotif({
+                    isOpen: true,
+                    title: "Gagal Memuat Materi Tujuan",
+                    message: "Tidak dapat mengambil daftar materi tujuan.",
+                    success: false
+                });
                 console.error("Gagal memuat daftar materi tujuan:", err);
                 setTargetMateriList({});
             })
@@ -85,10 +118,16 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
         }
     }, [isOpen, step, fetchTargetMateri]);
 
-    const subjects = useMemo(() => ['Semua', ...Array.from(new Set(questions.map(q => q.nama_mapel)))], [questions]);
+    // Siapkan options untuk CustomSelect Subject
+    const subjectOptions = useMemo(() => [
+        { value: 'Semua', label: 'Semua Mapel' },
+        ...Array.from(new Set(questions.map(q => q.nama_mapel)))
+               .map(subject => ({ value: subject, label: subject }))
+    ], [questions]);
+
 
     const filteredQuestions = useMemo(() => {
-        return questions.filter(q => 
+        return questions.filter(q =>
             q.pertanyaan.toLowerCase().includes(searchTerm.toLowerCase()) &&
             (selectedSubject === 'Semua' || q.nama_mapel === selectedSubject)
         );
@@ -102,10 +141,16 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
             return newSet;
         });
     };
-    
+
     const handleNextStep = () => {
         if (selectedQuestionIds.size === 0) {
-            alert("Pilih setidaknya satu soal.");
+            // Tampilkan notifikasi info
+             setNotif({
+                isOpen: true,
+                title: "Info",
+                message: "Pilih setidaknya satu soal untuk melanjutkan.",
+                success: true // Warna hijau untuk info
+            });
             return;
         }
         setStep(2);
@@ -113,45 +158,71 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
 
     const handleAddQuestions = async () => {
         if (!targetMateriKey) {
-            alert("Pilih materi tujuan terlebih dahulu.");
+             // Tampilkan notifikasi info
+            setNotif({
+                isOpen: true,
+                title: "Info",
+                message: "Pilih materi tujuan terlebih dahulu.",
+                success: true
+            });
             return;
         }
         setIsAdding(true);
         try {
             await DataService.addQuestionsFromBankToChapter(targetMateriKey, Array.from(selectedQuestionIds));
             onQuestionsAdded(targetMateriKey);
+             // Notifikasi sukses akan ditangani oleh parent (ManajemenMateri)
         } catch (error) {
-            alert("Gagal menambahkan soal dari bank.");
+             // Tampilkan notifikasi error
+             setNotif({
+                isOpen: true,
+                title: "Gagal Menambahkan",
+                message: error.response?.data?.message || "Gagal menambahkan soal dari bank.",
+                success: false
+            });
         } finally {
             setIsAdding(false);
         }
     };
-    
-    const targetMapelOptions = useMemo(() => Object.entries(targetMateriList).map(([nama, data]) => ({ subject_id: data.subject_id, nama_mapel: nama})), [targetMateriList]);
-    const targetMateriOptions = useMemo(() => {
+
+    const targetMapelOptions = useMemo(() => Object.entries(targetMateriList).map(([nama, data]) => ({ value: data.subject_id, label: nama })), [targetMateriList]);
+
+    // Siapkan options untuk CustomSelect Materi Tujuan
+     const targetMateriOptions = useMemo(() => {
         if (!targetSubjectId) return [];
-        const selectedMapel = Object.values(targetMateriList).find(m => m.subject_id === parseInt(targetSubjectId));
-        return selectedMapel ? selectedMapel.chapters : [];
+        const selectedMapelData = Object.values(targetMateriList).find(m => m.subject_id === parseInt(targetSubjectId));
+        return selectedMapelData ? selectedMapelData.chapters.map(c => ({ value: c.materiKey, label: c.judul })) : [];
     }, [targetMateriList, targetSubjectId]);
+
 
     // Handler untuk submit pembuatan materi baru
     const handleAddChapterSubmit = async (data) => {
         try {
             const response = await DataService.addChapter(data);
             const newChapter = response.data;
-            alert(`Materi baru "${newChapter.judul}" berhasil dibuat!`);
-            
-            setIsAddChapterModalOpen(false);
-            
-            // Panggil fetchTargetMateri lagi untuk refresh daftar
-            fetchTargetMateri();
+            // Tampilkan notifikasi sukses
+             setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: `Materi baru "${newChapter.judul}" berhasil dibuat!`,
+                success: true
+            });
 
-            // Atur dropdown untuk memilih materi yang baru saja dibuat
+            setIsAddChapterModalOpen(false);
+            fetchTargetMateri(); // Refresh daftar materi
+
+            // Langsung pilih materi yang baru dibuat
             setTargetSubjectId(String(data.subjectId));
             setTargetMateriKey(newChapter.materiKey);
 
         } catch (e) {
-            alert("Gagal membuat materi baru: " + e.message);
+            // Tampilkan notifikasi error
+             setNotif({
+                isOpen: true,
+                title: "Gagal Membuat Materi",
+                message: e.response?.data?.message || "Terjadi kesalahan saat membuat materi baru.",
+                success: false
+            });
         }
     };
 
@@ -160,13 +231,22 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
 
     return (
         <>
+             {/* Render Notification */}
+            <Notification
+                isOpen={notif.isOpen}
+                onClose={handleCloseNotif}
+                title={notif.title}
+                message={notif.message}
+                success={notif.success}
+            />
             <AnimatePresence>
                 {isAddChapterModalOpen && (
                     <AddChapterModal
                         isOpen={isAddChapterModalOpen}
                         onClose={() => setIsAddChapterModalOpen(false)}
                         onSubmit={handleAddChapterSubmit}
-                        mapelList={targetMapelOptions}
+                         // Kirim dalam format { value: id, label: nama }
+                        mapelList={targetMapelOptions.map(m => ({ subject_id: m.value, nama_mapel: m.label }))}
                         jenjang={targetFilterKey}
                     />
                 )}
@@ -182,25 +262,35 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
                         </div>
                         <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-200"><FiX size={22}/></button>
                     </div>
-                    
+
                     {step === 1 && (
                         <>
                             <div className="p-4 border-b bg-gray-50 flex flex-col md:flex-row gap-4">
-                                 <select value={selectedFilterKey} onChange={(e) => setSelectedFilterKey(e.target.value)} className="w-full md:w-56 p-2 border rounded-lg bg-white">
-                                    {Object.keys(jenjangOptions).map(key => (<option key={key} value={key}>{key}</option>))}
-                                </select>
+                                <div className="w-full md:w-56">
+                                    {/* Ganti select Jenjang Sumber */}
+                                    <CustomSelect
+                                        options={jenjangSelectOptions}
+                                        value={selectedFilterKey}
+                                        onChange={setSelectedFilterKey}
+                                    />
+                                </div>
                                 <div className="relative flex-grow">
                                     <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                     <input type="text" placeholder="Cari pertanyaan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-2 pl-10 border rounded-lg"/>
                                 </div>
-                                <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)} className="w-full md:w-56 p-2 border rounded-lg bg-white" disabled={loading || questions.length === 0}>
-                                    {subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}
-                                </select>
+                                <div className="w-full md:w-56">
+                                    {/* Ganti select Mapel Sumber */}
+                                    <CustomSelect
+                                        options={subjectOptions}
+                                        value={selectedSubject}
+                                        onChange={setSelectedSubject}
+                                        disabled={loading || questions.length === 0}
+                                    />
+                                </div>
                             </div>
                             <div className="flex-grow overflow-y-auto p-4">
                                 {loading ? <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>
-                                : error ? <div className="text-center text-red-500">{error}</div>
-                                : filteredQuestions.length === 0 ? (
+                                : filteredQuestions.length === 0 ? ( // Cek error tidak perlu lagi
                                     <div className="text-center text-gray-400 h-full flex flex-col items-center justify-center"><FiInbox size={48} /><p className="mt-2 font-semibold">Tidak ada soal ditemukan.</p></div>
                                 ) : (
                                     <div className="space-y-3">
@@ -230,37 +320,33 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
                         <div className="flex-grow flex flex-col justify-center items-center p-8 bg-gray-50">
                             <div className='w-full max-w-md space-y-6'>
                                 <h4 className='text-center text-lg font-bold text-gray-700'>Pilih Materi Tujuan</h4>
-                                
+
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-1">Jenjang & Kelas Tujuan</label>
-                                    <select
+                                    {/* Ganti select Jenjang Tujuan */}
+                                     <CustomSelect
+                                        options={jenjangSelectOptions}
                                         value={targetFilterKey}
-                                        onChange={(e) => { setTargetFilterKey(e.target.value); setTargetSubjectId(''); setTargetMateriKey(''); }}
-                                        className="w-full p-3 border border-gray-300 rounded-lg bg-white"
-                                    >
-                                        {Object.keys(jenjangOptions).map(key => (<option key={key} value={key}>{key}</option>))}
-                                    </select>
+                                        onChange={(value) => { setTargetFilterKey(value); setTargetSubjectId(''); setTargetMateriKey(''); }}
+                                    />
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-1">Mata Pelajaran</label>
-                                    <select
+                                     {/* Ganti select Mapel Tujuan */}
+                                     <CustomSelect
+                                        options={targetMapelOptions}
                                         value={targetSubjectId}
-                                        onChange={(e) => { setTargetSubjectId(e.target.value); setTargetMateriKey(''); }}
-                                        className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                                        onChange={(value) => { setTargetSubjectId(value); setTargetMateriKey(''); }}
+                                        placeholder={targetMateriLoading ? 'Memuat...' : '-- Pilih Mata Pelajaran --'}
                                         disabled={targetMateriLoading}
-                                    >
-                                        <option value="">
-                                            {targetMateriLoading ? 'Memuat...' : '-- Pilih Mata Pelajaran --'}
-                                        </option>
-                                        {targetMapelOptions.map(m => <option key={m.subject_id} value={m.subject_id}>{m.nama_mapel}</option>)}
-                                    </select>
+                                    />
                                 </div>
                                  <div>
                                     <div className="flex justify-between items-center mb-1">
                                       <label className="block text-sm font-semibold text-gray-700">Materi / Bab</label>
-                                      <button 
-                                        type="button" 
+                                      <button
+                                        type="button"
                                         onClick={() => setIsAddChapterModalOpen(true)}
                                         disabled={!targetSubjectId}
                                         className="text-xs font-bold text-sesm-teal hover:underline disabled:text-gray-400 disabled:no-underline flex items-center gap-1"
@@ -268,15 +354,14 @@ const BankSoalMateriModal = ({ isOpen, onClose, onQuestionsAdded }) => {
                                         <FiPlus size={14}/> Buat Materi Baru
                                       </button>
                                     </div>
-                                    <select
+                                     {/* Ganti select Bab Tujuan */}
+                                     <CustomSelect
+                                        options={targetMateriOptions}
                                         value={targetMateriKey}
-                                        onChange={(e) => setTargetMateriKey(e.target.value)}
-                                        className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                                        onChange={setTargetMateriKey}
+                                        placeholder="-- Pilih Materi --"
                                         disabled={!targetSubjectId || targetMateriLoading}
-                                    >
-                                        <option value="">-- Pilih Materi --</option>
-                                        {targetMateriOptions.map(c => <option key={c.materiKey} value={c.materiKey}>{c.judul}</option>)}
-                                    </select>
+                                    />
                                 </div>
                             </div>
                         </div>

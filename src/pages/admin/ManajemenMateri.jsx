@@ -9,12 +9,12 @@ import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
 import AddChapterModal from '../../components/mod/AddChapterModal';
 import QuestionFormModal from '../../components/mod/QuestionFormModal';
-import DraftsModal from '../../components/mod/DraftsModal';
+import DraftsModal from '../../components/mod/DraftsModal'; // Ganti nama impor jika perlu
 import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal';
 import EditQuestionModal from '../../components/admin/EditQuestionModal';
 import ChapterSettingsModal from '../../components/admin/ChapterSettingsModal';
-import Notification from '../../components/ui/Notification';
-import CustomSelect from '../../components/ui/CustomSelect';
+import Notification from '../../components/ui/Notification'; // Impor Notification
+import CustomSelect from '../../components/ui/CustomSelect'; // Impor CustomSelect
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -26,6 +26,7 @@ const jenjangOptions = {
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
 
+// Siapkan options untuk CustomSelect jenjang
 const jenjangSelectOptions = Object.keys(jenjangOptions).map(key => ({
     value: key,
     label: key,
@@ -74,25 +75,42 @@ const ManajemenMateri = ({ onNavigate }) => {
     const [selectedMateri, setSelectedMateri] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isDetailLoading, setIsDetailLoading] = useState(false);
-    const [error, setError] = useState(null);
+    // State error tidak digunakan langsung, diganti notif
+    // const [error, setError] = useState(null);
     const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState(false);
     const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
     const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
-    const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
+    const [selectedFilterKey, setSelectedFilterKey] = useState('TK'); // Default TK
     const [isBankSoalOpen, setIsBankSoalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null);
-    
+
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [selectedChapterForSettings, setSelectedChapterForSettings] = useState(null);
-    
+
     const [drafts, setDrafts] = useState([]);
     const [showDraftsNotification, setShowDraftsNotification] = useState(false);
+    const [hasDismissedDraftNotif, setHasDismissedDraftNotif] = useState(false); // Untuk mencegah notif muncul lagi setelah ditutup
+
+    // State Notifikasi
+    const [notif, setNotif] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        isConfirmation: false,
+        success: true,
+        onConfirm: () => {},
+        confirmText: 'Ya',
+        cancelText: 'Batal'
+    });
+
+    // Fungsi untuk menutup notifikasi
+    const handleCloseNotif = () => setNotif(prev => ({ ...prev, isOpen: false }));
 
     const fetchMateriList = useCallback((selectKeyAfterFetch = null) => {
         const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
         setIsLoading(true);
-        setError(null);
+        // setError(null); // Hapus setError
         if (!selectKeyAfterFetch) {
             setSelectedKey(null);
             setSelectedMateri(null);
@@ -101,10 +119,24 @@ const ManajemenMateri = ({ onNavigate }) => {
             setMateriList(res.data)
             if (selectKeyAfterFetch) {
                 setSelectedKey(selectKeyAfterFetch);
+                // Update selectedMateri juga jika ada key baru
+                 const materiInfo = Object.values(res.data).flatMap(m => m.chapters).find(m => m.materiKey === selectKeyAfterFetch);
+                 if (materiInfo) {
+                    // Hanya update info dasar, soal akan diambil terpisah
+                    setSelectedMateri(prev => ({ ...prev, ...materiInfo }));
+                 }
             }
-        }).catch(err => setError(err.response?.data?.message || "Gagal memuat data.")).finally(() => setIsLoading(false));
+        }).catch(err => {
+            // Tampilkan notifikasi error
+             setNotif({
+                isOpen: true,
+                title: "Gagal Memuat",
+                message: err.response?.data?.message || "Gagal memuat data materi.",
+                success: false
+            });
+        }).finally(() => setIsLoading(false));
     }, [selectedFilterKey]);
-    
+
     const fetchDrafts = useCallback(async () => {
         try {
             const response = await DataService.getAllDrafts();
@@ -112,7 +144,10 @@ const ManajemenMateri = ({ onNavigate }) => {
                 const materiDrafts = response.data.filter(d => d.draft_key.startsWith('materi_'));
                 if (materiDrafts.length > 0) {
                     setDrafts(materiDrafts);
-                    setShowDraftsNotification(true);
+                     // Tampilkan notifikasi hanya jika belum pernah ditutup di sesi ini
+                    if (!hasDismissedDraftNotif) {
+                        setShowDraftsNotification(true);
+                    }
                 } else {
                     setDrafts([]);
                 }
@@ -121,8 +156,15 @@ const ManajemenMateri = ({ onNavigate }) => {
             }
         } catch (error) {
             console.error("Gagal mengambil draft:", error);
+             // Opsional: Tampilkan notifikasi error jika gagal fetch draft
+             setNotif({
+                isOpen: true,
+                title: "Gagal Memuat Draf",
+                message: "Tidak dapat mengambil data draf dari server.",
+                success: false
+            });
         }
-    }, []);
+    }, [hasDismissedDraftNotif]); // Tambahkan dependency
 
     useEffect(() => {
         fetchMateriList();
@@ -133,11 +175,20 @@ const ManajemenMateri = ({ onNavigate }) => {
         if (!selectedKey) { setSelectedMateri(null); return; }
         setIsDetailLoading(true);
         const materiInfo = Object.values(materiList).flatMap(m => m.chapters).find(m => m.materiKey === selectedKey);
-        DataService.getDetailMateriForAdmin(selectedKey).then(res => setSelectedMateri({ ...materiInfo, questions: res.data.questions || [] })).catch(() => alert("Gagal memuat detail soal.")).finally(() => setIsDetailLoading(false));
+        DataService.getDetailMateriForAdmin(selectedKey).then(res => setSelectedMateri({ ...materiInfo, questions: res.data.questions || [] })).catch((err) => {
+            // Tampilkan notifikasi error
+            setNotif({
+                isOpen: true,
+                title: "Gagal Memuat Soal",
+                message: "Gagal memuat detail soal untuk materi ini.",
+                success: false
+            });
+             setSelectedMateri(prev => ({ ...prev, questions: [] })); // Kosongkan soal jika error
+        }).finally(() => setIsDetailLoading(false));
     }, [selectedKey, materiList]);
 
     useEffect(() => { fetchDetailMateri(); }, [fetchDetailMateri]);
-    
+
     const stats = useMemo(() => ({
         totalMapel: Object.keys(materiList).length,
         totalBab: Object.values(materiList).reduce((sum, mapel) => sum + (mapel.chapters?.length || 0), 0),
@@ -145,20 +196,80 @@ const ManajemenMateri = ({ onNavigate }) => {
     }), [materiList]);
 
     const handleAddChapterSubmit = async (data) => {
-        try { await DataService.addChapter(data); fetchMateriList(); setIsAddChapterModalOpen(false); } catch (e) { alert("Gagal: " + e.message); }
-    };
-    
-    const handleQuestionsFromBankAdded = (targetMateriKey) => {
-        setIsBankSoalOpen(false);
-        alert("Soal berhasil ditambahkan dari bank!");
-        fetchMateriList(targetMateriKey);
-    };
-
-    const handleDeleteChapter = async (materiKey) => {
-        if (window.confirm("Yakin ingin menghapus materi ini beserta semua soal di dalamnya?")) {
-            try { await DataService.deleteChapter(materiKey); fetchMateriList(); if (selectedKey === materiKey) setSelectedKey(null); } catch (e) { alert("Gagal menghapus."); }
+        try {
+            await DataService.addChapter(data);
+            fetchMateriList();
+            setIsAddChapterModalOpen(false);
+            // Tampilkan notifikasi sukses
+             setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: `Materi "${data.judul}" berhasil ditambahkan.`,
+                success: true
+            });
+        } catch (e) {
+            // Tampilkan notifikasi error
+            setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: e.response?.data?.message || "Gagal menambahkan materi baru.",
+                success: false
+            });
         }
     };
+
+    const handleQuestionsFromBankAdded = (targetMateriKey) => {
+        setIsBankSoalOpen(false);
+        // Tampilkan notifikasi sukses
+         setNotif({
+            isOpen: true,
+            title: "Berhasil",
+            message: "Soal berhasil ditambahkan dari bank!",
+            success: true
+        });
+        fetchMateriList(targetMateriKey); // Refresh daftar & pilih materi yang diupdate
+        fetchDetailMateri(); // Refresh detail soal
+    };
+
+    // Fungsi untuk menampilkan konfirmasi hapus bab
+    const handleDeleteChapter = (materiKey, chapterTitle) => {
+        setNotif({
+            isOpen: true,
+            title: "Konfirmasi Hapus",
+            message: `Yakin ingin menghapus materi "${chapterTitle}" beserta semua soal di dalamnya?`,
+            isConfirmation: true,
+            success: false, // Warna merah untuk aksi berbahaya
+            onConfirm: () => confirmDeleteChapter(materiKey, chapterTitle),
+            confirmText: "Ya, Hapus"
+        });
+    };
+
+    // Fungsi yang dijalankan setelah konfirmasi
+    const confirmDeleteChapter = async (materiKey, chapterTitle) => {
+        try {
+            await DataService.deleteChapter(materiKey);
+            fetchMateriList(); // Refresh daftar materi
+            if (selectedKey === materiKey) setSelectedKey(null); // Deselect jika yang dihapus sedang dipilih
+            // Tampilkan notifikasi sukses
+             setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: `Materi "${chapterTitle}" berhasil dihapus.`,
+                success: true,
+                isConfirmation: false // Pastikan ini bukan konfirmasi lagi
+            });
+        } catch (e) {
+             // Tampilkan notifikasi error
+            setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: e.response?.data?.message || "Gagal menghapus materi.",
+                success: false,
+                isConfirmation: false // Pastikan ini bukan konfirmasi lagi
+            });
+        }
+    };
+
 
     const handleBatchQuestionSubmit = async (newQuestions) => {
         if (!selectedKey) return;
@@ -167,10 +278,24 @@ const ManajemenMateri = ({ onNavigate }) => {
             for (const q of newQuestions) {
                 await DataService.addQuestion(selectedKey, q);
             }
-            alert(`${newQuestions.length} soal berhasil dipublikasikan!`);
-            fetchDetailMateri(); 
+             // Tampilkan notifikasi sukses
+             setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: `${newQuestions.length} soal berhasil dipublikasikan!`,
+                success: true
+            });
+            fetchDetailMateri();
             fetchMateriList(selectedKey);
-        } catch (e) { alert("Gagal publikasi."); } finally { setIsDetailLoading(false); }
+        } catch (e) {
+            // Tampilkan notifikasi error
+             setNotif({
+                isOpen: true,
+                title: "Gagal Publikasi",
+                message: e.response?.data?.message || "Terjadi kesalahan saat publikasi soal.",
+                success: false
+            });
+        } finally { setIsDetailLoading(false); }
     };
 
     const handleOpenEditModal = (question) => {
@@ -183,43 +308,131 @@ const ManajemenMateri = ({ onNavigate }) => {
             await DataService.updateQuestion(questionId, updatedData);
             setIsEditModalOpen(false);
             setEditingQuestion(null);
-            alert("Soal berhasil diperbarui!");
+            // Tampilkan notifikasi sukses
+             setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: "Soal berhasil diperbarui!",
+                success: true
+            });
             fetchDetailMateri();
         } catch (error) {
-            alert("Gagal memperbarui soal.");
+            // Tampilkan notifikasi error
+             setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: error.response?.data?.message || "Gagal memperbarui soal.",
+                success: false
+            });
             console.error(error);
         }
     };
 
-    const handleDeleteQuestion = async (questionId) => {
-        if (!window.confirm("Yakin ingin menghapus soal ini?")) return;
-        try { await DataService.deleteQuestion(questionId); fetchDetailMateri(); fetchMateriList(selectedKey); } catch (e) { alert("Gagal menghapus."); }
+    // Fungsi untuk menampilkan konfirmasi hapus soal
+    const handleDeleteQuestion = (questionId, questionText) => {
+         setNotif({
+            isOpen: true,
+            title: "Konfirmasi Hapus Soal",
+            message: `Yakin ingin menghapus soal "${questionText.substring(0, 30)}..."?`,
+            isConfirmation: true,
+            success: false,
+            onConfirm: () => confirmDeleteQuestion(questionId, questionText),
+            confirmText: "Ya, Hapus"
+        });
     };
 
-    const handleDeleteAllQuestions = async () => {
+    // Fungsi setelah konfirmasi hapus soal
+    const confirmDeleteQuestion = async (questionId, questionText) => {
+         try {
+            await DataService.deleteQuestion(questionId);
+             // Tampilkan notifikasi sukses
+             setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: "Soal berhasil dihapus.",
+                success: true,
+                isConfirmation: false // Reset
+            });
+            fetchDetailMateri();
+            fetchMateriList(selectedKey);
+        } catch (e) {
+             // Tampilkan notifikasi error
+            setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: e.response?.data?.message || "Gagal menghapus soal.",
+                success: false,
+                isConfirmation: false // Reset
+            });
+        }
+    }
+
+
+    const handleDeleteAllQuestions = () => {
         if (!selectedMateri || !selectedMateri.questions || selectedMateri.questions.length === 0) {
-            alert("Tidak ada soal untuk dihapus."); return;
+            setNotif({ isOpen: true, title: "Info", message: "Tidak ada soal untuk dihapus.", success: true });
+            return;
         }
-        if (window.confirm(`Anda yakin ingin menghapus SEMUA (${selectedMateri.questions.length}) soal dari materi "${selectedMateri.judul}"? Tindakan ini tidak dapat diurungkan.`)) {
-            setIsDetailLoading(true);
-            try {
-                await Promise.all(selectedMateri.questions.map(q => DataService.deleteQuestion(q.id)));
-                alert("Semua soal berhasil dihapus.");
-                fetchDetailMateri(); fetchMateriList(selectedKey);
-            } catch (e) { alert("Terjadi kesalahan."); } finally { setIsDetailLoading(false); }
-        }
+        // Tampilkan modal konfirmasi
+        setNotif({
+            isOpen: true,
+            title: "Konfirmasi Hapus Semua Soal",
+            message: `Anda yakin ingin menghapus SEMUA (${selectedMateri.questions.length}) soal dari materi "${selectedMateri.judul}"? Tindakan ini tidak dapat diurungkan.`,
+            isConfirmation: true,
+            success: false,
+            onConfirm: confirmDeleteAllQuestions,
+            confirmText: "Ya, Hapus Semua"
+        });
+    };
+
+     const confirmDeleteAllQuestions = async () => {
+        setIsDetailLoading(true);
+        try {
+            await Promise.all(selectedMateri.questions.map(q => DataService.deleteQuestion(q.id)));
+             // Tampilkan notifikasi sukses
+             setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: "Semua soal berhasil dihapus.",
+                success: true,
+                isConfirmation: false
+            });
+            fetchDetailMateri(); fetchMateriList(selectedKey);
+        } catch (e) {
+            // Tampilkan notifikasi error
+             setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: "Terjadi kesalahan saat menghapus semua soal.",
+                success: false,
+                isConfirmation: false
+            });
+        } finally { setIsDetailLoading(false); }
     };
 
     const handleGradingModeChange = async (chapterId, currentMode) => {
         const newMode = currentMode === 'manual' ? 'otomatis' : 'manual';
         try {
             await DataService.updateGradingMode(chapterId, newMode);
-            fetchMateriList(selectedKey);
+             // Tampilkan notifikasi sukses
+             setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: `Mode penilaian diubah ke ${newMode}.`,
+                success: true
+            });
+            fetchMateriList(selectedKey); // Refresh list untuk update UI
         } catch (err) {
-            alert(`Gagal mengubah mode penilaian: ${err.response?.data?.message || err.message}`);
+            // Tampilkan notifikasi error
+             setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: `Gagal mengubah mode penilaian: ${err.response?.data?.message || err.message}`,
+                success: false
+            });
         }
     };
-    
+
     const handleOpenSettingsModal = (chapter) => {
         setSelectedChapterForSettings(chapter);
         setIsSettingsModalOpen(true);
@@ -228,20 +441,39 @@ const ManajemenMateri = ({ onNavigate }) => {
     const handleSaveSettings = async (chapterId, newSettings) => {
         try {
             await DataService.updateChapterSettings(chapterId, newSettings);
-            alert("Pengaturan berhasil disimpan!");
+             // Tampilkan notifikasi sukses
+             setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: "Pengaturan berhasil disimpan!",
+                success: true
+            });
             setIsSettingsModalOpen(false);
-            fetchMateriList(selectedKey); 
+            fetchMateriList(selectedKey);
         } catch (error) {
-            alert("Gagal menyimpan pengaturan.");
+             // Tampilkan notifikasi error
+            setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: error.response?.data?.message || "Gagal menyimpan pengaturan.",
+                success: false
+            });
             console.error(error);
         }
     };
 
-    const handleContinueDraft = (materiKey) => { 
-        setSelectedKey(materiKey); 
+    const handleContinueDraft = (materiKey) => {
+        setSelectedKey(materiKey);
+        setShowDraftsNotification(false); // Tutup notifikasi saat draft dipilih
+        setIsDraftsModalOpen(false);
+        // Jeda sedikit agar modal draft tertutup sebelum modal soal terbuka
+        setTimeout(() => setIsQuestionModalOpen(true), 150);
+    };
+
+    // Close notifikasi draft jika tombol 'Nanti Saja' diklik
+    const handleDismissDraftNotification = () => {
         setShowDraftsNotification(false);
-        setIsDraftsModalOpen(false); 
-        setTimeout(() => setIsQuestionModalOpen(true), 100);
+        setHasDismissedDraftNotif(true); // Tandai bahwa notif sudah ditutup
     };
 
     const currentMapelList = useMemo(() => Object.entries(materiList).map(([nama, data]) => ({ subject_id: data.subject_id, nama_mapel: nama })).filter(m => m.subject_id), [materiList]);
@@ -249,39 +481,49 @@ const ManajemenMateri = ({ onNavigate }) => {
 
     return (
         <>
+             {/* Render Notification component */}
+            <Notification
+                isOpen={notif.isOpen}
+                onClose={handleCloseNotif}
+                title={notif.title}
+                message={notif.message}
+                isConfirmation={notif.isConfirmation}
+                success={notif.success}
+                onConfirm={notif.onConfirm}
+                confirmText={notif.confirmText}
+                cancelText={notif.cancelText}
+            />
+            {/* Notifikasi Draf */}
+             <Notification
+                isOpen={showDraftsNotification}
+                onClose={handleDismissDraftNotification} // Panggil fungsi dismiss
+                onConfirm={() => {
+                    handleDismissDraftNotification(); // Tutup juga saat konfirmasi
+                    setIsDraftsModalOpen(true);
+                }}
+                title="Anda Memiliki Draf Materi"
+                message={`Anda memiliki ${drafts.length} draf materi yang belum selesai. Ingin melanjutkannya?`}
+                isConfirmation={true}
+                confirmText="Ya, Lanjutkan"
+                cancelText="Nanti Saja"
+                success={true} // Warna hijau untuk info
+            />
+
             <AnimatePresence>
-                 {showDraftsNotification && (
-                    <Notification
-                        isOpen={showDraftsNotification}
-                        onClose={() => setShowDraftsNotification(false)}
-                        onConfirm={() => {
-                            setShowDraftsNotification(false);
-                            setIsDraftsModalOpen(true);
-                        }}
-                        title="Anda Memiliki Draf"
-                        message={`Anda memiliki ${drafts.length} draf materi yang belum selesai. Ingin melanjutkannya?`}
-                        isConfirmation={true}
-                        confirmText="Ya, Lanjutkan"
-                        cancelText="Nanti Saja"
-                        success={true}
-                    />
-                )}
                 {isAddChapterModalOpen && <AddChapterModal isOpen onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
-                
-                {isDraftsModalOpen && (
-                    <DraftsModal 
-                        isOpen={isDraftsModalOpen} 
-                        onClose={() => setIsDraftsModalOpen(false)} 
-                        allData={materiList} 
+                 {isDraftsModalOpen && (
+                    <DraftsModal
+                        isOpen={isDraftsModalOpen}
+                        onClose={() => setIsDraftsModalOpen(false)}
+                        allData={materiList}
                         drafts={drafts}
                         onContinue={handleContinueDraft}
-                        onDraftDeleted={fetchDrafts}
+                        onDraftDeleted={fetchDrafts} // Tambahkan ini agar draft list di modal terupdate
                     />
                 )}
-
-                {isBankSoalOpen && <BankSoalMateriModal isOpen onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
-                {isEditModalOpen && <EditQuestionModal isOpen onClose={() => setIsEditModalOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
-                {isSettingsModalOpen && (
+                 {isBankSoalOpen && <BankSoalMateriModal isOpen onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
+                 {isEditModalOpen && <EditQuestionModal isOpen onClose={() => setIsEditModalOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
+                 {isSettingsModalOpen && (
                     <ChapterSettingsModal
                         isOpen={isSettingsModalOpen}
                         onClose={() => setIsSettingsModalOpen(false)}
@@ -297,6 +539,7 @@ const ManajemenMateri = ({ onNavigate }) => {
                     <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
                         <div className="p-4 border-b">
                             <label className="text-sm font-bold text-gray-600 mb-1 block">Pilih Jenjang & Kelas</label>
+                             {/* Gunakan CustomSelect */}
                             <CustomSelect
                                 options={jenjangSelectOptions}
                                 value={selectedFilterKey}
@@ -304,20 +547,26 @@ const ManajemenMateri = ({ onNavigate }) => {
                             />
                         </div>
                         <div className="flex-grow overflow-y-auto p-2">
-                            {isLoading ? <div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl" /></div> : error ? <div className="p-4 text-red-500 text-center"><FiAlertCircle className="mx-auto mb-2" />{error}</div> :
-                                Object.keys(materiList).length > 0 ? Object.keys(materiList).sort().map(mapel => (
+                             {/* Tampilan Loading, Error, atau List Materi */}
+                             {isLoading ? (
+                                <div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl text-sesm-teal"/></div>
+                            ) : Object.keys(materiList).length > 0 ? (
+                                Object.keys(materiList).sort().map(mapel => (
                                     <div key={mapel}>
                                         <h3 className="font-bold text-sesm-teal mt-4 px-2 text-sm uppercase">{mapel}</h3>
                                         <div className="space-y-1 mt-1">
-                                            {materiList[mapel].chapters.map(m => (
+                                            {materiList[mapel].chapters.sort((a,b) => a.judul.localeCompare(b.judul)).map(m => (
                                                 <div key={m.materiKey} className={`group w-full p-2 rounded-md flex items-center ${selectedKey === m.materiKey ? 'bg-sesm-teal/20' : 'hover:bg-gray-100'}`}>
                                                     <button onClick={() => setSelectedKey(m.materiKey)} className={`flex-grow flex justify-between items-center text-left pr-2 text-sm ${selectedKey === m.materiKey ? 'font-bold text-sesm-deep' : 'text-gray-700'}`}><span>{m.judul}</span><FiChevronRight /></button>
-                                                    <button onClick={e => { e.stopPropagation(); handleDeleteChapter(m.materiKey); }} className="p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600" title="Hapus"><FiTrash2 size={14} /></button>
+                                                    <button onClick={e => { e.stopPropagation(); handleDeleteChapter(m.materiKey, m.judul); }} className="p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600" title="Hapus"><FiTrash2 size={14} /></button>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                )) : <p className="p-4 text-center text-gray-500">Tidak ada materi.</p>}
+                                ))
+                            ) : (
+                                <p className="p-4 text-center text-gray-500">Tidak ada materi untuk jenjang ini.</p>
+                            )}
                         </div>
                     </div>
 
@@ -326,9 +575,9 @@ const ManajemenMateri = ({ onNavigate }) => {
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                                 <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Materi & Nilai</h1>
                                 <p className="text-gray-500 mt-1">Buat materi baru, kelola soal, dan lihat hasil pengerjaan siswa.</p>
-                                
+
                                 <div className="flex items-center gap-3 my-6">
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsDraftsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-gray-800 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"><FiFileText /> Draf</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsDraftsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-gray-800 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"><FiFileText /> Draf {drafts.length > 0 && `(${drafts.length})`}</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiBookOpen/> Bank Soal</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsAddChapterModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold shadow-sm"><FiPlus /> Buat Materi</motion.button>
@@ -340,7 +589,7 @@ const ManajemenMateri = ({ onNavigate }) => {
                             <AnimatePresence mode="wait">
                                 <motion.div key={selectedMateri ? selectedMateri.materiKey : 'dashboard'} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full">
                                     {!selectedMateri ? <DashboardView userName={user?.nama} stats={stats} /> :
-                                        isDetailLoading ? <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl" /></div> : (
+                                        isDetailLoading ? <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal" /></div> : (
                                             <div>
                                                 <div className="pb-4 mb-4">
                                                     <div className="flex justify-between items-start gap-4 mb-4">
@@ -356,18 +605,18 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                     </div>
                                                     <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
                                                         <div><p className="font-semibold text-sm">Penilaian Manual {selectedMateri.grading_mode === 'manual' ? 'Aktif' : 'Nonaktif'}</p><p className="text-xs text-gray-500">{selectedMateri.grading_mode === 'manual' ? 'Guru akan menilai jawaban esai.' : 'Sistem menilai otomatis (hanya PG).'}</p></div>
-                                                        <ToggleSwitch 
-                                                            enabled={selectedMateri.grading_mode === 'manual'} 
-                                                            onToggle={() => handleGradingModeChange(selectedMateri.chapter_id, selectedMateri.grading_mode)} 
+                                                        <ToggleSwitch
+                                                            enabled={selectedMateri.grading_mode === 'manual'}
+                                                            onToggle={() => handleGradingModeChange(selectedMateri.chapter_id, selectedMateri.grading_mode)}
                                                         />
                                                     </div>
                                                 </div>
                                                 <div className="flex justify-between items-center mb-4">
-                                                    <h3 className="font-bold text-gray-700">Daftar Soal ({selectedMateri.questions.length})</h3>
+                                                    <h3 className="font-bold text-gray-700">Daftar Soal ({selectedMateri.questions?.length || 0})</h3>
                                                     <button onClick={handleDeleteAllQuestions} disabled={!selectedMateri.questions || selectedMateri.questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
                                                 </div>
                                                 <div className="space-y-3 max-h-[calc(100vh-35rem)] overflow-y-auto pr-2">
-                                                    {selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, i) => (
+                                                     {selectedMateri.questions && selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, i) => (
                                                         <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-3 rounded-lg">
                                                             <div className="flex justify-between items-start">
                                                                 <div className="flex-grow">
@@ -375,8 +624,8 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                                     <p className="text-sm text-green-600 font-bold mt-1">Jawaban: {q.correctAnswer || q.jawaban_esai || "N/A"}</p>
                                                                 </div>
                                                                 <div className="flex-shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <button onClick={() => handleOpenEditModal(q)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg" title="Edit Soal"><FiEdit size={16}/></button>
-                                                                    <button onClick={() => handleDeleteQuestion(q.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg" title="Hapus Soal"><FiTrash2 size={16} /></button>
+                                                                     <button onClick={() => handleOpenEditModal(q)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg" title="Edit Soal"><FiEdit size={16}/></button>
+                                                                    <button onClick={() => handleDeleteQuestion(q.id, q.pertanyaan)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg" title="Hapus Soal"><FiTrash2 size={16} /></button>
                                                                 </div>
                                                             </div>
                                                         </motion.div>
