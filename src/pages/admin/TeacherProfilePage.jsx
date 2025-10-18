@@ -1,13 +1,14 @@
 // contoh-sesm-web/pages/admin/TeacherProfilePage.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUser, FiSave, FiLoader, FiCamera, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+// --- Tambahkan FiCalendar ---
+import { FiUser, FiSave, FiLoader, FiCamera, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
-import Notification from '../../components/ui/Notification'; // Pastikan path ini benar
-import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'; // Impor ReactCrop
-import 'react-image-crop/dist/ReactCrop.css'; // Impor CSS ReactCrop
+import Notification from '../../components/ui/Notification';
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
-// --- Komponen Modal Cropping (Diambil dari AccountSettingsPage) ---
+// --- Komponen Modal Cropping (Tidak berubah) ---
 const CropModal = ({ upImg, onClose, onCropComplete }) => {
     const imgRef = useRef(null);
     const [crop, setCrop] = useState();
@@ -72,13 +73,13 @@ const TeacherProfilePage = () => {
         password: '', confirmPassword: '', avatar: null
     });
     const [avatarPreview, setAvatarPreview] = useState(null);
-    const [avatarFile, setAvatarFile] = useState(null); // File hasil crop
+    const [avatarFile, setAvatarFile] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
     const fileInputRef = useRef(null);
-    const [upImg, setUpImg] = useState(null); // State untuk gambar sebelum crop
+    const [upImg, setUpImg] = useState(null);
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
-    const [avatarPage, setAvatarPage] = useState(0); // State untuk halaman avatar bawaan
+    const [avatarPage, setAvatarPage] = useState(0);
     const avatarsPerPage = 6;
 
     const API_URL = 'http://localhost:8080';
@@ -92,27 +93,26 @@ const TeacherProfilePage = () => {
             setFormData({
                 nama: user.nama || '', username: user.username || '', email: user.email || '', umur: user.umur ?? '',
                 pendidikan_terakhir: user.pendidikan_terakhir || '', institusi: user.institusi || '', jurusan: user.jurusan || '', tahun_lulus: user.tahun_lulus ?? '',
-                password: '', confirmPassword: '', avatar: user.avatar // Simpan path asli
+                password: '', confirmPassword: '', avatar: user.avatar
             });
-            let currentAvatar = defaultInitialAvatar; // Default awal
+            let currentAvatar = defaultInitialAvatar;
             if (user.avatar && typeof user.avatar === 'string') {
                 currentAvatar = user.avatar.startsWith('http') ? user.avatar : `${API_URL}/${user.avatar}`;
             }
             setAvatarPreview(currentAvatar);
-            setAvatarFile(null); // Reset file saat user data berubah
+            setAvatarFile(null);
         } else {
              setFormData({ nama: '', username: '', email: '', umur: '', pendidikan_terakhir: '', institusi: '', jurusan: '', tahun_lulus: '', password: '', confirmPassword: '', avatar: null });
              setAvatarPreview(defaultInitialAvatar);
              setAvatarFile(null);
         }
-    }, [user, defaultInitialAvatar]); // Tambahkan defaultInitialAvatar ke dependency
+    }, [user, defaultInitialAvatar]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Buka modal crop saat file dipilih
     const handleAvatarChange = (e) => {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
@@ -124,49 +124,38 @@ const TeacherProfilePage = () => {
             reader.addEventListener('load', () => setUpImg(reader.result?.toString() || ''));
             reader.readAsDataURL(file);
             setIsCropModalOpen(true);
-            e.target.value = null; // Reset input file
+            e.target.value = null;
         }
     };
 
-    // Fungsi setelah crop selesai
     const getCroppedImage = useCallback((image, crop) => {
         const canvas = document.createElement('canvas');
         const scaleX = image.naturalWidth / image.width;
         const scaleY = image.naturalHeight / image.height;
-        const targetWidth = 256; // Ukuran target avatar
-        canvas.width = targetWidth;
-        canvas.height = targetWidth;
+        const targetWidth = 256;
+        canvas.width = targetWidth; canvas.height = targetWidth;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        const cropX = crop.x * scaleX;
-        const cropY = crop.y * scaleY;
-        const cropWidth = crop.width * scaleX;
-        const cropHeight = crop.height * scaleY;
+        const cropX = crop.x * scaleX; const cropY = crop.y * scaleY;
+        const cropWidth = crop.width * scaleX; const cropHeight = crop.height * scaleY;
         ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, targetWidth, targetWidth);
         canvas.toBlob(blob => {
             if (!blob) { console.error('Gagal membuat blob gambar'); return; }
-            setAvatarPreview(URL.createObjectURL(blob)); // Tampilkan preview hasil crop
-            setAvatarFile(new File([blob], "avatar.jpeg", { type: "image/jpeg" })); // Simpan file hasil crop
-            setIsCropModalOpen(false);
-            setUpImg(null); // Hapus gambar asli dari state
-            // Signal avatar update (bukan delete)
+            setAvatarPreview(URL.createObjectURL(blob));
+            setAvatarFile(new File([blob], "avatar.jpeg", { type: "image/jpeg" }));
+            setIsCropModalOpen(false); setUpImg(null);
             setFormData(prev => ({...prev, avatar: null}));
         }, 'image/jpeg', 0.95);
     }, []);
 
-    // Pilih avatar bawaan
     const handleSelectDefaultAvatar = (url) => {
-        setAvatarPreview(url);
-        setAvatarFile(null); // Hapus file jika ada
-         // Signal avatar update (bukan delete), simpan URL bawaan
+        setAvatarPreview(url); setAvatarFile(null);
         setFormData(prev => ({...prev, avatar: url}));
     };
 
-    // Hapus avatar (kembali ke default)
     const handleDeleteAvatar = () => {
-        setAvatarPreview(defaultInitialAvatar);
-        setAvatarFile(null);
-        setFormData(prev => ({...prev, avatar: 'DELETE'})); // Signal delete
+        setAvatarPreview(defaultInitialAvatar); setAvatarFile(null);
+        setFormData(prev => ({...prev, avatar: 'DELETE'}));
     };
 
     const handleSubmit = async (e) => {
@@ -175,27 +164,18 @@ const TeacherProfilePage = () => {
             setNotif({ isOpen: true, title: "Gagal", message: "Password dan Konfirmasi Password tidak cocok.", success: false });
             return;
         }
-
         setIsSaving(true);
         const dataToUpdate = { ...formData };
         if (!dataToUpdate.password) {
-            delete dataToUpdate.password;
-            delete dataToUpdate.confirmPassword;
+            delete dataToUpdate.password; delete dataToUpdate.confirmPassword;
         } else {
             delete dataToUpdate.confirmPassword;
         }
-
-        // 'avatar' di dataToUpdate sekarang berisi:
-        // - URL avatar bawaan jika dipilih
-        // - 'DELETE' jika dihapus
-        // - null jika file baru diupload (file ada di avatarFile)
-        // - path asli dari server jika tidak diubah
-
         try {
             const result = await updateProfile(dataToUpdate, avatarFile);
             setNotif({ isOpen: true, title: "Sukses", message: result.message || "Profil berhasil diperbarui", success: true });
             setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
-            setAvatarFile(null); // Clear staged file after successful upload/update
+            setAvatarFile(null);
             if (typeof refreshUser === 'function') { refreshUser(); }
         } catch (error) {
             setNotif({ isOpen: true, title: "Gagal", message: error.message || "Gagal memperbarui profil.", success: false });
@@ -204,7 +184,6 @@ const TeacherProfilePage = () => {
         }
     };
 
-    // Navigasi avatar bawaan
     const nextAvatarPage = () => setAvatarPage(p => (p + 1) * avatarsPerPage >= defaultAvatars.length ? 0 : p + 1);
     const prevAvatarPage = () => setAvatarPage(p => p - 1 < 0 ? Math.floor((defaultAvatars.length - 1) / avatarsPerPage) : p - 1);
     const displayedAvatars = defaultAvatars.slice(avatarPage * avatarsPerPage, (avatarPage + 1) * avatarsPerPage);
@@ -212,7 +191,10 @@ const TeacherProfilePage = () => {
     const inputStyle = "w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal text-sm";
     const labelStyle = "block text-sm font-bold text-gray-600 mb-1";
 
-    // Loading state
+    // --- Format Tanggal Akun Dibuat (Placeholder) ---
+    // Ganti ini dengan data asli dari `user` jika tersedia
+    const accountCreatedDate = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data tidak tersedia';
+
      if (!user || avatarPreview === null) {
         return <div className="min-h-screen bg-gray-100 flex justify-center items-center"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
     }
@@ -222,52 +204,24 @@ const TeacherProfilePage = () => {
              <AnimatePresence>
                 {isCropModalOpen && <CropModal upImg={upImg} onClose={() => setIsCropModalOpen(false)} onCropComplete={getCroppedImage} />}
             </AnimatePresence>
-            <Notification
-                isOpen={notif.isOpen}
-                onClose={() => setNotif({ ...notif, isOpen: false })}
-                title={notif.title}
-                message={notif.message}
-                success={notif.success}
-            />
+            <Notification isOpen={notif.isOpen} onClose={() => setNotif({ ...notif, isOpen: false })} title={notif.title} message={notif.message} success={notif.success} />
+
             <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg flex-grow flex flex-col h-full">
                 <h1 className="text-3xl font-bold text-sesm-deep flex items-center gap-3 mb-6 pb-6 border-b">
                     <FiUser /> Profil Saya
                 </h1>
 
-                <form onSubmit={handleSubmit} className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {/* Kolom Avatar */}
-                    <div className="md:col-span-1 flex flex-col items-center pt-4">
+                {/* --- PERBAIKAN: Grid utama dengan 5 kolom untuk pembatas --- */}
+                <form onSubmit={handleSubmit} className="flex-grow grid grid-cols-1 md:grid-cols-5 gap-8">
+                    {/* Kolom Avatar & Info Tambahan */}
+                    <div className="md:col-span-2 flex flex-col items-center pt-4 border-r pr-8"> {/* Tambahkan border-r pr-8 */}
+                        {/* ... (bagian avatar preview & selection sama) ... */}
                         <div className="relative mb-4">
-                            <img
-                                src={avatarPreview || defaultInitialAvatar}
-                                alt="Avatar Guru"
-                                className="w-40 h-40 rounded-full border-4 border-sesm-sky object-cover shadow-md bg-gray-200"
-                                onError={(e) => { e.target.onerror = null; e.target.src = defaultInitialAvatar; }}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="absolute -right-2 bottom-2 bg-sesm-teal text-white p-3 rounded-full border-2 border-white shadow-md hover:bg-sesm-deep transition-colors"
-                                title="Ganti Avatar"
-                            >
-                                <FiCamera size={20} />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleDeleteAvatar}
-                                // Tampilkan tombol hapus hanya jika avatar saat ini BUKAN default initial avatar
-                                className={`absolute -left-2 bottom-2 bg-red-500 text-white p-2 rounded-full border-2 border-white shadow-md hover:bg-red-700 transition-colors ${avatarPreview === defaultInitialAvatar ? 'hidden' : ''}`}
-                                title="Hapus Avatar"
-                            >
-                                <FiTrash2 size={18} />
-                            </button>
-                            <input
-                                type="file" ref={fileInputRef} onChange={handleAvatarChange}
-                                className="hidden" accept="image/png, image/jpeg, image/jpg"
-                            />
+                            <img src={avatarPreview || defaultInitialAvatar} alt="Avatar Guru" className="w-40 h-40 rounded-full border-4 border-sesm-sky object-cover shadow-md bg-gray-200" onError={(e) => { e.target.onerror = null; e.target.src = defaultInitialAvatar; }} />
+                            <button type="button" onClick={() => fileInputRef.current?.click()} className="absolute -right-2 bottom-2 bg-sesm-teal text-white p-3 rounded-full border-2 border-white shadow-md hover:bg-sesm-deep transition-colors" title="Ganti Avatar"> <FiCamera size={20} /> </button>
+                            <button type="button" onClick={handleDeleteAvatar} className={`absolute -left-2 bottom-2 bg-red-500 text-white p-2 rounded-full border-2 border-white shadow-md hover:bg-red-700 transition-colors ${avatarPreview === defaultInitialAvatar ? 'hidden' : ''}`} title="Hapus Avatar"> <FiTrash2 size={18} /> </button>
+                            <input type="file" ref={fileInputRef} onChange={handleAvatarChange} className="hidden" accept="image/png, image/jpeg, image/jpg" />
                         </div>
-
-                        {/* Pemilihan Avatar Bawaan */}
                         <h3 className="font-bold text-gray-700 mb-3 text-center">Pilih Avatar Bawaan</h3>
                         <div className="flex justify-center items-center w-full max-w-sm gap-2 mb-2">
                             <button type="button" onClick={prevAvatarPage} className="p-2 rounded-full hover:bg-gray-100 flex-shrink-0"><FiChevronLeft size={20}/></button>
@@ -281,11 +235,31 @@ const TeacherProfilePage = () => {
                             </div>
                             <button type="button" onClick={nextAvatarPage} className="p-2 rounded-full hover:bg-gray-100 flex-shrink-0"><FiChevronRight size={20}/></button>
                         </div>
-                        <p className="text-xs text-gray-500 text-center">Klik ikon kamera untuk unggah foto (max. 2MB).</p>
+                        <p className="text-xs text-gray-500 text-center mb-6">Klik ikon kamera untuk unggah foto (max. 2MB).</p>
+
+                         {/* --- PERBAIKAN: Info Tambahan di Bawah Avatar --- */}
+                        <div className="w-full mt-auto space-y-3 bg-gray-50 p-4 rounded-lg border">
+                            <h4 className="text-center font-bold text-gray-700 mb-2">Informasi Akun</h4>
+                             <div className="text-sm">
+                                <span className="font-semibold text-gray-600">Bergabung:</span>
+                                <p className="text-gray-800 flex items-center gap-2"><FiCalendar size={14}/> {accountCreatedDate}</p>
+                            </div>
+                             <hr className="border-dashed"/>
+                            <div className="text-sm">
+                                <span className="font-semibold text-gray-600">Pendidikan:</span>
+                                <p className="text-gray-800 truncate">{formData.pendidikan_terakhir || '-'}{formData.jurusan ? ` - ${formData.jurusan}` : ''}</p>
+                            </div>
+                            <div className="text-sm">
+                                <span className="font-semibold text-gray-600">Institusi:</span>
+                                <p className="text-gray-800 truncate">{formData.institusi || '-'}</p>
+                                <p className="text-xs text-gray-500">Lulus: {formData.tahun_lulus || '-'}</p>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Kolom Form (Tetap sama) */}
-                    <div className="md:col-span-2 space-y-4">
+                    {/* Kolom Form */}
+                    <div className="md:col-span-3 space-y-4"> {/* Ubah menjadi col-span-3 */}
+                        {/* ... (Isi form lainnya tetap sama) ... */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div> <label className={labelStyle}>Nama Lengkap</label> <input type="text" name="nama" value={formData.nama} onChange={handleInputChange} className={inputStyle} required /> </div>
                             <div> <label className={labelStyle}>Username</label> <input type="text" name="username" value={formData.username} onChange={handleInputChange} className={inputStyle} required /> </div>
