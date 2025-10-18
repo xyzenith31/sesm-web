@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiSave, FiLoader } from 'react-icons/fi';
+import CustomSelect from '../ui/CustomSelect'; // 1. Impor CustomSelect
 
-const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
+const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting: parentSubmitting }) => { // Rename isSubmitting prop
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -10,9 +11,10 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         umur: '',
         role: 'siswa',
         password: '',
-        confirmPassword: '', 
+        confirmPassword: '',
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    // Gunakan prop isSubmitting yang di-pass dari parent
+    // const [isSubmitting, setIsSubmitting] = useState(false); // Hapus state lokal ini
 
     const isEditMode = Boolean(initialData);
 
@@ -24,11 +26,10 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 nama: initialData.nama || '',
                 umur: initialData.umur || '',
                 role: initialData.role || 'siswa',
-                password: '', 
+                password: '',
                 confirmPassword: '',
             });
         } else {
-            // Reset form for create mode
             setFormData({ username: '', email: '', nama: '', umur: '', role: 'siswa', password: '', confirmPassword: '' });
         }
     }, [initialData, isEditMode]);
@@ -38,22 +39,33 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    // 2. Handler khusus untuk CustomSelect
+    const handleRoleChange = (value) => {
+        setFormData(prev => ({ ...prev, role: value }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
             alert("Password dan Konfirmasi Password tidak cocok. Silakan periksa kembali.");
-            return; 
+            return;
         }
 
-        setIsSubmitting(true);
+        // Tidak perlu set isSubmitting(true) di sini karena sudah di-handle di parent
         await onSubmit(formData);
-        setIsSubmitting(false);
+        // Tidak perlu set isSubmitting(false)
     };
 
     if (!isOpen) return null;
 
     const inputStyle = "w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal";
+
+    // 3. Opsi untuk CustomSelect Role
+    const roleOptions = [
+        { value: 'siswa', label: 'Siswa' },
+        { value: 'guru', label: 'Guru' }
+    ];
 
     return (
         <motion.div
@@ -71,7 +83,6 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX /></button>
                     </header>
 
-                    {/* --- MAIN LAYOUT DIUBAH MENJADI VERTIKAL --- */}
                     <main className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                         <div>
                             <label className="font-semibold text-sm mb-1 block">Nama Lengkap</label>
@@ -91,42 +102,45 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         </div>
                         <div>
                             <label className="font-semibold text-sm mb-1 block">Role</label>
-                            <select name="role" value={formData.role} onChange={handleInputChange} className={inputStyle}>
-                                <option value="siswa">Siswa</option>
-                                <option value="guru">Guru</option>
-                            </select>
+                            {/* 4. Ganti <select> dengan <CustomSelect> */}
+                            <CustomSelect
+                                options={roleOptions}
+                                value={formData.role}
+                                onChange={handleRoleChange} // Gunakan handler yang baru
+                            />
                         </div>
                         <div>
                             <label className="font-semibold text-sm mb-1 block">Password</label>
-                            <input 
-                                type="password" 
-                                name="password" 
-                                value={formData.password} 
-                                onChange={handleInputChange} 
-                                className={inputStyle} 
-                                placeholder={isEditMode ? 'Kosongkan jika tidak diubah' : ''} 
-                                required={!isEditMode} 
+                            <input
+                                type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                className={inputStyle}
+                                placeholder={isEditMode ? 'Kosongkan jika tidak diubah' : ''}
+                                required={!isEditMode}
                             />
                         </div>
                         <div>
                             <label className="font-semibold text-sm mb-1 block">Konfirmasi Password</label>
-                            <input 
-                                type="password" 
-                                name="confirmPassword" 
-                                value={formData.confirmPassword} 
-                                onChange={handleInputChange} 
-                                className={inputStyle} 
+                            <input
+                                type="password"
+                                name="confirmPassword"
+                                value={formData.confirmPassword}
+                                onChange={handleInputChange}
+                                className={inputStyle}
                                 placeholder="Ulangi password"
-                                required={!isEditMode || formData.password !== ''} 
+                                required={!isEditMode || formData.password !== ''}
                             />
                         </div>
                     </main>
 
                     <footer className="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t">
                         <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200">Batal</button>
-                        <button type="submit" disabled={isSubmitting} className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 flex items-center gap-2 disabled:bg-gray-400">
-                            {isSubmitting ? <FiLoader className="animate-spin" /> : <FiSave />}
-                            <span>{isSubmitting ? 'Menyimpan...' : 'Simpan'}</span>
+                        <button type="submit" disabled={parentSubmitting} className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 flex items-center gap-2 disabled:bg-gray-400">
+                            {/* Gunakan prop parentSubmitting */}
+                            {parentSubmitting ? <FiLoader className="animate-spin" /> : <FiSave />}
+                            <span>{parentSubmitting ? 'Menyimpan...' : 'Simpan'}</span>
                         </button>
                     </footer>
                 </form>

@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiUsers, FiPlus, FiSearch, FiLoader, FiEdit, FiTrash2, FiAlertCircle, FiBriefcase, FiUserCheck, FiArrowUp, FiArrowDown, FiChevronDown } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 import UserFormModal from '../../components/admin/UserFormModal';
-import Notification from '../../components/ui/Notification';
+import Notification from '../../components/ui/Notification'; // Pastikan sudah diimpor
+import CustomSelect from '../../components/ui/CustomSelect'; // 1. Impor CustomSelect
 
 const StatCard = ({ icon: Icon, value, label, color, delay }) => (
     <motion.div
@@ -49,12 +50,13 @@ const ManajemenPengguna = () => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('Semua');
-    
+
     const [sortConfig, setSortConfig] = useState({ key: 'nama', direction: 'ascending' });
-    
+
     const [isUserFormModalOpen, setIsUserFormModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
 
+    // State notifikasi tetap menggunakan Notification component
     const [notif, setNotif] = useState({
         isOpen: false,
         title: '',
@@ -64,8 +66,7 @@ const ManajemenPengguna = () => {
         onConfirm: () => {},
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    // --- PERBAIKAN: Definisikan base URL API ---
+
     const API_URL = 'http://localhost:8080';
 
     const fetchUsers = useCallback(async () => {
@@ -124,9 +125,18 @@ const ManajemenPengguna = () => {
         }
         setSortConfig({ key, direction });
     };
-    
-    const handleSortChangeFromSelect = (e) => {
-        const [key, direction] = e.target.value.split('-');
+
+    // 2. Opsi untuk CustomSelect Sort
+    const sortOptions = [
+        { value: 'nama-ascending', label: 'Urutkan: Nama (A-Z)' },
+        { value: 'nama-descending', label: 'Urutkan: Nama (Z-A)' },
+        { value: 'role-ascending', label: 'Urutkan: Role (Guru dulu)' },
+        { value: 'role-descending', label: 'Urutkan: Role (Siswa dulu)' },
+    ];
+
+    // 3. Handler untuk perubahan CustomSelect Sort
+    const handleSortChangeFromSelect = (value) => {
+        const [key, direction] = value.split('-');
         setSortConfig({ key, direction });
     };
 
@@ -140,6 +150,7 @@ const ManajemenPengguna = () => {
         setEditingUser(null);
     };
 
+    // Fungsi simpan pengguna sudah menggunakan Notification
     const handleSaveUser = async (userData) => {
         setIsSubmitting(true);
         try {
@@ -158,40 +169,42 @@ const ManajemenPengguna = () => {
             setIsSubmitting(false);
         }
     };
-    
+
+    // Fungsi hapus pengguna sudah menggunakan Notification
     const handleDeleteUser = (user) => {
         setNotif({
             isOpen: true,
             title: "Konfirmasi Hapus",
             message: `Anda yakin ingin menghapus pengguna "${user.nama}"?`,
             isConfirmation: true,
-            success: false, 
+            success: false,
             onConfirm: () => confirmDeleteUser(user),
+            confirmText: "Hapus" // Tambahkan teks tombol konfirmasi
         });
     };
 
     const confirmDeleteUser = async (user) => {
         if (!user) return;
-        setIsSubmitting(true);
-        setNotif(prev => ({ ...prev, isOpen: false }));
+        setIsSubmitting(true); // Mulai loading saat konfirmasi
+        setNotif(prev => ({ ...prev, isOpen: false })); // Tutup modal konfirmasi
 
         try {
             await DataService.deleteUserByAdmin(user.id);
-            setNotif({ isOpen: true, title: "Berhasil!", message: `Pengguna "${user.nama}" telah dihapus.`, success: true });
+            setNotif({ isOpen: true, title: "Berhasil!", message: `Pengguna "${user.nama}" telah dihapus.`, success: true, isConfirmation: false });
             fetchUsers();
         } catch (err) {
-            setNotif({ isOpen: true, title: "Gagal!", message: err.response?.data?.message || 'Gagal menghapus pengguna.', success: false });
+            setNotif({ isOpen: true, title: "Gagal!", message: err.response?.data?.message || 'Gagal menghapus pengguna.', success: false, isConfirmation: false });
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false); // Selesai loading
         }
     };
-    
+
     const getRoleBadge = (role) => {
         return role === 'guru'
             ? <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">Guru</span>
             : <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">Siswa</span>;
     };
-    
+
     const filterButtons = ['Semua', 'Guru', 'Siswa'];
 
     return (
@@ -203,11 +216,12 @@ const ManajemenPengguna = () => {
                         onClose={handleCloseUserFormModal}
                         onSubmit={handleSaveUser}
                         initialData={editingUser}
-                        isSubmitting={isSubmitting}
+                        isSubmitting={isSubmitting} // Pass isSubmitting state
                     />
                 )}
             </AnimatePresence>
-            
+
+            {/* Render Notification component untuk semua notifikasi */}
             <Notification
                 isOpen={notif.isOpen}
                 onClose={() => setNotif({ ...notif, isOpen: false })}
@@ -216,10 +230,12 @@ const ManajemenPengguna = () => {
                 message={notif.message}
                 isConfirmation={notif.isConfirmation}
                 success={notif.success}
-                confirmText={isSubmitting ? 'Memproses...' : 'Hapus'}
+                confirmText={notif.isConfirmation ? (isSubmitting ? 'Memproses...' : (notif.confirmText || 'Ya')) : 'Oke'} // Tampilkan loading pada tombol konfirmasi
+                cancelText="Batal" // Tambahkan teks tombol batal jika diperlukan
             />
-            
+
             <div className="bg-white p-6 rounded-xl shadow-lg flex-grow flex flex-col h-full">
+                {/* Header Section */}
                 <div className="flex justify-between items-center mb-6 pb-6 border-b border-gray-200">
                     <h1 className="text-3xl font-bold text-sesm-deep flex items-center gap-3">
                         <FiUsers />
@@ -234,13 +250,16 @@ const ManajemenPengguna = () => {
                     </motion.button>
                 </div>
 
+                {/* Stat Cards Section */}
                 <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <StatCard icon={FiUsers} value={loading ? '...' : stats.total} label="Total Pengguna" color="text-purple-500" delay={0}/>
+                     <StatCard icon={FiUsers} value={loading ? '...' : stats.total} label="Total Pengguna" color="text-purple-500" delay={0}/>
                     <StatCard icon={FiBriefcase} value={loading ? '...' : stats.guru} label="Jumlah Guru" color="text-green-500" delay={1}/>
                     <StatCard icon={FiUserCheck} value={loading ? '...' : stats.siswa} label="Jumlah Siswa" color="text-blue-500" delay={2}/>
                 </div>
 
+                {/* Filter and Search Section */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                    {/* Role Filter Buttons */}
                     <div className="flex items-center bg-gray-100 rounded-full p-1">
                         {filterButtons.map(filter => (
                             <button
@@ -252,22 +271,20 @@ const ManajemenPengguna = () => {
                             </button>
                         ))}
                     </div>
+
+                    {/* Sort and Search */}
                     <div className="flex items-center gap-3 w-full md:w-auto">
-                        <div className="relative">
-                            <select
+                        {/* 4. Ganti <select> dengan <CustomSelect> */}
+                        <div className="w-full md:w-56"> {/* Atur lebar CustomSelect */}
+                            <CustomSelect
+                                options={sortOptions}
                                 value={`${sortConfig.key}-${sortConfig.direction}`}
                                 onChange={handleSortChangeFromSelect}
-                                className="appearance-none w-full md:w-auto p-3 pr-10 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal text-sm font-semibold"
-                            >
-                                <option value="nama-ascending">Urutkan: Nama (A-Z)</option>
-                                <option value="nama-descending">Urutkan: Nama (Z-A)</option>
-                                <option value="role-ascending">Urutkan: Role (Guru dulu)</option>
-                                <option value="role-descending">Urutkan: Role (Siswa dulu)</option>
-                            </select>
-                            <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            />
                         </div>
+                        {/* Search Input */}
                         <div className="relative flex-grow">
-                            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type="text"
                                 value={searchTerm}
@@ -278,7 +295,8 @@ const ManajemenPengguna = () => {
                         </div>
                     </div>
                 </div>
-                
+
+                {/* Table Section */}
                 <div className="flex-grow overflow-y-auto -mx-6 px-6">
                     {loading ? (
                         <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal" /></div>
@@ -289,11 +307,12 @@ const ManajemenPengguna = () => {
                             <table className="w-full text-sm text-left text-gray-700">
                                 <thead className="text-xs text-gray-800 uppercase bg-gray-100 sticky top-0 z-10">
                                     <tr>
+                                        {/* Table Headers */}
                                         <SortableHeader column="nama" sortConfig={sortConfig} onSort={handleSort}>Nama Lengkap</SortableHeader>
                                         <SortableHeader column="username" sortConfig={sortConfig} onSort={handleSort}>Username</SortableHeader>
                                         <SortableHeader column="email" sortConfig={sortConfig} onSort={handleSort}>Email</SortableHeader>
                                         <SortableHeader column="role" sortConfig={sortConfig} onSort={handleSort}>Role</SortableHeader>
-                                        <th scope="col" className="px-6 py-3 text-center rounded-r-lg">Aksi</th>
+                                        <th scope="col" className="px-6 py-3 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y">
@@ -308,10 +327,10 @@ const ManajemenPengguna = () => {
                                                 transition={{ duration: 0.3 }}
                                                 className="hover:bg-gray-50"
                                             >
-                                                {/* --- PERBAIKAN TAMPILAN NAMA DENGAN AVATAR --- */}
+                                                {/* Table Data */}
                                                 <td className="px-6 py-4 font-bold text-sesm-deep">
                                                     <div className="flex items-center gap-3">
-                                                        <img
+                                                         <img
                                                             src={
                                                                 user.avatar
                                                                     ? (user.avatar.startsWith('http') ? user.avatar : `${API_URL}/${user.avatar}`)
@@ -323,7 +342,6 @@ const ManajemenPengguna = () => {
                                                         <span>{user.nama}</span>
                                                     </div>
                                                 </td>
-                                                {/* --- BATAS AKHIR PERBAIKAN --- */}
                                                 <td className="px-6 py-4 text-gray-600">{user.username}</td>
                                                 <td className="px-6 py-4 text-gray-600">{user.email}</td>
                                                 <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
