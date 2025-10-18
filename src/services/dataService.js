@@ -195,6 +195,17 @@ const getStudentSubmissionDetails = (submissionId) => {
     return apiClient.get(`/materi/submission/${submissionId}`);
 };
 
+// --- FUNGSI BARU UNTUK AGENDA ---
+const getAgendas = (startDate, endDate) => {
+    return apiClient.get('/agendas', { params: { startDate, endDate } });
+};
+const createAgenda = (agendaData) => {
+    return apiClient.post('/agendas', agendaData);
+};
+const deleteAgenda = (agendaId) => {
+    return apiClient.delete(`/agendas/${agendaId}`);
+};
+
 const DataService = {
   getSubjects,
   updateLevelAndClass,
@@ -213,7 +224,7 @@ const DataService = {
   deleteQuestion,
   getChaptersForSubject,
   addQuestionsFromBankToChapter,
-  updateChapterSettings, // <-- ✅ EKSPOR FUNGSI BARU
+  updateChapterSettings,
   getAllUsers,
   createUserByAdmin,
   updateUserByAdmin,
@@ -249,6 +260,10 @@ const DataService = {
   getAllDrafts,
   deleteDraft,
   addQuestionsFromBankToBookmark,
+  // Ekspor fungsi agenda
+  getAgendas,
+  createAgenda,
+  deleteAgenda,
 };
 
 export default DataService;
