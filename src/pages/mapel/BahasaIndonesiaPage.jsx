@@ -1,31 +1,83 @@
 // contoh-sesm-web/pages/mapel/BahasaIndonesiaPage.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiAward, FiTarget, FiCheckCircle, FiBarChart2 } from 'react-icons/fi';
+import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiAward, FiTarget, FiCheckCircle, FiBarChart2, FiUser } from 'react-icons/fi';
 import { FaBook } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
-import StudentSubmissionDetailModal from '../../components/mod/StudentSubmissionDetailModal'; // ✅ Impor komponen baru
+import StudentSubmissionDetailModal from '../../components/mod/StudentSubmissionDetailModal';
 
 // --- Komponen UI Umum ---
-const ChapterButton = ({ chapter, onClick, Icon, themeStyles }) => (
-    <motion.button
-        onClick={onClick}
-        className={`w-full bg-white rounded-2xl p-4 flex items-center space-x-4 shadow-md border border-gray-200/60 text-left transition-all duration-300 hover:shadow-xl ${themeStyles.hoverBorder} hover:-translate-y-1`}
-        whileTap={{ scale: 0.98 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-    >
-        <div className={`w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br ${themeStyles.bgGradient} flex-shrink-0 shadow-inner`}>
-            <Icon size={32} className={themeStyles.color} />
-        </div>
-        <div className="flex-1">
-            <h4 className="font-bold text-sesm-deep text-base">{chapter.judul}</h4>
-            <p className="text-xs text-gray-500 mt-1">Klik untuk memulai</p>
-        </div>
-    </motion.button>
-);
+// --- ⭐ Modifikasi ChapterButton (Perbaikan Alignment & Avatar v2) ---
+const ChapterButton = ({ chapter, onClick, Icon, themeStyles, hasCompleted }) => {
+    const API_URL = 'http://localhost:8080';
+
+    // URL Avatar Creator - Encode nama untuk URL
+    const creatorNameSeed = encodeURIComponent(chapter.creator_name || 'Guru');
+    const defaultAvatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${creatorNameSeed}&backgroundColor=cccccc&fontSize=36`; // Background abu-abu jika gagal
+
+    const creatorAvatarUrl = chapter.creator_avatar
+        ? (chapter.creator_avatar.startsWith('http') ? chapter.creator_avatar : `${API_URL}/${chapter.creator_avatar}`)
+        : defaultAvatarUrl;
+
+    // Fallback jika avatar gagal dimuat
+    const handleAvatarError = (e) => {
+        e.target.onerror = null; // Mencegah loop error
+        e.target.src = defaultAvatarUrl; // Gunakan URL default yang sudah didefinisikan
+    };
+
+    return (
+        <motion.button
+            onClick={onClick}
+            // ✅ PERBAIKAN: Pastikan `relative` ada di sini
+            className={`relative w-full bg-white rounded-2xl p-4 flex items-center space-x-4 shadow-md border border-gray-200/60 text-left transition-all duration-300 hover:shadow-xl ${themeStyles.hoverBorder} hover:-translate-y-1 group`}
+            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        >
+            {/* Ikon Mapel */}
+            <div className={`w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br ${themeStyles.bgGradient} flex-shrink-0 shadow-inner`}>
+                <Icon size={32} className={themeStyles.color} />
+            </div>
+
+            {/* Konten Teks (Judul & Creator) */}
+            <div className="flex-1 min-w-0"> {/* min-w-0 untuk truncate */}
+                <h4 className="font-bold text-sesm-deep text-base truncate">{chapter.judul}</h4>
+                {/* Info Pembuat */}
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+                     <img
+                        src={creatorAvatarUrl} // Gunakan URL yang sudah disiapkan
+                        alt={chapter.creator_name || 'Guru'}
+                        className="w-4 h-4 rounded-full object-cover bg-gray-300 flex-shrink-0" // Beri background default
+                        onError={handleAvatarError} // Gunakan handler error
+                    />
+                    <span className="truncate">Oleh {chapter.creator_name || 'Guru'}</span>
+                </div>
+            </div>
+
+             {/* Ikon Medali (di kanan atas) */}
+             {/* ✅ PERBAIKAN: Gunakan AnimatePresence untuk animasi halus */}
+            <AnimatePresence>
+             {hasCompleted && (
+                 <motion.div
+                    key="medal-icon" // Beri key unik
+                    initial={{ scale: 0, opacity: 0, y: -5 }} // Mulai dari kecil dan sedikit di atas
+                    animate={{ scale: 1, opacity: 1, y: 0 }} // Animasi ke ukuran normal
+                    exit={{ scale: 0, opacity: 0, y: -5 }} // Animasi menghilang
+                    transition={{ type: 'spring', stiffness: 400, damping: 15, duration: 0.3 }} // Efek pegas
+                    // ✅ PERBAIKAN: Pastikan posisi absolut benar
+                    className="absolute top-2 right-2 p-1.5 bg-yellow-400 rounded-full text-white shadow-md flex-shrink-0" // flex-shrink-0 untuk mencegah wrap
+                    title="Sudah Dikerjakan & Poin Didapat"
+                 >
+                     <FiAward size={14} />
+                 </motion.div>
+             )}
+            </AnimatePresence>
+        </motion.button>
+    );
+};
+
 
 const HistoryCard = ({ item, onSelect }) => (
     <motion.div className="w-full bg-white rounded-2xl p-4 shadow-sm border" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -79,25 +131,32 @@ const BahasaIndonesiaPage = ({ onNavigate, onNavigateToWorksheet }) => {
     };
     const NAVIGATION_KEY = 'bahasaIndonesia';
 
+    // Fetch data chapters
     useEffect(() => {
         let isMounted = true;
         if (user?.jenjang) {
-            setLoading(true); setError(null); setHistoryError(null);
+            setLoading(true); setError(null);
             DataService.getChaptersForSubject(user.jenjang, user.kelas, SUBJECT_NAME)
                 .then(res => { if (isMounted) setChapters(res.data); })
                 .catch(err => { console.error("Gagal memuat chapters:", err); if (isMounted) setError(`Gagal memuat daftar bab. ${err.response?.data?.message || err.message}`); })
                 .finally(() => { if (isMounted) setLoading(false); });
-
-            setHistoryLoading(true);
-            DataService.getSubjectHistory(SUBJECT_NAME)
-                .then(res => { if (isMounted) setHistory(res.data); })
-                .catch(err => { console.error("Gagal memuat riwayat:", err); if (isMounted) setHistoryError(`Gagal memuat riwayat nilai. ${err.response?.data?.message || err.message}`); })
-                .finally(() => { if (isMounted) setHistoryLoading(false); });
         } else {
-            setError("Informasi jenjang/kelas pengguna tidak ditemukan."); setLoading(false); setHistoryLoading(false);
+            setError("Informasi jenjang/kelas pengguna tidak ditemukan."); setLoading(false);
         }
         return () => { isMounted = false };
-    }, [user, SUBJECT_NAME]);
+    }, [user, SUBJECT_NAME]); // Hanya fetch ulang jika user atau nama mapel berubah
+
+    // Fetch data history
+    useEffect(() => {
+        let isMounted = true;
+        setHistoryLoading(true); setHistoryError(null);
+        DataService.getSubjectHistory(SUBJECT_NAME)
+            .then(res => { if (isMounted) setHistory(res.data); })
+            .catch(err => { console.error("Gagal memuat riwayat:", err); if (isMounted) setHistoryError(`Gagal memuat riwayat nilai. ${err.response?.data?.message || err.message}`); })
+            .finally(() => { if (isMounted) setHistoryLoading(false); });
+        return () => { isMounted = false };
+    }, [SUBJECT_NAME]); // Hanya fetch ulang jika nama mapel berubah
+
 
     const stats = useMemo(() => {
         const gradedHistory = history.filter(h => h.score !== null);
@@ -112,14 +171,30 @@ const BahasaIndonesiaPage = ({ onNavigate, onNavigateToWorksheet }) => {
         return chapters.filter(chapter => chapter.judul.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [chapters, searchTerm]);
 
+
     const renderContent = () => {
         if (loading) return <div className="flex justify-center items-center h-48 pt-12"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
         if (error && activeTab === 'materi') return <div className="text-center text-red-500 p-4 bg-red-50 rounded-lg mt-12"><FiAlertCircle className="mx-auto text-3xl mb-2"/><p>{error}</p></div>;
         if (historyError && activeTab === 'nilai') return <div className="text-center text-red-500 p-4 bg-red-50 rounded-lg mt-12"><FiAlertCircle className="mx-auto text-3xl mb-2"/><p>{historyError}</p></div>;
 
+
         if (activeTab === 'materi') {
             if (filteredChapters.length === 0) return <div className="text-center text-gray-500 mt-12"><p>{searchTerm ? 'Bab tidak ditemukan.' : 'Belum ada bab untuk mata pelajaran ini.'}</p></div>;
-            return <div className="space-y-4">{filteredChapters.map((chapter) => <ChapterButton key={chapter.id} chapter={chapter} onClick={() => onNavigateToWorksheet({ materiKey: chapter.materiKey, chapterTitle: chapter.judul, subjectName: SUBJECT_NAME, navigationKey: NAVIGATION_KEY })} Icon={ICON} themeStyles={THEME_STYLES} />)}</div>;
+            // ⭐ Teruskan prop hasCompleted
+            return (
+                <div className="space-y-4">
+                    {filteredChapters.map((chapter) => (
+                        <ChapterButton
+                            key={chapter.id || chapter.materiKey} // Gunakan ID chapter jika ada, fallback ke materiKey
+                            chapter={chapter}
+                            onClick={() => onNavigateToWorksheet({ materiKey: chapter.materiKey, chapterTitle: chapter.judul, subjectName: SUBJECT_NAME, navigationKey: NAVIGATION_KEY })}
+                            Icon={ICON}
+                            themeStyles={THEME_STYLES}
+                            hasCompleted={chapter.hasCompleted} // Teruskan status penyelesaian
+                        />
+                    ))}
+                </div>
+            );
         }
         if (activeTab === 'nilai') {
             if (historyLoading) return <div className="flex justify-center items-center h-48 pt-12"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
@@ -134,6 +209,7 @@ const BahasaIndonesiaPage = ({ onNavigate, onNavigateToWorksheet }) => {
                 {selectedHistory && <StudentSubmissionDetailModal submission={selectedHistory} onClose={() => setSelectedHistory(null)} />}
             </AnimatePresence>
 
+            {/* Layout Mobile */}
             <div className={`md:hidden flex flex-col min-h-screen bg-gray-50 pb-28`}>
                 <header className={`bg-gradient-to-b from-sesm-teal to-sesm-deep rounded-b-[2.5rem] p-6 pt-10 text-white z-10 shadow-lg flex-shrink-0`}>
                     <div className="flex justify-between items-center mb-4">
@@ -171,6 +247,7 @@ const BahasaIndonesiaPage = ({ onNavigate, onNavigateToWorksheet }) => {
                 </main>
             </div>
 
+            {/* Layout Desktop */}
             <div className={`hidden md:flex flex-col min-h-screen ${THEME_STYLES.desktopBg} p-8`}>
                 <motion.div
                     className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-2xl flex flex-col flex-grow overflow-hidden"
