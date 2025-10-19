@@ -1,31 +1,56 @@
 // contoh-sesm-web/pages/mapel/MenulisPage.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiAward, FiTarget, FiCheckCircle, FiBarChart2 } from 'react-icons/fi';
+import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiAward, FiTarget, FiCheckCircle, FiBarChart2, FiUser } from 'react-icons/fi'; // <-- Tambah FiUser
 import { FaPencilAlt } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
-import StudentSubmissionDetailModal from '../../components/mod/StudentSubmissionDetailModal'; // ✅ Impor komponen baru
+import StudentSubmissionDetailModal from '../../components/mod/StudentSubmissionDetailModal'; // <-- Impor modal siswa
 
 // --- Komponen UI Umum ---
-const ChapterButton = ({ chapter, onClick, Icon, themeStyles }) => (
-    <motion.button
-        onClick={onClick}
-        className={`w-full bg-white rounded-2xl p-4 flex items-center space-x-4 shadow-md border border-gray-200/60 text-left transition-all duration-300 hover:shadow-xl ${themeStyles.hoverBorder} hover:-translate-y-1`}
-        whileTap={{ scale: 0.98 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-    >
-        <div className={`w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br ${themeStyles.bgGradient} flex-shrink-0 shadow-inner`}>
-            <Icon size={32} className={themeStyles.color} />
-        </div>
-        <div className="flex-1">
-            <h4 className="font-bold text-sesm-deep text-base">{chapter.judul}</h4>
-            <p className="text-xs text-gray-500 mt-1">Klik untuk memulai</p>
-        </div>
-    </motion.button>
-);
+// --- ⭐ Modifikasi ChapterButton ---
+const ChapterButton = ({ chapter, onClick, Icon, themeStyles, hasCompleted }) => {
+    const API_URL = 'http://localhost:8080';
+    const creatorNameSeed = encodeURIComponent(chapter.creator_name || 'Guru');
+    const defaultAvatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${creatorNameSeed}&backgroundColor=cccccc&fontSize=36`;
+    const creatorAvatarUrl = chapter.creator_avatar
+        ? (chapter.creator_avatar.startsWith('http') ? chapter.creator_avatar : `${API_URL}/${chapter.creator_avatar}`)
+        : defaultAvatarUrl;
+    const handleAvatarError = (e) => { e.target.onerror = null; e.target.src = defaultAvatarUrl; };
+
+    return (
+        <motion.button
+            onClick={onClick}
+            className={`relative w-full bg-white rounded-2xl p-4 flex items-center space-x-4 shadow-md border border-gray-200/60 text-left transition-all duration-300 hover:shadow-xl ${themeStyles.hoverBorder} hover:-translate-y-1 group`}
+            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        >
+            <div className={`w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br ${themeStyles.bgGradient} flex-shrink-0 shadow-inner`}>
+                <Icon size={32} className={themeStyles.color} />
+            </div>
+            <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-sesm-deep text-base truncate">{chapter.judul}</h4>
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+                     <img src={creatorAvatarUrl} alt={chapter.creator_name || 'Guru'} className="w-4 h-4 rounded-full object-cover bg-gray-300 flex-shrink-0" onError={handleAvatarError} />
+                    <span className="truncate">Oleh {chapter.creator_name || 'Guru'}</span>
+                </div>
+            </div>
+            <AnimatePresence>
+             {hasCompleted && (
+                 <motion.div
+                    key="medal-icon"
+                    initial={{ scale: 0, opacity: 0, y: -5 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0, opacity: 0, y: -5 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 15, duration: 0.3 }}
+                    className="absolute top-2 right-2 p-1.5 bg-yellow-400 rounded-full text-white shadow-md flex-shrink-0" title="Sudah Dikerjakan & Poin Didapat"
+                 > <FiAward size={14} /> </motion.div>
+             )}
+            </AnimatePresence>
+        </motion.button>
+    );
+};
+
 
 const HistoryCard = ({ item, onSelect }) => (
     <motion.div className="w-full bg-white rounded-2xl p-4 shadow-sm border" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -62,7 +87,7 @@ const MenulisPage = ({ onNavigate, onNavigateToWorksheet }) => {
     const [error, setError] = useState(null);
     const [historyError, setHistoryError] = useState(null);
     const [activeTab, setActiveTab] = useState('materi');
-    const [selectedHistory, setSelectedHistory] = useState(null);
+    const [selectedHistory, setSelectedHistory] = useState(null); // <-- State untuk modal detail siswa
     const [searchTerm, setSearchTerm] = useState('');
 
     // --- Detail Spesifik Mapel ---
@@ -79,26 +104,33 @@ const MenulisPage = ({ onNavigate, onNavigateToWorksheet }) => {
         desktopTabText: 'text-pink-800'
     };
     const NAVIGATION_KEY = 'menulis';
-    
+
+    // Fetch data chapters
     useEffect(() => {
         let isMounted = true;
         if (user?.jenjang) {
-            setLoading(true); setError(null); setHistoryError(null);
+            setLoading(true); setError(null);
             DataService.getChaptersForSubject(user.jenjang, user.kelas, SUBJECT_NAME)
                 .then(res => { if (isMounted) setChapters(res.data); })
                 .catch(err => { console.error("Gagal memuat chapters:", err); if (isMounted) setError(`Gagal memuat daftar bab. ${err.response?.data?.message || err.message}`); })
                 .finally(() => { if (isMounted) setLoading(false); });
-
-            setHistoryLoading(true);
-            DataService.getSubjectHistory(SUBJECT_NAME)
-                .then(res => { if (isMounted) setHistory(res.data); })
-                .catch(err => { console.error("Gagal memuat riwayat:", err); if (isMounted) setHistoryError(`Gagal memuat riwayat nilai. ${err.response?.data?.message || err.message}`); })
-                .finally(() => { if (isMounted) setHistoryLoading(false); });
         } else {
-            setError("Informasi jenjang/kelas pengguna tidak ditemukan."); setLoading(false); setHistoryLoading(false);
+            setError("Informasi jenjang/kelas pengguna tidak ditemukan."); setLoading(false);
         }
         return () => { isMounted = false };
     }, [user, SUBJECT_NAME]);
+
+    // Fetch data history
+    useEffect(() => {
+        let isMounted = true;
+        setHistoryLoading(true); setHistoryError(null);
+        DataService.getSubjectHistory(SUBJECT_NAME)
+            .then(res => { if (isMounted) setHistory(res.data); })
+            .catch(err => { console.error("Gagal memuat riwayat:", err); if (isMounted) setHistoryError(`Gagal memuat riwayat nilai. ${err.response?.data?.message || err.message}`); })
+            .finally(() => { if (isMounted) setHistoryLoading(false); });
+        return () => { isMounted = false };
+    }, [SUBJECT_NAME]);
+
 
     const stats = useMemo(() => {
         const gradedHistory = history.filter(h => h.score !== null);
@@ -120,22 +152,38 @@ const MenulisPage = ({ onNavigate, onNavigateToWorksheet }) => {
 
         if (activeTab === 'materi') {
             if (filteredChapters.length === 0) return <div className="text-center text-gray-500 mt-12"><p>{searchTerm ? 'Bab tidak ditemukan.' : 'Belum ada bab untuk mata pelajaran ini.'}</p></div>;
-            return <div className="space-y-4">{filteredChapters.map((chapter) => <ChapterButton key={chapter.id} chapter={chapter} onClick={() => onNavigateToWorksheet({ materiKey: chapter.materiKey, chapterTitle: chapter.judul, subjectName: SUBJECT_NAME, navigationKey: NAVIGATION_KEY })} Icon={ICON} themeStyles={THEME_STYLES} />)}</div>;
+             // ⭐ Teruskan prop hasCompleted ke ChapterButton
+            return (
+                <div className="space-y-4">
+                    {filteredChapters.map((chapter) => (
+                        <ChapterButton
+                            key={chapter.id || chapter.materiKey}
+                            chapter={chapter}
+                            onClick={() => onNavigateToWorksheet({ materiKey: chapter.materiKey, chapterTitle: chapter.judul, subjectName: SUBJECT_NAME, navigationKey: NAVIGATION_KEY })}
+                            Icon={ICON}
+                            themeStyles={THEME_STYLES}
+                            hasCompleted={chapter.hasCompleted} // <-- Tambahkan ini
+                        />
+                    ))}
+                </div>
+            );
         }
         if (activeTab === 'nilai') {
             if (historyLoading) return <div className="flex justify-center items-center h-48 pt-12"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
             if (history.length === 0 && !historyError) return <div className="text-center text-gray-500 mt-12"><p>Anda belum pernah mengerjakan bab apapun.</p></div>;
+             // <-- Panggil setSelectedHistory saat HistoryCard diklik
             return <div className="space-y-4">{history.map(item => <HistoryCard key={item.id} item={item} onSelect={setSelectedHistory} />)}</div>;
         }
     };
 
     return (
         <>
+            {/* --- ⭐ Render StudentSubmissionDetailModal --- */}
             <AnimatePresence>
                 {selectedHistory && <StudentSubmissionDetailModal submission={selectedHistory} onClose={() => setSelectedHistory(null)} />}
             </AnimatePresence>
 
-            {/* --- Tampilan Mobile --- */}
+            {/* Layout Mobile */}
             <div className={`md:hidden flex flex-col min-h-screen bg-gray-50 pb-28`}>
                 <header className={`bg-gradient-to-b from-sesm-teal to-sesm-deep rounded-b-[2.5rem] p-6 pt-10 text-white z-10 shadow-lg flex-shrink-0`}>
                     <div className="flex justify-between items-center mb-4">
@@ -173,7 +221,7 @@ const MenulisPage = ({ onNavigate, onNavigateToWorksheet }) => {
                 </main>
             </div>
 
-            {/* --- Tampilan Desktop --- */}
+            {/* Layout Desktop */}
             <div className={`hidden md:flex flex-col min-h-screen ${THEME_STYLES.desktopBg} p-8`}>
                 <motion.div
                     className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-2xl flex flex-col flex-grow overflow-hidden"
