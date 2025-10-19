@@ -3,8 +3,8 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiArrowLeft, FiTrash2, FiFolder, FiFilePlus, FiSave,
-    FiCloud, FiCloudOff, FiCheckCircle, FiAlertTriangle, FiInfo,
-    FiMinus, FiPlus, FiLoader, FiRotateCcw, FiRotateCw, FiDownload, FiLayers, FiStar, FiHeart, FiX
+    FiCloud, FiCloudOff, FiCheckCircle, FiAlertTriangle, FiInfo, FiLoader,
+    FiMinus, FiPlus, FiRotateCcw, FiRotateCw, FiDownload, FiLayers, FiStar, FiHeart, FiX
 } from 'react-icons/fi';
 import { FaPaintBrush, FaEraser, FaSmile, FaPalette } from 'react-icons/fa';
 import DrawingService from '../services/drawingService';
@@ -28,7 +28,7 @@ const SaveStatusIcon = ({ status }) => {
         initial: { y: 3, opacity: 0 },
         animate: { y: -3, opacity: [0, 1, 1, 0], transition: { duration: 1.2, repeat: Infinity, ease: "easeInOut" } }
     };
-    
+
     return (
         <div className="relative w-6 h-6">
             <AnimatePresence>
@@ -73,7 +73,7 @@ const DrawingPage = ({ onNavigate }) => {
     const [isAutoSaveConfirmOpen, setIsAutoSaveConfirmOpen] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
-    
+
     const [history, setHistory] = useState([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [activeStamp, setActiveStamp] = useState('star');
@@ -151,7 +151,7 @@ const DrawingPage = ({ onNavigate }) => {
             setSaveStatus('Gagal');
         }
     }, [isAutoSaveEnabled, history, historyIndex]);
-    
+
     useEffect(() => {
         if (!activeProject || isLoading || !isAutoSaveEnabled) return;
         const handler = setTimeout(() => saveProject(activeProject), 2500);
@@ -167,7 +167,7 @@ const DrawingPage = ({ onNavigate }) => {
     const handleClearCanvas = () => { if (window.confirm("Yakin ingin membersihkan seluruh kanvas?")) { redrawCanvas(null, true); } };
     const handleDownloadCanvas = () => { if (!canvasRef.current) return; const link = document.createElement('a'); link.download = `${activeProject?.title || 'karyaku'}.png`; link.href = canvasRef.current.toDataURL('image/png'); link.click(); };
     useEffect(() => { if (contextRef.current) { contextRef.current.strokeStyle = tool === 'eraser' ? 'white' : color; contextRef.current.lineWidth = brushSize; contextRef.current.fillStyle = tool === 'eraser' ? 'white' : color; } }, [color, brushSize, tool]);
-    
+
     const drawStamp = (x, y) => { const ctx = contextRef.current; const size = brushSize * 5; ctx.save(); ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.translate(x, y); if (activeStamp === 'star') { ctx.beginPath(); for (let i = 0; i < 5; i++) { ctx.lineTo(Math.cos((18 + i * 72) / 180 * Math.PI) * size, -Math.sin((18 + i * 72) / 180 * Math.PI) * size); ctx.lineTo(Math.cos((54 + i * 72) / 180 * Math.PI) * (size/2), -Math.sin((54 + i * 72) / 180 * Math.PI) * (size/2)); } ctx.closePath(); } else if (activeStamp === 'heart') { const d = size; ctx.beginPath(); ctx.moveTo(0, d/4); ctx.quadraticCurveTo(0, 0, d/4, 0); ctx.quadraticCurveTo(d/2, 0, d/2, d/4); ctx.quadraticCurveTo(d/2, 0, d*3/4, 0); ctx.quadraticCurveTo(d, 0, d, d/4); ctx.quadraticCurveTo(d, d/2, d*3/4, d*3/4); ctx.lineTo(d/2, d); ctx.lineTo(d/4, d*3/4); ctx.quadraticCurveTo(0, d/2, 0, d/4); ctx.closePath(); } else if (activeStamp === 'smile') { ctx.beginPath(); ctx.arc(0, 0, size / 2, 0, Math.PI * 2, true); ctx.moveTo(size * 0.25, -size * 0.1); ctx.arc(0, 0, size * 0.25, 0, Math.PI, false); ctx.moveTo(-size * 0.1, -size * 0.1); ctx.arc(-size * 0.15, -size * 0.1, size * 0.05, 0, Math.PI * 2, true); ctx.moveTo(size * 0.2, -size * 0.1); ctx.arc(size * 0.15, -size * 0.1, size * 0.05, 0, Math.PI * 2, true); } ctx.fill(); ctx.restore(); };
     const getCoords = (event) => { const canvas = canvasRef.current; if (!canvas) return { x: 0, y: 0 }; const rect = canvas.getBoundingClientRect(); const touch = event.touches ? event.touches[0] : event; return { x: touch.clientX - rect.left, y: touch.clientY - rect.top }; };
     const startDrawing = (e) => { e.preventDefault(); const { x, y } = getCoords(e); if(tool === 'stamp') { drawStamp(x, y); finishDrawingAndSave(); return; } contextRef.current.beginPath(); contextRef.current.moveTo(x, y); setIsDrawing(true); };
@@ -181,71 +181,130 @@ const DrawingPage = ({ onNavigate }) => {
     return (
         <div className="w-full h-screen bg-blue-50 flex flex-col font-sans overflow-hidden">
              <Notification isOpen={notif.isOpen} onClose={() => setNotif({ ...notif, isOpen: false })} title={notif.title} message={notif.message} success={notif.success} />
-            <motion.header initial={{ y: -100 }} animate={{ y: 0 }} className="bg-gradient-to-r from-sesm-teal to-sesm-deep p-3 flex justify-between items-center shadow-lg z-20">
-                <button onClick={() => onNavigate('creativeZone')} className="p-2 rounded-full text-white hover:bg-white/20"><FiArrowLeft size={22} /></button>
-                <div className='flex items-center gap-2'>
-                    <div className='flex items-center space-x-2 text-white/90 text-sm bg-black/10 px-3 py-1.5 rounded-full w-32 justify-center'>
+            {/* ========== HEADER ========== */}
+            <motion.header
+                initial={{ y: -100 }} animate={{ y: 0 }}
+                // --- PERBAIKAN: Padding responsif dan flex-wrap ---
+                className="bg-gradient-to-r from-sesm-teal to-sesm-deep p-2 sm:p-3 flex flex-wrap justify-between items-center gap-y-2 shadow-lg z-20"
+            >
+                {/* Bagian Kiri: Tombol Kembali */}
+                <button onClick={() => onNavigate('creativeZone')} className="p-2 rounded-full text-white hover:bg-white/20">
+                    <FiArrowLeft size={22} />
+                </button>
+
+                {/* Bagian Tengah: Tombol Aksi (dengan flex-wrap) */}
+                {/* --- PERBAIKAN: flex-wrap dan justify-center --- */}
+                <div className='flex flex-wrap justify-center items-center gap-1 sm:gap-2'>
+                    {/* Save Status */}
+                    <div className='flex items-center space-x-2 text-white/90 text-sm bg-black/10 px-3 py-1.5 rounded-full min-w-[120px] justify-center order-first sm:order-none'>
                         <SaveStatusIcon status={saveStatus} />
                         <span>{saveStatus}</span>
                     </div>
+                    {/* Undo/Redo */}
                     <button onClick={handleUndo} disabled={historyIndex <= 0} className="p-2 rounded-full text-white hover:bg-white/20 disabled:opacity-50" title="Undo"><FiRotateCcw size={20} /></button>
                     <button onClick={handleRedo} disabled={historyIndex >= history.length - 1} className="p-2 rounded-full text-white hover:bg-white/20 disabled:opacity-50" title="Redo"><FiRotateCw size={20} /></button>
-                    <div className="w-px h-6 bg-white/20"></div>
+                    {/* Divider */}
+                    <div className="w-px h-6 bg-white/20 hidden sm:block"></div>
+                    {/* Aksi Lainnya */}
                     <button onClick={handleDownloadCanvas} className="p-2 rounded-full text-white hover:bg-white/20" title="Unduh Gambar"><FiDownload size={20} /></button>
                     <button onClick={handleCreateProject} className="p-2 rounded-full text-white hover:bg-white/20" title="Kanvas Baru"><FiFilePlus size={20} /></button>
                     <button onClick={() => setIsProjectModalOpen(true)} className="p-2 rounded-full text-white hover:bg-white/20" title="Buka Kanvas"><FiFolder size={20} /></button>
                     <button onClick={handleDeleteProject} className="p-2 rounded-full text-white hover:bg-white/20" title="Hapus Kanvas"><FiTrash2 size={20} /></button>
                 </div>
+
+                {/* Bagian Kanan: Autosave */}
                 <button onClick={handleToggleAutoSave} className={`p-2 rounded-full text-white transition-colors ${isAutoSaveEnabled ? 'bg-green-500/50 hover:bg-green-500/80' : 'bg-red-500/50 hover:bg-red-500/80'}`} title={isAutoSaveEnabled ? 'Simpan Otomatis Aktif' : 'Simpan Otomatis Nonaktif'}>
                     {isAutoSaveEnabled ? <FiCloud size={20} /> : <FiCloudOff size={20} />}
                 </button>
             </motion.header>
 
+            {/* ========== MAIN CONTENT (CANVAS AREA) ========== */}
             <main className="flex-1 flex flex-col p-4 md:p-8 relative overflow-y-auto">
                 <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="w-full flex-1 flex flex-col bg-white rounded-2xl shadow-inner overflow-hidden">
-                    {isLoading ? <div className="w-full h-full flex justify-center items-center flex-col gap-4 text-sesm-deep"><FiLoader className="animate-spin text-4xl"/><span className="font-semibold">Memuat Kanvas...</span></div>
-                     : (<> {activeProject && <div className="p-4 border-b bg-gray-50"> <input type="text" value={activeProject.title} onChange={(e) => updateActiveProjectTitle(e.target.value)} className="w-full text-xl font-bold text-center text-sesm-deep bg-transparent focus:outline-none" placeholder="Judul Karyamu" /> </div>} <div className='w-full h-full'> <canvas ref={canvasRef} className="w-full h-full cursor-crosshair touch-none" onMouseDown={startDrawing} onMouseUp={finishDrawingAndSave} onMouseMove={draw} onMouseLeave={finishDrawingAndSave} onTouchStart={startDrawing} onTouchEnd={finishDrawingAndSave} onTouchMove={draw} /> </div> </>)}
+                    {isLoading ? (
+                        <div className="w-full h-full flex justify-center items-center flex-col gap-4 text-sesm-deep">
+                            <FiLoader className="animate-spin text-4xl"/><span className="font-semibold">Memuat Kanvas...</span>
+                        </div>
+                     ) : (
+                        <>
+                            {activeProject && (
+                                <div className="p-4 border-b bg-gray-50 flex-shrink-0">
+                                    <input
+                                        type="text"
+                                        value={activeProject.title}
+                                        onChange={(e) => updateActiveProjectTitle(e.target.value)}
+                                        className="w-full text-xl font-bold text-center text-sesm-deep bg-transparent focus:outline-none"
+                                        placeholder="Judul Karyamu"
+                                    />
+                                </div>
+                            )}
+                            <div className='w-full h-full flex-grow relative'> {/* Ensure canvas container takes space */}
+                                <canvas
+                                    ref={canvasRef}
+                                    // --- PERBAIKAN KURSOR DISINI ---
+                                    className="absolute inset-0 w-full h-full touch-none cursor-[url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\'><path d=\'M12 0 V24 M0 12 H24\' stroke=\'black\' stroke-width=\'1.5\'/></svg>')_12_12,_crosshair]"
+                                    onMouseDown={startDrawing}
+                                    onMouseUp={finishDrawingAndSave}
+                                    onMouseMove={draw}
+                                    onMouseLeave={finishDrawingAndSave}
+                                    onTouchStart={startDrawing}
+                                    onTouchEnd={finishDrawingAndSave}
+                                    onTouchMove={draw}
+                                />
+                            </div>
+                        </>
+                    )}
                 </motion.div>
             </main>
-            
-            <motion.footer initial={{ y: 200 }} animate={{ y: 0 }} transition={{ type: 'spring', stiffness: 120, damping: 20, delay: 0.2 }} className="bg-white/80 backdrop-blur-md p-4 rounded-t-2xl shadow-2xl z-20">
-                 <div className="flex items-center justify-between mb-4 px-2">
-                    <div className="flex space-x-2">
-                        <button onClick={() => setTool('brush')} className={`p-3 rounded-xl ${tool === 'brush' ? 'bg-sesm-deep text-white' : 'bg-gray-200'}`}><FaPaintBrush size={20}/></button>
-                        <button onClick={() => setTool('eraser')} className={`p-3 rounded-xl ${tool === 'eraser' ? 'bg-sesm-deep text-white' : 'bg-gray-200'}`}><FaEraser size={20}/></button>
-                        <button onClick={() => setTool('stamp')} className={`p-3 rounded-xl ${tool === 'stamp' ? 'bg-sesm-deep text-white' : 'bg-gray-200'}`}><FiStar size={20}/></button>
-                        <button onClick={handleClearCanvas} className="p-3 rounded-xl bg-gray-200" title="Bersihkan Kanvas"><FiLayers size={20}/></button>
+
+            {/* ========== FOOTER (TOOLBAR) ========== */}
+            <motion.footer initial={{ y: 200 }} animate={{ y: 0 }} transition={{ type: 'spring', stiffness: 120, damping: 20, delay: 0.2 }} className="bg-white/80 backdrop-blur-md p-3 sm:p-4 rounded-t-2xl shadow-2xl z-20 flex-shrink-0">
+                 {/* Baris Atas: Tools & Size/Stamp */}
+                 <div className="flex flex-col sm:flex-row items-center justify-between mb-3 sm:mb-4 px-2 gap-y-2">
+                    {/* Tools */}
+                    <div className="flex space-x-1 sm:space-x-2">
+                        <button onClick={() => setTool('brush')} className={`p-2 sm:p-3 rounded-xl ${tool === 'brush' ? 'bg-sesm-deep text-white' : 'bg-gray-200'}`}><FaPaintBrush size={20}/></button>
+                        <button onClick={() => setTool('eraser')} className={`p-2 sm:p-3 rounded-xl ${tool === 'eraser' ? 'bg-sesm-deep text-white' : 'bg-gray-200'}`}><FaEraser size={20}/></button>
+                        <button onClick={() => setTool('stamp')} className={`p-2 sm:p-3 rounded-xl ${tool === 'stamp' ? 'bg-sesm-deep text-white' : 'bg-gray-200'}`}><FiStar size={20}/></button>
+                        <button onClick={handleClearCanvas} className="p-2 sm:p-3 rounded-xl bg-gray-200" title="Bersihkan Kanvas"><FiLayers size={20}/></button>
                     </div>
+                    {/* Size/Stamp Picker */}
                     {tool === 'stamp' ? (
-                        <div className="flex items-center space-x-2 bg-gray-200 p-1 rounded-xl">
+                        <div className="flex items-center space-x-1 sm:space-x-2 bg-gray-200 p-1 rounded-xl">
                             {stamps.map(stamp => ( <button key={stamp.id} onClick={() => setActiveStamp(stamp.id)} className={`p-2 rounded-lg ${activeStamp === stamp.id ? 'bg-sesm-deep text-white' : ''}`}> <stamp.icon size={20}/> </button> ))}
                         </div>
                     ) : (
-                        <div className="flex items-center space-x-3 bg-gray-200 p-1 rounded-xl"><button onClick={() => setBrushSize(s => Math.max(1, s - 2))} className="p-2"><FiMinus /></button><div className="w-5 h-5 rounded-full bg-gray-700" style={{ transform: `scale(${brushSize/10})` }}></div><button onClick={() => setBrushSize(s => Math.min(50, s + 2))} className="p-2"><FiPlus /></button></div>
+                        <div className="flex items-center space-x-2 sm:space-x-3 bg-gray-200 p-1 rounded-xl">
+                            <button onClick={() => setBrushSize(s => Math.max(1, s - 2))} className="p-2"><FiMinus /></button>
+                            <div className="w-5 h-5 rounded-full bg-gray-700" style={{ transform: `scale(${brushSize/10})` }}></div>
+                            <button onClick={() => setBrushSize(s => Math.min(50, s + 2))} className="p-2"><FiPlus /></button>
+                        </div>
                     )}
                 </div>
-                <div className="flex justify-center items-center space-x-2 overflow-x-auto pb-2">
-                    <label htmlFor="color-picker" className="w-10 h-10 rounded-full cursor-pointer border-2 border-gray-300 flex items-center justify-center relative overflow-hidden" style={{ background: 'conic-gradient(from 180deg at 50% 50%, #FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000)'}}>
+                {/* Baris Bawah: Palet Warna */}
+                <div className="flex justify-center items-center space-x-1 sm:space-x-2 overflow-x-auto pb-1 sm:pb-2">
+                    <label htmlFor="color-picker" className="flex-shrink-0 w-10 h-10 rounded-full cursor-pointer border-2 border-gray-300 flex items-center justify-center relative overflow-hidden" style={{ background: 'conic-gradient(from 180deg at 50% 50%, #FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000)'}}>
                         <input id="color-picker" type="color" value={color} onChange={(e) => {setColor(e.target.value); setTool('brush');}} className="absolute w-20 h-20 opacity-0 cursor-pointer"/>
                     </label>
                     {colors.map((c) => ( <ColorSwatch key={c} color={c} isActive={color === c && tool !== 'eraser'} onClick={() => { setColor(c); setTool('brush'); }} /> ))}
                 </div>
             </motion.footer>
 
+            {/* Modals */}
             <AnimatePresence>
                 {isProjectModalOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setIsProjectModalOpen(false)}>
                     <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-2xl w-full max-w-4xl max-h-[80vh] flex flex-col shadow-lg" onClick={(e) => e.stopPropagation()}>
-                    <h2 className="text-xl font-bold p-5 border-b text-gray-800">Buka Kanvas</h2>
-                    <div className="overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <h2 className="text-xl font-bold p-5 border-b text-gray-800 flex-shrink-0">Buka Kanvas</h2>
+                    <div className="overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-4 gap-4 flex-grow">
                         {projects.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified)).map(project => (
-                        <div key={project.id} onClick={() => handleSelectProject(project.id)} className={`rounded-lg cursor-pointer transition-all border-2 ${activeProjectId === project.id ? 'border-sesm-teal' : 'border-transparent'}`}>
-                            <div className={`p-3 rounded-lg ${activeProjectId === project.id ? 'bg-sesm-teal/10' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                                <div className="w-full h-32 bg-white rounded-md mb-2 overflow-hidden border">
-                                    {project.imageData ? <img alt={project.title} src={project.imageData} className="w-full h-full object-contain" /> : <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Kosong</div>}
+                        <div key={project.id} onClick={() => handleSelectProject(project.id)} className={`rounded-lg cursor-pointer transition-all border-2 ${activeProjectId === project.id ? 'border-sesm-teal ring-2 ring-sesm-teal/30' : 'border-transparent hover:border-gray-300'}`}>
+                            <div className={`p-3 rounded-lg h-full flex flex-col ${activeProjectId === project.id ? 'bg-sesm-teal/10' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                <div className="w-full h-32 bg-white rounded-md mb-2 overflow-hidden border flex-shrink-0">
+                                    {project.imageData ? <img alt={project.title} src={project.imageData} className="w-full h-full object-contain" /> : <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm italic">Kosong</div>}
                                 </div>
-                                <p className="font-bold truncate text-gray-800">{project.title}</p>
-                                <p className="text-xs opacity-60 text-gray-600 mt-1">{new Date(project.lastModified).toLocaleString()}</p>
+                                <p className="font-bold truncate text-gray-800 text-sm flex-grow">{project.title}</p>
+                                <p className="text-xs opacity-60 text-gray-600 mt-1 flex-shrink-0">{new Date(project.lastModified).toLocaleString()}</p>
                             </div>
                         </div>
                         ))}
