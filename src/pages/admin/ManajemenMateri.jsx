@@ -1,8 +1,9 @@
+// contoh-sesm-web/pages/admin/ManajemenMateri.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiPlus, FiChevronRight, FiBookOpen, FiTrash2, FiLoader, FiGrid,
-    FiCheckSquare, FiFileText, FiEdit, FiAlertCircle, FiTrendingUp, FiSettings, FiCheckCircle // ✅ PERBAIKAN DI SINI
+    FiCheckSquare, FiFileText, FiEdit, FiAlertCircle, FiTrendingUp, FiSettings, FiCheckCircle
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
@@ -472,9 +473,8 @@ const ManajemenMateri = ({ onNavigate }) => {
                         title="Anda Memiliki Draf Materi"
                         message={`Anda memiliki ${drafts.length} draf materi yang belum selesai. Ingin melanjutkannya?`}
                         isConfirmation={true}
-                        confirmText="Ya, Lanjutkan"
-                        cancelText="Nanti Saja"
-                        success={true}
+                        confirmText="Lanjutkan"
+                        cancelText="Tidak"
                     />
                 )}
             </AnimatePresence>
@@ -545,10 +545,25 @@ const ManajemenMateri = ({ onNavigate }) => {
                                 <p className="text-gray-500 mt-1">Buat materi baru, kelola soal, dan lihat hasil pengerjaan siswa.</p>
 
                                 <div className="flex items-center gap-3 my-6">
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsDraftsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-gray-800 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"><FiFileText /> Draf {drafts.length > 0 && `(${drafts.length})`}</motion.button>
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiBookOpen/> Bank Soal</motion.button>
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsAddChapterModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold shadow-sm"><FiPlus /> Buat Materi</motion.button>
+                                    {/* --- PERBAIKAN DESAIN TOMBOL DRAF --- */}
+                                    <motion.button 
+                                        whileTap={{ scale: 0.95 }} 
+                                        onClick={() => setIsDraftsModalOpen(true)} 
+                                        className="relative flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"
+                                    >
+                                        <FiFileText />
+                                        <span>Draf</span>
+                                        {drafts.length > 0 && (
+                                            <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold border-2 border-white">
+                                                {drafts.length}
+                                            </span>
+                                        )}
+                                    </motion.button>
+                                    {/* --- AKHIR PERBAIKAN --- */}
+
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiBookOpen/> Bank Soal</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsAddChapterModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-sesm-teal text-white rounded-lg font-semibold shadow-sm"><FiPlus /> Buat Materi</motion.button>
                                 </div>
                             </motion.div>
                         </div>
