@@ -1,18 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // ✅ PERBAIKAN: Tambahkan useCallback
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
 import DataService from '../../services/dataService';
-import CustomSelect from '../ui/CustomSelect'; // 1. Impor CustomSelect
-
-// ... (Komponen MediaPreview, LinkPreview, TextPreview, dan hook useDebounce tidak berubah)
-const useDebounce = (value, delay) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => { setDebouncedValue(value); }, delay);
-        return () => { clearTimeout(handler); };
-    }, [value, delay]);
-    return debouncedValue;
-};
+import CustomSelect from '../ui/CustomSelect';
+import useDebounce from '../../hooks/useDebounce';
+import SaveStatusIcon from '../ui/SaveStatusIcon'; // Impor komponen SaveStatusIcon
 
 const MediaPreview = ({ file, onRemove }) => {
     const getIcon = () => {
@@ -50,38 +42,43 @@ const TextPreview = ({ text, onRemove }) => (
 
 
 const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
-    // 2. Siapkan opsi untuk tipe soal
     const questionTypeOptions = [
         { value: 'pilihan-ganda', label: 'Pilihan Ganda' },
         { value: 'esai', label: 'Esai' },
         { value: 'pilihan-ganda-esai', label: 'Pilihan Ganda & Esai' }
     ];
     
-    // ... (Semua state dan fungsi lainnya tetap sama)
     const DRAFT_KEY = `materi_${chapterId}`;
     const [questions, setQuestions] = useState([]);
     const [linkInput, setLinkInput] = useState({ qIndex: null, value: '' });
     const [textInput, setTextInput] = useState({ qIndex: null, value: '' });
-
+    const [saveStatus, setSaveStatus] = useState('Tersimpan');
+    
     const getNewQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', media: [], links: [], texts: [], subQuestions: [], id: Date.now() + Math.random() });
     const getNewSubQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', id: Date.now() + Math.random() + '_sub' });
     
-    const saveDraftToBackend = async (draftData) => {
+    const debouncedQuestions = useDebounce(questions, 1500);
+
+    const saveDraftToBackend = useCallback(async (draftData) => {
+        if (draftData.length === 1 && draftData[0].question.trim() === '' && draftData[0].media.length === 0) {
+            return;
+        }
+        setSaveStatus('Menyimpan...');
         try {
             const serializableData = draftData.map(({ media, ...rest }) => rest);
             await DataService.saveDraft(DRAFT_KEY, serializableData);
+            setSaveStatus('Tersimpan');
         } catch (error) {
             console.error("Gagal menyimpan draf ke server:", error);
+            setSaveStatus('Gagal');
         }
-    };
+    }, [DRAFT_KEY]);
     
-    const debouncedQuestions = useDebounce(questions, 2000);
-
     useEffect(() => {
-        if (isOpen && debouncedQuestions.length > 0 && debouncedQuestions.some(q => q.question.trim() !== '')) {
+        if (isOpen) {
             saveDraftToBackend(debouncedQuestions);
         }
-    }, [debouncedQuestions, DRAFT_KEY, isOpen]);
+    }, [debouncedQuestions, isOpen, saveDraftToBackend]);
 
     useEffect(() => {
         if (isOpen) {
@@ -138,10 +135,19 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     if (!isOpen) return null;
 
     return (
-        <motion.div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <motion.div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col h-[90vh]">
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                    <div className="p-6 border-b"><h3 className="text-xl font-bold text-sesm-deep">Tambah Soal Baru</h3><p className="text-sm text-gray-500">Perubahan akan disimpan otomatis sebagai draf.</p></div>
+                    <div className="p-6 border-b flex justify-between items-center">
+                        <div>
+                            <h3 className="text-xl font-bold text-sesm-deep">Tambah Soal Baru</h3>
+                            <p className="text-sm text-gray-500">Perubahan akan disimpan otomatis sebagai draf.</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <SaveStatusIcon status={saveStatus} />
+                            <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
+                        </div>
+                    </div>
                     <div className="p-6 space-y-6 flex-grow overflow-y-auto bg-gray-50/50">
                         {questions.map((q, qIndex) => (
                             <div key={q.id} className="bg-white p-5 rounded-xl border shadow-sm">
@@ -149,7 +155,6 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                     <div className="flex-grow space-y-4">
                                         <div className="flex items-center gap-4">
                                             <span className="font-bold text-lg">{qIndex + 1}.</span>
-                                            {/* 3. Ganti <select> Tipe Soal */}
                                             <CustomSelect
                                                 options={questionTypeOptions}
                                                 value={q.type}
@@ -159,7 +164,6 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                         </div>
                                         <textarea value={q.question} onChange={(e) => handleQuestionChange(qIndex, 'question', e.target.value)} placeholder="Tulis pertanyaan utama di sini..." className="w-full p-2 border rounded-md h-24" required />
                                         
-                                        {/* ... (bagian lampiran media tidak berubah) ... */}
                                         <div>
                                             <div className="flex flex-wrap items-center gap-2 mb-2">
                                                 <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors cursor-pointer">
@@ -209,7 +213,6 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                                 {q.options.map((opt, oIndex) => (<div key={oIndex} className="flex items-center gap-2"><input type="text" value={opt} onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)} placeholder={`Pilihan ${oIndex + 1}`} className="w-full p-2 border rounded-md" required/><button type="button" onClick={() => removeOptionField(qIndex, oIndex)} disabled={q.options.length <= 2} className="p-2 text-gray-400 hover:text-red-600 disabled:text-gray-300 disabled:cursor-not-allowed"><FiTrash2/></button></div>))}
                                                 <button type="button" onClick={() => addOptionField(qIndex)} className="text-sm font-semibold flex items-center gap-1 px-3 py-1 bg-gray-100 border rounded-md hover:bg-gray-200 transition-colors"><FiPlus size={16}/> Tambah Opsi</button>
                                                 
-                                                {/* 4. Ganti <select> Jawaban Benar */}
                                                 <CustomSelect
                                                     options={q.options.filter(opt => opt.trim() !== '').map(opt => ({ value: opt, label: opt }))}
                                                     value={q.correctAnswer}
@@ -218,7 +221,6 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                                 />
                                             </fieldset>
                                         )}
-                                        {/* ... (sisa kode tidak berubah) ... */}
                                         {(q.type === 'esai' || q.type === 'pilihan-ganda-esai') && (
                                             <fieldset className="border p-3 rounded-md">
                                                 <legend className="text-sm font-medium px-1">Jawaban Esai</legend>
@@ -251,7 +253,7 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                         ))}
                          <button type="button" onClick={addQuestionField} className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed rounded-lg text-sesm-deep hover:bg-sesm-teal/10 transition-colors"><FiPlus/> Tambah Soal Lagi</button>
                     </div>
-                    <div className="bg-gray-50 p-4 flex justify-between items-center rounded-b-2xl border-t"><span className="text-sm text-gray-600">Total: {questions.length} soal</span><div><button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200 transition-colors mr-2">Batal</button><button type="button" onClick={handleSaveDraft} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors mr-3">Simpan Sementara</button><button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 transition-colors">Publish Soal</button></div></div>
+                    <div className="bg-gray-50 p-4 flex justify-between items-center rounded-b-2xl border-t"><span className="text-sm text-gray-600 font-semibold">Total: {questions.length} soal</span><div><button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200 transition-colors mr-2">Batal</button><button type="button" onClick={handleSaveDraft} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors mr-3">Simpan Sementara</button><button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 transition-colors">Publish Soal</button></div></div>
                 </form>
             </motion.div>
         </motion.div>
