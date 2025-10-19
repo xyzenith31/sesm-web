@@ -109,8 +109,8 @@ const updateGradingMode = (chapterId, mode) => { return apiClient.put(`/admin/ch
 const getAllSubmissionsForChapter = (chapterId) => { return apiClient.get(`/admin/nilai/chapter/${chapterId}`); };
 const getSubmissionDetails = (submissionId) => { return apiClient.get(`/admin/nilai/submission/${submissionId}`); };
 
-const gradeSubmission = (submissionId, score, answers) => { 
-  return apiClient.post(`/admin/nilai/submission/${submissionId}`, { score, answers }); 
+const gradeSubmission = (submissionId, score, answers) => {
+  return apiClient.post(`/admin/nilai/submission/${submissionId}`, { score, answers });
 };
 
 const overrideAnswer = (answerId, isCorrect) => { return apiClient.patch(`/admin/nilai/answer/${answerId}`, { isCorrect }); };
@@ -125,30 +125,47 @@ const updateQuestionInQuiz = (questionId, questionData) => {
     const formData = new FormData();
     formData.append('question_text', questionData.question);
     formData.append('question_type', questionData.type);
-    if (questionData.options) {
+
+    // Bagian ini sudah benar: membuat array { text: string, isCorrect: boolean }
+    if (questionData.options && questionData.type.includes('pilihan-ganda')) {
         const formattedOptions = questionData.options.map(opt => ({
-            text: opt,
-            isCorrect: opt === questionData.correctAnswer
+            text: opt, // Ambil teks opsi
+            isCorrect: opt === questionData.correctAnswer // Tentukan boolean isCorrect
         }));
-        formData.append('options', JSON.stringify(formattedOptions));
+        formData.append('options', JSON.stringify(formattedOptions)); // Kirim sebagai JSON string
     }
-     // Handle existing media (assuming structure { type: 'file'/'link', url: '...' })
-    const existingMediaUrls = questionData.media.filter(m => m.type !== 'new-file' && m.url); // Filter yg url nya ada
+
+    // Handle existing media (assuming structure { type: 'file'/'link', url: '...' })
+    const existingMediaUrls = (questionData.media || []) // Pastikan media ada
+                          .filter(m => m.type !== 'new-file' && m.url)
+                          .map(({file, ...keepAttrs}) => keepAttrs); // Hapus property 'file' jika ada
     formData.append('existingMedia', JSON.stringify(existingMediaUrls));
 
+
     // Handle new files to upload
-    const newFiles = questionData.media.filter(m => m.type === 'new-file').map(m => m.file);
-    newFiles.forEach(file => formData.append('mediaFiles', file)); // Use 'mediaFiles' as expected by backend
+    const newFiles = (questionData.media || []) // Pastikan media ada
+                      .filter(m => m.type === 'new-file')
+                      .map(m => m.file);
+    newFiles.forEach(file => formData.append('mediaFiles', file)); // Use 'mediaFiles'
 
     formData.append('essayAnswer', questionData.essayAnswer || ''); // Include essay answer
 
-    return apiClient.put(`/admin/quizzes/questions/${questionId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }, });
+    return apiClient.put(`/admin/quizzes/questions/${questionId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
 };
+
 const deleteQuestionFromQuiz = (questionId) => { return apiClient.delete(`/admin/quizzes/questions/${questionId}`); };
 const getAllQuestionsForBank = (jenjang, kelas) => { return apiClient.get('/admin/all-questions', { params: { jenjang, kelas } }); };
 const addQuestionsFromBank = (quizId, questionIds) => { return apiClient.post(`/admin/quizzes/${quizId}/add-from-bank`, { questionIds }); };
 const getQuizForStudent = (quizId) => { return apiClient.get(`/quizzes/${quizId}`); };
-const submitQuizAnswers = (quizId, answers) => { return apiClient.post(`/quizzes/${quizId}/submit`, { answers }); };
+
+// Fungsi submitQuizAnswers sudah diperbaiki di sini
+const submitQuizAnswers = (quizId, answers) => {
+    // Pastikan mengirim objek dengan key 'answers' yang berisi array
+    return apiClient.post(`/quizzes/${quizId}/submit`, { answers });
+};
+
 const updateQuizSettings = (quizId, settings) => {
     return apiClient.put(`/admin/quizzes/${quizId}/settings`, settings);
 };
@@ -194,6 +211,10 @@ const deleteDraft = (draftKey) => {
 const getStudentSubmissionDetails = (submissionId) => {
     return apiClient.get(`/materi/submission/${submissionId}`);
 };
+const getStudentBookmarkSubmissionDetails = (submissionId) => { // Fungsi baru untuk detail bookmark siswa
+    return apiClient.get(`/bookmarks/submissions/${submissionId}`);
+};
+
 
 // --- FUNGSI BARU UNTUK AGENDA ---
 const getAgendas = (startDate, endDate) => {
@@ -218,6 +239,7 @@ const DataService = {
   getDetailMateriForAdmin,
   addChapter,
   getStudentSubmissionDetails,
+  getStudentBookmarkSubmissionDetails, // Ekspor fungsi baru
   addQuestion,
   updateQuestion,
   deleteChapter,

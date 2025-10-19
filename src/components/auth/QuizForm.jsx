@@ -102,24 +102,41 @@ const QuizForm = ({ quizData: initialQuizData, onCompleteQuiz }) => {
         }
     }, [currentQuestionIndex, fullQuizData?.questions?.length, results, submitAndFinishQuiz, QUIZ_DURATION]);
 
-    // --- PERUBAHAN 2: Logika Submit Jawaban Diperbarui Total ---
+    // ==========================================================
+    // === PERBAIKAN UTAMA ADA DI FUNGSI SUBMIT DI BAWAH INI ===
+    // ==========================================================
     const handleAnswerSubmit = useCallback(() => {
         if (gameState !== 'playing' || !currentQuestion) return;
 
+        // Ambil kunci jawaban dari data soal (yang udah kita fetch di useEffect)
         const correctAnswerMC = currentQuestion.options?.find(opt => opt.is_correct)?.option_text;
+        
         let isCorrect = false;
         let submittedAnswer = '';
 
         if (currentQuestion.question_type.includes('pilihan-ganda')) {
-            isCorrect = answer.mc === correctAnswerMC;
+            const userAnswerMC = answer.mc || ""; // Ambil jawaban user, pastikan tidak null
+
+            // --- INI DIA LOGIKA PERBAIKANNYA ---
+            // Cek jika jawaban user (setelah ditrim & lowercase) SAMA DENGAN
+            // kunci jawaban (setelah ditrim & lowercase)
+            if (correctAnswerMC && userAnswerMC.trim().toLowerCase() === correctAnswerMC.trim().toLowerCase()) {
+                isCorrect = true;
+            }
+            // --- SELESAI PERBAIKAN LOGIKA ---
+
             submittedAnswer = answer.mc || '';
         }
+        
         if (currentQuestion.question_type.includes('esai')) {
+            // Esai TIDAK dinilai otomatis di frontend, jadi 'isCorrect' tetap false
+            // Penilaian esai harusnya manual oleh guru
             isCorrect = false; 
             submittedAnswer = `${submittedAnswer}${submittedAnswer && answer.essay ? ' | ' : ''}${answer.essay}`;
         }
         
-        // Cek untuk pertanyaan tebusan
+        // Cek untuk pertanyaan tebusan (Redemption Round)
+        // Logika ini sekarang akan jalan dengan benar karena 'isCorrect'-nya sudah akurat
         if (!isCorrect && !isRedemptionRound && fullQuizData.setting_allow_redemption && !redemptionAttempts[currentQuestion.id] && currentQuestion.question_type.includes('pilihan-ganda')) {
             setRedemptionAttempts(prev => ({...prev, [currentQuestion.id]: true}));
             setIsRedemptionRound(true);
@@ -134,6 +151,8 @@ const QuizForm = ({ quizData: initialQuizData, onCompleteQuiz }) => {
 
         // Proses jawaban seperti biasa jika bukan tebusan atau jika tebusan sudah selesai
         setGameState('feedback');
+        
+        // 'isCorrect' yang disimpan di sini sekarang sudah akurat
         const resultToSave = { questionId: currentQuestion.id, answer: submittedAnswer, isCorrect, question: currentQuestion.question_text };
         setResults(prev => [...prev, resultToSave]);
         
@@ -159,16 +178,30 @@ const QuizForm = ({ quizData: initialQuizData, onCompleteQuiz }) => {
         return () => clearInterval(timer);
     }, [gameState, currentQuestionIndex, handleAnswerSubmit, fullQuizData, currentQuestion, isRedemptionRound]);
     
+    // Fungsi ini (getButtonClass) dibenerin juga logikanya
     const getButtonClass = (option) => {
         if (!currentQuestion) return 'bg-white';
         const isSubmitted = gameState !== 'playing';
         const isSelected = answer.mc === option;
+
         if (!isSubmitted) return isSelected ? 'bg-sesm-teal text-white' : 'bg-white';
+
+        // Logika untuk menampilkan tombol hijau (jawaban benar)
         const correctAnswer = currentQuestion.options.find(opt => opt.is_correct)?.option_text;
-        if (option === correctAnswer) return 'bg-green-500 text-white';
-        if (isSelected) return 'bg-red-500 text-white';
+        
+        // Cek jawaban benar (pake trim & lowercase)
+        if (correctAnswer && option.trim().toLowerCase() === correctAnswer.trim().toLowerCase()) {
+            return 'bg-green-500 text-white';
+        }
+        
+        // Kalo dia milih ini DAN ini salah
+        if (isSelected) {
+            return 'bg-red-500 text-white';
+        }
+
         return 'bg-white opacity-60';
     };
+
 
     if (loading) return <div className="min-h-screen bg-gray-100 flex justify-center items-center flex-col"><FiLoader className="animate-spin text-3xl text-sesm-teal mb-4"/><p>Memuat soal...</p></div>;
     if (error) return <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6 text-center"><FiAlertCircle className="text-5xl text-red-500 mb-4" /><h2 className="text-2xl font-bold">Terjadi Kesalahan</h2><p>{error}</p><button onClick={onCompleteQuiz} className="mt-6 px-6 py-2 bg-sesm-deep text-white rounded-lg">Kembali</button></div>;
