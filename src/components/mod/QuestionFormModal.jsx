@@ -57,7 +57,7 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const getNewQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', media: [], links: [], texts: [], subQuestions: [], id: Date.now() + Math.random() });
     const getNewSubQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', id: Date.now() + Math.random() + '_sub' });
     
-    const debouncedQuestions = useDebounce(questions, 1500);
+    const debouncedQuestions = useDebounce(questions, 200);
 
     const saveDraftToBackend = useCallback(async (draftData) => {
         if (draftData.length === 1 && draftData[0].question.trim() === '' && draftData[0].media.length === 0) {

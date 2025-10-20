@@ -59,7 +59,7 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
 
     // State untuk auto-save
     const [saveStatus, setSaveStatus] = useState('Tersimpan');
-    const debouncedQuestion = useDebounce(question, 1500);
+    const debouncedQuestion = useDebounce(question, 200);
 
     const saveDraftToBackend = useCallback(async (draftData) => {
         if (!draftData) return;
