@@ -416,7 +416,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                 <h3 className="font-bold text-gray-700">Daftar Soal ({questions.length})</h3>
                                                 <button onClick={() => handleDeleteAllQuestions(selectedQuiz.id)} disabled={questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
                                             </div>
-                                            <div className="space-y-3 max-h-[calc(100vh-35rem)] overflow-y-auto pr-2">
+                                            <div className="space-y-3 max-h-[calc(110vh-35rem)] overflow-y-auto pr-2">
                                                 {questions.length > 0 ? questions.map((q, index) => {
                                                     const creatorAvatar = q.creator_avatar
                                                         ? (q.creator_avatar.startsWith('http') ? q.creator_avatar : `${API_URL}/${q.creator_avatar}`)
