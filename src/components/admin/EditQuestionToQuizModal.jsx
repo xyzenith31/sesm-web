@@ -1,15 +1,20 @@
 // contoh-sesm-web/components/admin/EditQuestionToQuizModal.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { FiSave, FiX, FiPaperclip, FiLink, FiImage, FiFilm, FiMusic, FiFile, FiTrash2, FiPlus } from 'react-icons/fi';
-import CustomSelect from '../ui/CustomSelect';
-import useDebounce from '../../hooks/useDebounce'; // <-- 1. Impor useDebounce
-import SaveStatusIcon from '../ui/SaveStatusIcon'; // <-- 2. Impor SaveStatusIcon
-import DataService from '../../services/dataService'; // <-- 3. Impor DataService
+import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
+
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => { setDebouncedValue(value); }, delay);
+        return () => { clearTimeout(handler); };
+    }, [value, delay]);
+    return debouncedValue;
+};
+
 
 const MediaPreview = ({ item, onRemove }) => {
-    // ... (Komponen MediaPreview tidak berubah, tetap sama)
-    const API_URL = 'http://localhost:8080';
     const getIcon = (url) => {
         const ext = url.split('.').pop().toLowerCase();
         if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return <FiImage className="text-blue-500" size={24} />;
@@ -17,29 +22,21 @@ const MediaPreview = ({ item, onRemove }) => {
         if (['mp3', 'wav', 'ogg'].includes(ext)) return <FiMusic className="text-pink-500" size={24} />;
         return <FiFile className="text-gray-500" size={24} />;
     };
-
-    // Tampilkan file baru (dari state) atau file lama (dari URL)
-    const isNewFile = item.file instanceof File;
-    const displayName = isNewFile ? item.file.name : (item.url ? item.url.split('/').pop() : 'File');
-    const displayIcon = isNewFile ? getIcon(item.file.name) : (item.type === 'link' ? <FiLink className="text-green-500" size={24} /> : getIcon(item.url || ''));
-
+    
     return (
         <div className="bg-white border rounded-lg p-2 flex items-center gap-3">
-            {displayIcon}
-            <p className="text-sm font-medium text-gray-800 truncate flex-grow">{displayName}</p>
+            {item.type === 'link' ? <FiLink className="text-green-500" size={24} /> : getIcon(item.url)}
+            <p className="text-sm font-medium text-gray-800 truncate flex-grow">{item.url}</p>
             <button type="button" onClick={onRemove} className="p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100"><FiX size={16} /></button>
         </div>
     );
 };
-
 
 const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) => {
     const DRAFT_KEY = `edit_quiz_question_draft_${questionData?.id}`;
     const [question, setQuestion] = useState(null);
     const [isLinkInputVisible, setLinkInputVisible] = useState(false);
     const [linkValue, setLinkValue] = useState('');
-    // 4. Tambahkan state untuk status penyimpanan
-    const [saveStatus, setSaveStatus] = useState('Tersimpan');
 
     const questionTypeOptions = [
         { value: 'pilihan-ganda', label: 'Pilihan Ganda' },
@@ -47,78 +44,42 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
         { value: 'pilihan-ganda-esai', label: 'Pilihan Ganda & Esai' }
     ];
 
-    // 5. Gunakan useDebounce
+    const saveDraft = (data) => {
+        if (!data) return;
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+    };
+
     const debouncedQuestion = useDebounce(question, 1500);
-
-    // 6. Buat fungsi untuk menyimpan draf
-    const saveDraftToBackend = useCallback(async (draftData) => {
-        if (!draftData) return;
-        setSaveStatus('Menyimpan...');
-        try {
-            // Hapus file object sebelum serialisasi
-            const serializableData = {
-                ...draftData,
-                media: draftData.media.map(({ file, ...rest }) => rest)
-            };
-            await DataService.saveDraft(DRAFT_KEY, serializableData);
-            setSaveStatus('Tersimpan');
-        } catch (error) {
-            console.error("Gagal menyimpan draf:", error);
-            setSaveStatus('Gagal');
-        }
-    }, [DRAFT_KEY]);
-    
-    // 7. useEffect untuk memicu auto-save
     useEffect(() => {
-        if (isOpen && question) {
-            saveDraftToBackend(debouncedQuestion);
+        if (isOpen) {
+            saveDraft(debouncedQuestion);
         }
-    }, [debouncedQuestion, isOpen, saveDraftToBackend, question]);
+    }, [debouncedQuestion, isOpen]);
 
 
-    // 8. useEffect untuk memuat draf atau data awal
     useEffect(() => {
-        if (isOpen && questionData) {
-            DataService.getDraft(DRAFT_KEY)
-                .then(response => {
-                    const draftContent = response.data?.content;
-                    if (draftContent) {
-                        setQuestion({ ...draftContent, media: draftContent.media || [] });
-                    } else {
-                        // Inisialisasi dari props jika tidak ada draf
-                        const options = Array.isArray(questionData.options) ? questionData.options : [];
-                        const correctAnswer = options.find(opt => opt.is_correct)?.option_text || '';
-                        setQuestion({
-                            id: questionData.id,
-                            question: questionData.question_text,
-                            type: questionData.question_type || 'pilihan-ganda',
-                            options: options.map(opt => opt.option_text),
-                            correctAnswer: correctAnswer,
-                            essayAnswer: questionData.correct_essay_answer || '',
-                            media: questionData.media_attachments || [],
-                        });
-                    }
-                })
-                .catch(() => {
-                     // Fallback jika fetch draft gagal
-                    const options = Array.isArray(questionData.options) ? questionData.options : [];
-                    const correctAnswer = options.find(opt => opt.is_correct)?.option_text || '';
-                    setQuestion({
-                        id: questionData.id,
-                        question: questionData.question_text,
-                        type: questionData.question_type || 'pilihan-ganda',
-                        options: options.map(opt => opt.option_text),
-                        correctAnswer: correctAnswer,
-                        essayAnswer: questionData.correct_essay_answer || '',
-                        media: questionData.media_attachments || [],
-                    });
+        if (questionData) {
+            const savedDraft = localStorage.getItem(DRAFT_KEY);
+            if (savedDraft) {
+                setQuestion(JSON.parse(savedDraft));
+            } else {
+                const options = Array.isArray(questionData.options) ? questionData.options : [];
+                const correctAnswer = options.find(opt => opt.is_correct)?.option_text || '';
+
+                setQuestion({
+                    id: questionData.id,
+                    question: questionData.question_text,
+                    type: questionData.question_type || 'pilihan-ganda',
+                    options: options.length > 0 ? options.map(opt => opt.option_text) : ['', ''],
+                    correctAnswer: correctAnswer,
+                    essayAnswer: questionData.correct_essay_answer || '',
+                    media: questionData.media_attachments || [],
                 });
-            
+            }
             setLinkInputVisible(false);
             setLinkValue('');
         }
-    }, [questionData, isOpen, DRAFT_KEY]);
-    
+    }, [questionData, isOpen]);
     
     if (!isOpen || !question) return null;
 
@@ -144,42 +105,31 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
     
     const handleAddLink = () => {
         if (!linkValue.startsWith('http')) { alert('URL tidak valid.'); return; }
-        const newLink = { type: 'link', url: linkValue, id: Math.random() };
+        const newLink = { type: 'link', url: linkValue };
         handleUpdate('media', [...question.media, newLink]);
         setLinkValue('');
         setLinkInputVisible(false);
     };
 
-    const handleMediaUpload = (e) => {
-        const files = Array.from(e.target.files);
-        const newMediaFiles = files.map(file => ({ type: 'new-file', file, id: Math.random() }));
-        handleUpdate('media', [...question.media, ...newMediaFiles]);
-    };
-
-    const removeMediaItem = (itemId) => {
-        handleUpdate('media', question.media.filter(item => item.id !== itemId));
+    const handleSaveDraft = () => {
+        saveDraft(question);
+        alert('Perubahan disimpan sebagai draf!');
+        onClose();
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(question.id, question);
-        DataService.deleteDraft(DRAFT_KEY).catch(err => console.error(err));
+        localStorage.removeItem(DRAFT_KEY);
     };
 
     return (
         <motion.div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col">
                 <form onSubmit={handleSubmit}>
-                    {/* 9. Perbarui header modal */}
                     <div className="p-6 border-b flex justify-between items-center">
-                        <div>
-                            <h3 className="text-xl font-bold text-sesm-deep">Edit Soal</h3>
-                            <p className="text-sm text-gray-500">Perubahan akan disimpan otomatis sebagai draf.</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <SaveStatusIcon status={saveStatus} />
-                            <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX/></button>
-                        </div>
+                        <h3 className="text-xl font-bold text-sesm-deep">Edit Soal</h3>
+                        <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX/></button>
                     </div>
                     <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                         <CustomSelect
@@ -195,10 +145,6 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                         <div>
                             <label className="font-semibold text-sm mb-1 block">Lampiran Media</label>
                              <div className="flex items-center gap-2 mb-2">
-                                <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 cursor-pointer">
-                                    <FiPaperclip/> Ganti/Tambah File
-                                    <input type="file" multiple onChange={handleMediaUpload} className="hidden" />
-                                </label>
                                 <button type="button" onClick={() => setLinkInputVisible(v => !v)} className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300">
                                     <FiLink /> {isLinkInputVisible ? 'Batal' : 'Tambah Link'}
                                 </button>
@@ -211,7 +157,7 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                             )}
                             {question.media.length > 0 && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2 border rounded-md bg-gray-100">
-                                    {question.media.map((item, index) => <MediaPreview key={item.id || index} item={item} onRemove={() => removeMediaItem(item.id)} />)}
+                                    {question.media.map((item, index) => <MediaPreview key={index} item={item} onRemove={() => handleUpdate('media', question.media.filter((_, i) => i !== index))} />)}
                                 </div>
                             )}
                         </div>
@@ -251,6 +197,7 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                     </div>
                     <div className="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t">
                         <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200">Batal</button>
+                        <button type="button" onClick={handleSaveDraft} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Simpan Sementara</button>
                         <button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 flex items-center gap-2"><FiSave /> Simpan Perubahan</button>
                     </div>
                 </form>
