@@ -51,51 +51,52 @@ const ManajemenKuis = ({ onNavigate }) => {
     });
 
     const handleCloseNotif = () => setNotif(prev => ({ ...prev, isOpen: false }));
-
-
-    const fetchQuizzes = useCallback((selectIdAfterFetch = null) => {
+    
+    // ✅ PERBAIKAN: Menggabungkan fetch data untuk sinkronisasi draf
+    const fetchData = useCallback((selectIdAfterFetch = null) => {
         setLoading(true);
-        DataService.getAllQuizzes()
-            .then(res => {
-                setQuizzes(res.data);
-                if (selectIdAfterFetch) {
-                    const updatedQuiz = res.data.find(q => q.id === selectIdAfterFetch);
-                    if (updatedQuiz) {
-                        setSelectedQuiz(updatedQuiz);
-                    }
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                setNotif({ isOpen: true, title: "Error", message: "Gagal memuat daftar kuis.", success: false });
-            })
-            .finally(() => setLoading(false));
-    }, []);
+        Promise.all([
+            DataService.getAllQuizzes(),
+            DataService.getAllDrafts()
+        ]).then(([quizzesRes, draftsRes]) => {
+            const quizzesData = quizzesRes.data || [];
+            setQuizzes(quizzesData);
 
-    const fetchDrafts = useCallback(async () => {
-        try {
-            const response = await DataService.getAllDrafts();
-            if (response.data && response.data.length > 0) {
-                const quizDrafts = response.data.filter(d => d.draft_key.startsWith('quiz_'));
-                if (quizDrafts.length > 0) {
-                    setDrafts(quizDrafts);
-                    setShowDraftsNotification(true);
-                } else {
-                    setDrafts([]);
+            if (selectIdAfterFetch) {
+                const updatedQuiz = quizzesData.find(q => q.id === selectIdAfterFetch);
+                if (updatedQuiz) {
+                    setSelectedQuiz(updatedQuiz);
                 }
-            } else {
-                setDrafts([]);
             }
-        } catch (error) {
-            console.error("Gagal mengambil draft kuis:", error);
-            setNotif({ isOpen: true, title: "Error", message: "Gagal memuat draf kuis.", success: false });
-        }
+            
+            // Filter draf yang relevan (hanya kuis) dan valid (kuisnya masih ada)
+            const allDrafts = draftsRes.data || [];
+            const quizDrafts = allDrafts.filter(d => d.draft_key.startsWith('quiz_'));
+            
+            const validQuizDrafts = quizDrafts.filter(draft => {
+                const quizIdMatch = draft.draft_key.match(/^quiz_(\d+)/);
+                if (!quizIdMatch) return false;
+                const quizId = parseInt(quizIdMatch[1], 10);
+                return quizzesData.some(q => q.id === quizId);
+            });
+
+            setDrafts(validQuizDrafts);
+            if (validQuizDrafts.length > 0) {
+                setShowDraftsNotification(true);
+            }
+
+        }).catch(err => {
+            console.error(err);
+            setNotif({ isOpen: true, title: "Error", message: "Gagal memuat data kuis atau draf.", success: false });
+        }).finally(() => {
+            setLoading(false);
+        });
     }, []);
 
     useEffect(() => {
-        fetchQuizzes();
-        fetchDrafts();
-    }, [fetchQuizzes, fetchDrafts]);
+        fetchData();
+    }, [fetchData]);
+
 
     const fetchQuizDetails = useCallback((quizId) => {
         setDetailLoading(true);
@@ -113,7 +114,7 @@ const ManajemenKuis = ({ onNavigate }) => {
     const handleCreateQuiz = async (formData) => {
         try {
             await DataService.createQuiz(formData);
-            fetchQuizzes();
+            fetchData();
             setNotif({ isOpen: true, title: "Sukses", message: "Kuis baru berhasil dibuat!", success: true });
         } catch (error) {
             console.error("Gagal membuat kuis:", error);
@@ -136,7 +137,7 @@ const ManajemenKuis = ({ onNavigate }) => {
     const confirmDeleteQuiz = async (quizId, quizTitle) => {
         try {
             await DataService.deleteQuiz(quizId);
-            fetchQuizzes();
+            fetchData();
             if (selectedQuiz?.id === quizId) {
                 setSelectedQuiz(null);
             }
@@ -169,7 +170,7 @@ const ManajemenKuis = ({ onNavigate }) => {
             }
             setNotif({ isOpen: true, title: "Sukses", message: "Semua soal berhasil dihapus.", success: true, isConfirmation: false });
             fetchQuizDetails(quizId);
-            fetchQuizzes(quizId);
+            fetchData(quizId);
         } catch (error) {
             console.error("Gagal menghapus semua soal:", error);
             setNotif({ isOpen: true, title: "Gagal", message: "Gagal menghapus semua soal.", success: false, isConfirmation: false });
@@ -181,7 +182,7 @@ const ManajemenKuis = ({ onNavigate }) => {
             await DataService.updateQuizSettings(quizId, settings);
             setNotif({ isOpen: true, title: "Sukses", message: "Pengaturan berhasil disimpan!", success: true });
             setIsSettingsModalOpen(false);
-            fetchQuizzes(quizId);
+            fetchData(quizId);
         } catch (error) {
             console.error("Gagal menyimpan pengaturan:", error);
             setNotif({ isOpen: true, title: "Gagal", message: "Gagal menyimpan pengaturan kuis.", success: false });
@@ -191,7 +192,7 @@ const ManajemenKuis = ({ onNavigate }) => {
     const handleQuestionsFromBankAdded = (updatedQuizId) => {
         setBankSoalOpen(false);
         setNotif({ isOpen: true, title: "Sukses", message: "Soal berhasil ditambahkan dari bank!", success: true });
-        fetchQuizzes(updatedQuizId);
+        fetchData(updatedQuizId);
         if (updatedQuizId === selectedQuiz?.id) {
             fetchQuizDetails(updatedQuizId);
         }
@@ -227,7 +228,7 @@ const ManajemenKuis = ({ onNavigate }) => {
              setNotif({ isOpen: true, title: "Gagal", message: `Gagal menambah soal: ${error.message}`, success: false });
         } finally {
             fetchQuizDetails(quizId);
-            fetchQuizzes(quizId);
+            fetchData(quizId);
         }
     };
 
@@ -262,7 +263,7 @@ const ManajemenKuis = ({ onNavigate }) => {
             await DataService.deleteQuestionFromQuiz(questionId);
             setNotif({ isOpen: true, title: "Sukses", message: "Soal berhasil dihapus.", success: true, isConfirmation: false });
             fetchQuizDetails(selectedQuiz.id);
-            fetchQuizzes(selectedQuiz.id);
+            fetchData(selectedQuiz.id);
         } catch (error) {
              console.error("Gagal menghapus soal:", error);
              setNotif({ isOpen: true, title: "Gagal", message: "Gagal menghapus soal.", success: false, isConfirmation: false });
@@ -281,7 +282,6 @@ const ManajemenKuis = ({ onNavigate }) => {
         }
     };
     
-    // Filter kuis berdasarkan search term (bukan debounced lagi)
     const filteredQuizzes = useMemo(() => {
         if (!searchTerm) return quizzes;
         return quizzes.filter(quiz =>
@@ -326,7 +326,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                 {isDraftQuizOpen && (
                     <DraftQuizModal
                         isOpen={isDraftQuizOpen} onClose={() => setDraftQuizOpen(false)} allQuizzes={quizzes}
-                        drafts={drafts} onContinueQuestionDraft={handleContinueQuestionDraft} onDraftDeleted={fetchDrafts}
+                        drafts={drafts} onContinueQuestionDraft={handleContinueQuestionDraft} onDraftDeleted={fetchData}
                     />
                 )}
                 {isSettingsModalOpen && <QuizSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} onSave={handleSaveSettings} quizData={selectedQuiz} />}
@@ -372,7 +372,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                                 <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Kuis</h1>
                                 <p className="text-gray-500 mt-1">Buat kuis baru, kelola soal, atau lihat hasil pengerjaan siswa.</p>
                                 
-                                {/* --- KUMPULAN TOMBOL BARU SESUAI GAMBAR --- */}
                                 <div className="flex items-center gap-3 my-6">
                                     <motion.button
                                         whileTap={{ scale: 0.95 }}

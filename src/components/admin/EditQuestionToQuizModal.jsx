@@ -1,21 +1,15 @@
 // contoh-sesm-web/components/admin/EditQuestionToQuizModal.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FiSave, FiX, FiPaperclip, FiLink, FiImage, FiFilm, FiMusic, FiFile, FiTrash2, FiPlus } from 'react-icons/fi';
-import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
-
-const useDebounce = (value, delay) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => { setDebouncedValue(value); }, delay);
-        return () => { clearTimeout(handler); };
-    }, [value, delay]);
-    return debouncedValue;
-};
-
+import CustomSelect from '../ui/CustomSelect';
+import useDebounce from '../../hooks/useDebounce';
+import DataService from '../../services/dataService';
+import SaveStatusIcon from '../ui/SaveStatusIcon';
 
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (url) => {
+        if (!url) return <FiFile className="text-gray-500" size={24} />;
         const ext = url.split('.').pop().toLowerCase();
         if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return <FiImage className="text-blue-500" size={24} />;
         if (['mp4', 'webm'].includes(ext)) return <FiFilm className="text-purple-500" size={24} />;
@@ -37,6 +31,8 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
     const [question, setQuestion] = useState(null);
     const [isLinkInputVisible, setLinkInputVisible] = useState(false);
     const [linkValue, setLinkValue] = useState('');
+    const [saveStatus, setSaveStatus] = useState('Tersimpan');
+    const debouncedQuestion = useDebounce(question, 200);
 
     const questionTypeOptions = [
         { value: 'pilihan-ganda', label: 'Pilihan Ganda' },
@@ -44,42 +40,65 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
         { value: 'pilihan-ganda-esai', label: 'Pilihan Ganda & Esai' }
     ];
 
-    const saveDraft = (data) => {
+    const saveDraft = useCallback(async (data) => {
         if (!data) return;
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-    };
+        setSaveStatus('Menyimpan...');
+        try {
+            await DataService.saveDraft(DRAFT_KEY, data);
+            setSaveStatus('Tersimpan');
+        } catch (error) {
+            console.error("Gagal menyimpan draf:", error);
+            setSaveStatus('Gagal');
+        }
+    }, [DRAFT_KEY]);
 
-    const debouncedQuestion = useDebounce(question, 1500);
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && debouncedQuestion) {
             saveDraft(debouncedQuestion);
         }
-    }, [debouncedQuestion, isOpen]);
-
+    }, [debouncedQuestion, isOpen, saveDraft]);
 
     useEffect(() => {
-        if (questionData) {
-            const savedDraft = localStorage.getItem(DRAFT_KEY);
-            if (savedDraft) {
-                setQuestion(JSON.parse(savedDraft));
-            } else {
-                const options = Array.isArray(questionData.options) ? questionData.options : [];
-                const correctAnswer = options.find(opt => opt.is_correct)?.option_text || '';
-
-                setQuestion({
-                    id: questionData.id,
-                    question: questionData.question_text,
-                    type: questionData.question_type || 'pilihan-ganda',
-                    options: options.length > 0 ? options.map(opt => opt.option_text) : ['', ''],
-                    correctAnswer: correctAnswer,
-                    essayAnswer: questionData.correct_essay_answer || '',
-                    media: questionData.media_attachments || [],
-                });
-            }
+        if (isOpen && questionData) {
+            setSaveStatus('Memuat...');
+            DataService.getDraft(DRAFT_KEY)
+                .then(response => {
+                    const draftContent = response.data?.content;
+                    if (draftContent) {
+                        setQuestion(draftContent);
+                    } else {
+                        const options = Array.isArray(questionData.options) ? questionData.options : [];
+                        const correctAnswer = options.find(opt => opt.is_correct)?.option_text || '';
+                        setQuestion({
+                            id: questionData.id,
+                            question: questionData.question_text,
+                            type: questionData.question_type || 'pilihan-ganda',
+                            options: options.length > 0 ? options.map(opt => opt.option_text) : ['', ''],
+                            correctAnswer: correctAnswer,
+                            essayAnswer: questionData.correct_essay_answer || '',
+                            media: questionData.media_attachments || [],
+                        });
+                    }
+                })
+                .catch(() => {
+                    const options = Array.isArray(questionData.options) ? questionData.options : [];
+                    const correctAnswer = options.find(opt => opt.is_correct)?.option_text || '';
+                    setQuestion({
+                        id: questionData.id,
+                        question: questionData.question_text,
+                        type: questionData.question_type || 'pilihan-ganda',
+                        options: options.length > 0 ? options.map(opt => opt.option_text) : ['', ''],
+                        correctAnswer: correctAnswer,
+                        essayAnswer: questionData.correct_essay_answer || '',
+                        media: questionData.media_attachments || [],
+                    });
+                })
+                .finally(() => setSaveStatus('Tersimpan'));
+            
             setLinkInputVisible(false);
             setLinkValue('');
         }
-    }, [questionData, isOpen]);
+    }, [questionData, isOpen, DRAFT_KEY]);
     
     if (!isOpen || !question) return null;
 
@@ -111,16 +130,15 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
         setLinkInputVisible(false);
     };
 
-    const handleSaveDraft = () => {
+    const handleSaveAndClose = () => {
         saveDraft(question);
-        alert('Perubahan disimpan sebagai draf!');
         onClose();
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(question.id, question);
-        localStorage.removeItem(DRAFT_KEY);
+        DataService.deleteDraft(DRAFT_KEY).catch(err => console.warn("Failed to delete draft on submit", err));
     };
 
     return (
@@ -129,7 +147,10 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 border-b flex justify-between items-center">
                         <h3 className="text-xl font-bold text-sesm-deep">Edit Soal</h3>
-                        <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX/></button>
+                        <div className="flex items-center gap-4">
+                            <SaveStatusIcon status={saveStatus} />
+                            <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX/></button>
+                        </div>
                     </div>
                     <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                         <CustomSelect
@@ -197,7 +218,7 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                     </div>
                     <div className="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t">
                         <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200">Batal</button>
-                        <button type="button" onClick={handleSaveDraft} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Simpan Sementara</button>
+                        <button type="button" onClick={handleSaveAndClose} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Simpan & Tutup</button>
                         <button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 flex items-center gap-2"><FiSave /> Simpan Perubahan</button>
                     </div>
                 </form>

@@ -1,9 +1,11 @@
 // contoh-sesm-web/components/admin/AddQuestionToQuizModal.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
 import DataService from '../../services/dataService';
-import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
+import CustomSelect from '../ui/CustomSelect';
+import useDebounce from '../../hooks/useDebounce';
+import SaveStatusIcon from '../ui/SaveStatusIcon';
 
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (file) => {
@@ -170,24 +172,39 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
 const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
     const DRAFT_KEY = `quiz_${quizId}`;
     const [questions, setQuestions] = useState([getNewQuestion()]);
-    
-    const saveDraft = async (data) => {
+    const [saveStatus, setSaveStatus] = useState('Tersimpan');
+    const debouncedQuestions = useDebounce(questions, 200);
+
+    const saveDraft = useCallback(async (data) => {
+        // Jangan simpan jika hanya ada 1 soal kosong
+        if (!data || (data.length === 1 && data[0].question.trim() === '' && data[0].media.length === 0)) {
+            setSaveStatus('Tersimpan'); // Tetap set status tersimpan
+            return;
+        }
+        setSaveStatus('Menyimpan...');
         try {
-            const serializableData = data.map(({ media, ...rest }) => rest);
+            // Hapus file object sebelum serialisasi ke backend
+            const serializableData = data.map(({ media, ...rest }) => ({
+                ...rest,
+                media: media.filter(m => m.type === 'link') // Hanya simpan link, bukan file
+            }));
             await DataService.saveDraft(DRAFT_KEY, serializableData);
+            setSaveStatus('Tersimpan');
         } catch (error) {
             console.error("Gagal menyimpan draf kuis ke server:", error);
+            setSaveStatus('Gagal');
         }
-    };
+    }, [DRAFT_KEY]);
     
     useEffect(() => {
-        if (isOpen && questions.length > 0 && questions.some(q => q.question.trim() !== '')) {
-            saveDraft(questions);
+        if (isOpen) {
+            saveDraft(debouncedQuestions);
         }
-    }, [questions, DRAFT_KEY, isOpen]);
+    }, [debouncedQuestions, isOpen, saveDraft]);
 
     useEffect(() => {
         if (isOpen) {
+            setSaveStatus('Memuat...');
             DataService.getDraft(DRAFT_KEY)
                 .then(response => {
                     if (response.data && response.data.content && response.data.content.length > 0) {
@@ -198,7 +215,8 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
                 })
                 .catch(() => {
                     setQuestions([getNewQuestion()]);
-                });
+                })
+                .finally(() => setSaveStatus('Tersimpan'));
         }
     }, [isOpen, DRAFT_KEY]);
     
@@ -212,13 +230,8 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         }
     };
 
-    const handleSaveDraft = () => {
-        if (questions.length === 0 || questions.every(q => q.question.trim() === '')) {
-            alert('Tidak ada soal untuk disimpan.');
-            return;
-        }
+    const handleSaveAndClose = () => {
         saveDraft(questions);
-        alert('Draf berhasil disimpan!');
         onClose();
     };
 
@@ -235,9 +248,15 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         <motion.div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col h-[90vh]">
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                    <div className="p-6 border-b">
-                        <h3 className="text-xl font-bold text-sesm-deep">Tambah Soal Baru ke Kuis</h3>
-                        <p className="text-sm text-gray-500">Perubahan akan disimpan otomatis sebagai draf.</p>
+                    <div className="p-6 border-b flex justify-between items-center">
+                        <div>
+                            <h3 className="text-xl font-bold text-sesm-deep">Tambah Soal Baru ke Kuis</h3>
+                            <p className="text-sm text-gray-500">Perubahan akan disimpan otomatis sebagai draf.</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <SaveStatusIcon status={saveStatus} />
+                            <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
+                        </div>
                     </div>
                     <div className="p-6 space-y-6 flex-grow overflow-y-auto bg-gray-50/50">
                         {questions.map((q, qIndex) => (
@@ -251,7 +270,7 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
                         <span className="text-sm text-gray-600 font-semibold">Total: {questions.length} soal</span>
                         <div>
                             <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200 mr-2">Batal</button>
-                            <button type="button" onClick={handleSaveDraft} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 mr-3">Simpan Sementara</button>
+                            <button type="button" onClick={handleSaveAndClose} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 mr-3">Simpan & Tutup</button>
                             <button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90">Publish Soal</button>
                         </div>
                     </div>
