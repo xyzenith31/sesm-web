@@ -7,6 +7,9 @@ import thankYouMeme from '../../assets/meme/terima-kasih.jpeg'; // Pastikan path
 import salahMeme from '../../assets/meme/meme-salah/9.jpeg'; // Pastikan path meme benar
 import DataService from '../../services/dataService'; // Pastikan path benar
 
+// Helper untuk mengubah indeks menjadi huruf
+const toAlpha = (num) => String.fromCharCode(65 + num);
+
 // Komponen MemeOverlay (Tidak berubah)
 const MemeOverlay = ({ meme, title, onClose }) => { if (!meme) return null; return (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center flex-col p-4" onClick={onClose}>{title && <h2 className="text-white text-3xl font-bold mb-4 text-center">{title}</h2>}<img src={meme} alt="Meme" className="max-w-sm max-h-[60vh] rounded-lg shadow-lg" /><p className="text-white font-semibold mt-4 text-lg">Klik di mana saja untuk melanjutkan</p></motion.div>);};
 
@@ -385,16 +388,17 @@ const QuizForm = ({ quizData: initialQuizData, onCompleteQuiz }) => {
                                     <div className="space-y-4">
                                         {currentQuestion.question_type.includes('pilihan-ganda') && (
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                {(currentQuestion.options || []).map((option) => (
+                                                {(currentQuestion.options || []).map((option, index) => (
                                                     <motion.button
                                                         key={option.id || option.option_text}
                                                         onClick={() => handleOptionClick(option.option_text)}
-                                                        className={`p-4 rounded-lg font-semibold text-lg shadow-md transition-all border-2 ${getButtonClass(option.option_text)}`}
+                                                        className={`p-4 rounded-lg font-semibold text-lg shadow-md transition-all border-2 flex items-start text-left gap-3 ${getButtonClass(option.option_text)}`}
                                                         whileHover={{ scale: gameState === 'playing' ? 1.03 : 1 }}
                                                         whileTap={{ scale: gameState === 'playing' ? 0.98 : 1 }}
                                                         disabled={gameState !== 'playing'}
                                                     >
-                                                        {option.option_text}
+                                                        <span className="font-bold">{toAlpha(index)}.</span>
+                                                        <span>{option.option_text}</span>
                                                     </motion.button>
                                                 ))}
                                             </div>

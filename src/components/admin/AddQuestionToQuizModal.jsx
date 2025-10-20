@@ -7,6 +7,9 @@ import CustomSelect from '../ui/CustomSelect';
 import useDebounce from '../../hooks/useDebounce';
 import SaveStatusIcon from '../ui/SaveStatusIcon';
 
+// Helper untuk mengubah indeks menjadi huruf
+const toAlpha = (num) => String.fromCharCode(65 + num);
+
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (file) => {
         if (file.type.startsWith('image/')) return <FiImage className="text-blue-500" size={24} />;
@@ -133,7 +136,8 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
                         <legend className="text-sm font-semibold text-gray-600 px-1">Opsi Pilihan Ganda</legend>
                         {question.options.map((opt, oIndex) => (
                             <div key={oIndex} className="flex items-center gap-2">
-                                <input type="text" value={opt} onChange={(e) => handleOptionChange(oIndex, e.target.value)} placeholder={`Pilihan ${oIndex + 1}`} className="w-full p-2 border rounded-md" required />
+                                <span className="font-bold text-gray-600">{toAlpha(oIndex)}.</span>
+                                <input type="text" value={opt} onChange={(e) => handleOptionChange(oIndex, e.target.value)} placeholder={`Pilihan ${toAlpha(oIndex)}`} className="w-full p-2 border rounded-md" required />
                                 <button type="button" onClick={() => removeOption(oIndex)} disabled={question.options.length <= 2} className="p-2 text-gray-400 hover:text-red-600 disabled:text-gray-300">
                                     <FiTrash2 />
                                 </button>
@@ -143,10 +147,10 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
                             <FiPlus size={16} /> Tambah Opsi
                         </button>
                         <CustomSelect
-                            options={question.options.filter(opt => opt.trim() !== '').map(opt => ({ value: opt, label: opt }))}
+                            options={question.options.filter(opt => opt.trim() !== '').map((opt, index) => ({ value: opt, label: `${toAlpha(index)}. ${opt}` }))}
                             value={question.correctAnswer}
                             onChange={(value) => handleInputChange('correctAnswer', value)}
-                            placeholder="Pilih Jawaban Benar"
+                            placeholder="-- Pilih Jawaban Benar --"
                         />
                     </fieldset>
                 )}

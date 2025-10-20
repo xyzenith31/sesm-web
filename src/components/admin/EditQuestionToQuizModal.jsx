@@ -7,6 +7,9 @@ import useDebounce from '../../hooks/useDebounce';
 import DataService from '../../services/dataService';
 import SaveStatusIcon from '../ui/SaveStatusIcon';
 
+// Helper untuk mengubah indeks menjadi huruf
+const toAlpha = (num) => String.fromCharCode(65 + num);
+
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (url) => {
         if (!url) return <FiFile className="text-gray-500" size={24} />;
@@ -188,16 +191,17 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
                                 <legend className="text-sm font-semibold text-gray-600 px-1">Opsi Jawaban</legend>
                                 {question.options.map((opt, oIndex) => (
                                     <div key={oIndex} className="flex items-center gap-2">
+                                        <span className="font-bold text-gray-600">{toAlpha(oIndex)}.</span>
                                         <input type="text" value={opt} onChange={(e) => handleOptionChange(oIndex, e.target.value)} className="w-full p-2 border rounded-md" required/>
                                         <button type="button" onClick={() => removeOption(oIndex)} disabled={question.options.length <= 2} className="p-2 text-gray-400 hover:text-red-600 disabled:text-gray-300"><FiTrash2/></button>
                                     </div>
                                 ))}
                                 <button type="button" onClick={addOption} className="text-sm font-semibold flex items-center gap-1 px-3 py-1 bg-gray-100 border rounded-md hover:bg-gray-200"><FiPlus size={16}/> Tambah Opsi</button>
                                 <CustomSelect
-                                    options={question.options.filter(opt => opt && opt.trim() !== '').map(opt => ({ value: opt, label: opt }))}
+                                    options={question.options.filter(opt => opt && opt.trim() !== '').map((opt, index) => ({ value: opt, label: `${toAlpha(index)}. ${opt}` }))}
                                     value={question.correctAnswer}
                                     onChange={(value) => handleUpdate('correctAnswer', value)}
-                                    placeholder="Pilih Jawaban Benar"
+                                    placeholder="-- Pilih Jawaban Benar --"
                                 />
                             </fieldset>
                         )}

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiPlus, FiChevronRight, FiBookOpen, FiTrash2, FiLoader, FiGrid,
     FiCheckSquare, FiCopy, FiEdit, FiFileText, FiAlertTriangle, FiTrendingUp, FiSettings,
-    FiSearch
+    FiSearch, FiCheckCircle 
 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 import CreateQuizModal from '../../components/admin/CreateQuizModal';
@@ -16,6 +16,8 @@ import DraftQuizModal from '../../components/admin/DraftQuizModal';
 import QuizSettingsModal from '../../components/admin/QuizSettingsModal';
 import Notification from '../../components/ui/Notification';
 import CustomSelect from '../../components/ui/CustomSelect';
+
+const toAlpha = (num) => String.fromCharCode(65 + num);
 
 const StatCard = ({ icon: Icon, value, label, color }) => ( <div className="bg-gray-100 p-4 rounded-lg flex-1 border hover:border-sesm-teal transition-colors"><div className="flex items-center"><Icon className={`text-xl mr-3 ${color}`} /><div><p className="text-xl font-bold text-sesm-deep">{value}</p><p className="text-xs text-gray-500 font-semibold">{label}</p></div></div></div> );
 const DashboardView = ({ userName, stats }) => ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col justify-center h-full text-center px-4"><FiBookOpen className="text-6xl text-gray-300 mx-auto mb-4" /><h2 className="text-2xl font-bold text-gray-800">Selamat Datang, {userName || 'Guru'}!</h2><p className="text-gray-500 max-w-md mx-auto mb-8">Pilih kuis dari daftar di sebelah kiri untuk melihat detail atau kelola soal. Gunakan tombol di atas untuk membuat kuis baru.</p><div className="space-y-6 text-left"><div><h3 className="font-bold text-gray-700 mb-3">Ringkasan Kuis</h3><div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4"><StatCard icon={FiGrid} value={stats.totalQuizzes} label="Total Kuis" color="text-blue-500" /><StatCard icon={FiCheckSquare} value={stats.totalQuestions} label="Total Soal" color="text-orange-500" /></div></div></div></motion.div> );
@@ -403,7 +405,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                     ) : (
                                         <div>
                                             <div className="pb-4 mb-4 flex-shrink-0">
-                                                <div className="flex justify-between items-start gap-4">
+                                                <div className="flex justify-between items-start gap-4 mb-4">
                                                     <h2 className="text-2xl font-bold text-sesm-deep">{selectedQuiz.title}</h2>
                                                     <div className="flex-shrink-0 flex gap-2">
                                                         <button onClick={() => setAddQuestionOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm hover:bg-opacity-90"><FiPlus/> Tambah Soal</button>
@@ -417,34 +419,48 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                 <button onClick={() => handleDeleteAllQuestions(selectedQuiz.id)} disabled={questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
                                             </div>
                                             <div className="space-y-3 max-h-[calc(110vh-35rem)] overflow-y-auto pr-2">
-                                                {questions.length > 0 ? questions.map((q, index) => {
-                                                    const creatorAvatar = q.creator_avatar
+                                                {questions.length > 0 ? questions.map((q, i) => {
+                                                    const creatorAvatar = q.creator_avatar 
                                                         ? (q.creator_avatar.startsWith('http') ? q.creator_avatar : `${API_URL}/${q.creator_avatar}`)
-                                                        : `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(q.creator_name || 'G')}`;
-
+                                                        : `https://api.dicebear.com/7.x/initials/svg?seed=${q.creator_name || 'G'}`;
+                                                    
                                                     return (
-                                                        <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border">
+                                                        <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border">
                                                             <div className="flex justify-between items-start">
                                                                 <div className="flex-grow">
                                                                     <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                                                                        <img src={creatorAvatar} alt={q.creator_name} className="w-6 h-6 rounded-full object-cover bg-gray-200"/>
+                                                                        <img src={creatorAvatar} alt={q.creator_name} className="w-6 h-6 rounded-full object-cover"/>
                                                                         <span>Dibuat oleh <strong>{q.creator_name || 'Tidak diketahui'}</strong></span>
                                                                     </div>
-                                                                    <p className="font-semibold text-gray-800">{index + 1}. {q.question_text}</p>
-                                                                    {q.options && q.options.find(opt => opt.is_correct) && (
-                                                                        <p className="text-sm text-green-600 font-bold mt-1">Jawaban: {q.options.find(opt => opt.is_correct).option_text}</p>
+                                                                    <p className="font-semibold text-gray-800">{i + 1}. {q.question_text}</p>
+                                                                    
+                                                                    {q.options && q.options.length > 0 && (
+                                                                        <div className='mt-3 space-y-2 text-sm'>
+                                                                            {q.options.map((opt, optIndex) => (
+                                                                                <p key={opt.id} className={`flex items-start gap-2 ${opt.is_correct ? 'text-green-700 font-bold' : 'text-gray-700'}`}>
+                                                                                    <span className='font-mono'>{toAlpha(optIndex)}.</span>
+                                                                                    <span>{opt.option_text}</span>
+                                                                                    {opt.is_correct && <FiCheckCircle className="text-green-600 mt-0.5" />}
+                                                                                </p>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {(q.correct_essay_answer) && (
+                                                                        <div className="mt-3 pt-2 border-t border-dashed">
+                                                                            <p className="text-sm font-semibold text-blue-700">Kunci Jawaban Esai:</p>
+                                                                            <p className="text-sm text-gray-800 whitespace-pre-wrap">{q.correct_essay_answer}</p>
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                                 <div className="flex-shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                     <button onClick={() => handleOpenEditModal(q)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg" title="Edit Soal"><FiEdit size={16}/></button>
-                                                                    <button onClick={() => handleDeleteQuestion(q.id, q.question_text)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg" title="Hapus Soal"><FiTrash2 size={16}/></button>
+                                                                    <button onClick={() => handleDeleteQuestion(q.id, q.question_text)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg" title="Hapus Soal"><FiTrash2 size={16} /></button>
                                                                 </div>
                                                             </div>
                                                         </motion.div>
                                                     );
-                                                }) : (
-                                                    <p className="text-center text-gray-500 py-8">Belum ada soal untuk kuis ini.</p>
-                                                )}
+                                                }) : <p className="text-center text-gray-500 py-8">Belum ada soal.</p>}
                                             </div>
                                         </div>
                                     )}
