@@ -3,8 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiSave, FiLoader } from 'react-icons/fi';
 
+// Komponen Toggle Switch internal
 const ToggleSwitch = ({ label, description, enabled, onToggle }) => (
-    <div onClick={onToggle} className="flex justify-between items-center p-4 rounded-lg cursor-pointer transition-colors duration-200 bg-gray-100 hover:bg-gray-200/60">
+    <div
+        onClick={onToggle}
+        className="flex justify-between items-center p-4 rounded-lg cursor-pointer transition-colors duration-200 bg-gray-100 hover:bg-gray-200/60"
+    >
         <div className="flex-grow pr-4">
             <p className="font-semibold text-gray-800">{label}</p>
             <p className="text-xs text-gray-500">{description}</p>
@@ -16,7 +20,6 @@ const ToggleSwitch = ({ label, description, enabled, onToggle }) => (
 );
 
 const QuizSettingsModal = ({ isOpen, onClose, onSave, quizData }) => {
-    // State lama + state baru untuk skor ketat
     const [settings, setSettings] = useState({
         setting_time_per_question: 20,
         setting_randomize_questions: false,
@@ -24,16 +27,19 @@ const QuizSettingsModal = ({ isOpen, onClose, onSave, quizData }) => {
         setting_show_leaderboard: true,
         setting_show_memes: true,
         setting_allow_redemption: false,
-        setting_strict_scoring: false, // <-- BARU: Default skor ketat tidak aktif
-        setting_points_per_correct: 100 // <-- BARU: Default poin jika ketat
+        setting_strict_scoring: false,
+        setting_points_per_correct: 100,
+        setting_allow_repeat_points: false // <-- Tambahkan state default
     });
+    // State untuk saklar timer dipisah agar logic AnimatePresence lebih mudah
     const [isTimerEnabled, setIsTimerEnabled] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (quizData) {
-            // Muat semua setting dari quizData
-            setIsTimerEnabled(quizData.setting_is_timer_enabled); // Ini boolean dari backend
+            // Muat status saklar timer
+            setIsTimerEnabled(quizData.setting_is_timer_enabled);
+            // Muat semua setting lainnya
             setSettings(currentSettings => ({
                 ...currentSettings,
                 // Pastikan semua setting diambil dari quizData jika ada, gunakan default jika tidak
@@ -43,8 +49,9 @@ const QuizSettingsModal = ({ isOpen, onClose, onSave, quizData }) => {
                 setting_show_leaderboard: quizData.setting_show_leaderboard,
                 setting_show_memes: quizData.setting_show_memes,
                 setting_allow_redemption: quizData.setting_allow_redemption,
-                setting_strict_scoring: quizData.setting_strict_scoring, // <-- BARU
-                setting_points_per_correct: quizData.setting_points_per_correct ?? 100 // <-- BARU
+                setting_strict_scoring: quizData.setting_strict_scoring,
+                setting_points_per_correct: quizData.setting_points_per_correct ?? 100,
+                setting_allow_repeat_points: quizData.setting_allow_repeat_points // <-- Muat state dari data
             }));
         }
     }, [quizData]);
@@ -58,13 +65,15 @@ const QuizSettingsModal = ({ isOpen, onClose, onSave, quizData }) => {
             // Siapkan data yang akan disimpan, termasuk state isTimerEnabled
             const settingsToSave = {
                 ...settings,
-                setting_is_timer_enabled: isTimerEnabled,
+                setting_is_timer_enabled: isTimerEnabled, // Sertakan status saklar timer
                  // Pastikan nilai integer valid atau null
-                setting_time_per_question: isTimerEnabled ? (parseInt(settings.setting_time_per_question, 10) || 20) : null,
+                setting_time_per_question: isTimerEnabled ? (parseInt(settings.setting_time_per_question, 10) || 20) : null, // Kirim null jika timer nonaktif
                 setting_points_per_correct: settings.setting_strict_scoring ? (parseInt(settings.setting_points_per_correct, 10) || 100) : 100 // Gunakan 100 jika skor ketat nonaktif atau input tidak valid
+                // setting_allow_repeat_points sudah boolean di state settings
             };
+            // Pastikan onSave dipanggil dengan benar
             await onSave(quizData.id, settingsToSave);
-             // onClose() dipanggil oleh parent jika sukses
+             // onClose() dipanggil oleh parent (ManajemenKuis) jika sukses
         } catch (error) {
             alert("Gagal menyimpan pengaturan. Silakan cek konsol untuk detail.");
             console.error("Gagal menyimpan pengaturan kuis:", error);
@@ -138,6 +147,13 @@ const QuizSettingsModal = ({ isOpen, onClose, onSave, quizData }) => {
                         )}
                     </AnimatePresence>
 
+                    {/* --- ⭐ Tambahkan Toggle untuk Izinkan Poin Berulang --- */}
+                    <ToggleSwitch
+                        label="Izinkan Dapat Poin Lagi Jika Mengerjakan Ulang"
+                        description="Jika aktif, siswa akan mendapat poin setiap kali mengerjakan kuis ini (meskipun sudah pernah)."
+                        enabled={settings.setting_allow_repeat_points}
+                        onToggle={() => handleToggle('setting_allow_repeat_points')}
+                    />
 
                     {/* Opsi Lain */}
                     <ToggleSwitch label="Acak Urutan Soal" description="Setiap siswa akan mendapatkan urutan soal yang berbeda." enabled={settings.setting_randomize_questions} onToggle={() => handleToggle('setting_randomize_questions')} />
