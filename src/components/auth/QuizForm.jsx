@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, animate } from 'framer-motion';
-import { FiArrowLeft, FiClock, FiAward, FiCheck, FiX, FiLoader, FiAlertCircle, FiDownload, FiLink, FiCheckCircle, FiHelpCircle, FiPause, FiPlay, FiVolume2, FiVolumeX, FiEye } from 'react-icons/fi';
+import { FiArrowLeft, FiClock, FiAward, FiCheck, FiX, FiLoader, FiAlertCircle, FiDownload, FiLink, FiCheckCircle, FiHelpCircle, FiPause, FiPlay, FiVolume2, FiVolumeX, FiEye, FiAlertTriangle } from 'react-icons/fi';
 import AnswerFeedback from '../ui/AnswerFeedback';
 import thankYouMeme from '../../assets/meme/terima-kasih.jpeg';
 import salahMeme from '../../assets/meme/meme-salah/9.jpeg';
