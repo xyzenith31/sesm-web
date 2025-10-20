@@ -1,6 +1,6 @@
 // contoh-sesm-web/pages/admin/ManajemenKuis.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion'; // Pastikan AnimatePresence diimpor
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiPlus, FiChevronRight, FiBookOpen, FiTrash2, FiLoader, FiGrid,
     FiCheckSquare, FiCopy, FiEdit, FiFileText, FiAlertTriangle, FiTrendingUp, FiSettings
@@ -13,8 +13,8 @@ import BankSoalQuizModal from '../../components/admin/BankSoalModal';
 import EditQuestionToQuizModal from '../../components/admin/EditQuestionToQuizModal';
 import DraftQuizModal from '../../components/admin/DraftQuizModal';
 import QuizSettingsModal from '../../components/admin/QuizSettingsModal';
-import Notification from '../../components/ui/Notification'; // Impor Notification
-import CustomSelect from '../../components/ui/CustomSelect'; // Impor CustomSelect
+import Notification from '../../components/ui/Notification';
+import CustomSelect from '../../components/ui/CustomSelect';
 
 const StatCard = ({ icon: Icon, value, label, color }) => ( <div className="bg-gray-100 p-4 rounded-lg flex-1 border hover:border-sesm-teal transition-colors"><div className="flex items-center"><Icon className={`text-xl mr-3 ${color}`} /><div><p className="text-xl font-bold text-sesm-deep">{value}</p><p className="text-xs text-gray-500 font-semibold">{label}</p></div></div></div> );
 const DashboardView = ({ userName, stats }) => ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col justify-center h-full text-center px-4"><FiBookOpen className="text-6xl text-gray-300 mx-auto mb-4" /><h2 className="text-2xl font-bold text-gray-800">Selamat Datang, {userName || 'Guru'}!</h2><p className="text-gray-500 max-w-md mx-auto mb-8">Pilih kuis dari daftar di sebelah kiri untuk melihat detail atau kelola soal. Gunakan tombol di atas untuk membuat kuis baru.</p><div className="space-y-6 text-left"><div><h3 className="font-bold text-gray-700 mb-3">Ringkasan Kuis</h3><div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4"><StatCard icon={FiGrid} value={stats.totalQuizzes} label="Total Kuis" color="text-blue-500" /><StatCard icon={FiCheckSquare} value={stats.totalQuestions} label="Total Soal" color="text-orange-500" /></div></div></div></motion.div> );
@@ -312,9 +312,6 @@ const ManajemenKuis = ({ onNavigate }) => {
 
     return (
         <>
-            {/* PERBAIKAN: Bungkus komponen Notification utama dengan AnimatePresence 
-              agar animasi exit berfungsi saat notif.isOpen menjadi false.
-            */}
             <AnimatePresence>
                 {notif.isOpen && (
                     <Notification
@@ -329,7 +326,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                 )}
             </AnimatePresence>
 
-            {/* Notifikasi Draf Kuis (sudah di dalam AnimatePresence) */}
             <AnimatePresence>
                 {showDraftsNotification && (
                     <Notification
@@ -349,7 +345,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                 )}
             </AnimatePresence>
 
-            {/* Modal-modal lainnya (sudah di dalam AnimatePresence) */}
             <AnimatePresence>
                 {isCreateQuizOpen && <CreateQuizModal isOpen={isCreateQuizOpen} onClose={() => setCreateQuizOpen(false)} onSubmit={handleCreateQuiz} />}
                 {isAddQuestionOpen && <AddQuestionToQuizModal isOpen={isAddQuestionOpen} onClose={() => setAddQuestionOpen(false)} onSubmit={handleBatchAddQuestions} quizId={selectedQuiz?.id} />}
@@ -368,12 +363,13 @@ const ManajemenKuis = ({ onNavigate }) => {
                 {isSettingsModalOpen && <QuizSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} onSave={handleSaveSettings} quizData={selectedQuiz} />}
             </AnimatePresence>
 
-            {/* Layout Utama Halaman */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-grow">
                 <div className="grid md:grid-cols-12 flex-grow">
-                    {/* Sidebar Kiri (Daftar Kuis) */}
+                    {/* ===== PERBAIKAN: DAFTAR KUIS DENGAN SCROLLBAR ===== */}
                     <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
-                        <div className="p-4 border-b border-gray-200"><h2 className="font-bold text-lg text-gray-800">Daftar Kuis</h2></div>
+                        <div className="p-4 border-b border-gray-200 flex-shrink-0">
+                            <h2 className="font-bold text-lg text-gray-800">Daftar Kuis</h2>
+                        </div>
                         <div className="flex-grow overflow-y-auto p-2">
                             {loading ? (<div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl text-sesm-teal"/></div>) : (
                                 <div className="space-y-1">
@@ -393,28 +389,39 @@ const ManajemenKuis = ({ onNavigate }) => {
                         </div>
                     </div>
 
-                    {/* Konten Kanan (Detail Kuis / Dashboard) */}
                     <div className="md:col-span-8 lg:col-span-9 flex flex-col">
-                        {/* Header Konten Kanan */}
                         <div className="p-6 flex-shrink-0">
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                                 <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Kuis</h1>
                                 <p className="text-gray-500 mt-1">Buat kuis baru, kelola soal, atau lihat hasil pengerjaan siswa.</p>
+                                {/* ===== PERBAIKAN: DESAIN TOMBOL AKSI ===== */}
                                 <div className="flex items-center gap-3 my-6">
-                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setDraftQuizOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"><FiFileText /> Draf {drafts.length > 0 && `(${drafts.length})`}</motion.button>
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setBankSoalOpen(true) } className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-bold hover:bg-sesm-teal/10 shadow-sm"><FiBookOpen/> Bank Soal</motion.button>
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('evaluasiKuis')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm">
-                                        <FiTrendingUp/> Manajemen Nilai
+                                    <motion.button
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => setDraftQuizOpen(true)}
+                                        className="relative flex items-center gap-2 px-4 py-2 bg-yellow-400 text-gray-900 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"
+                                    >
+                                        <FiFileText />
+                                        <span>Draf</span>
+                                        {drafts.length > 0 && (
+                                            <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold border-2 border-white">
+                                                {drafts.length}
+                                            </span>
+                                        )}
                                     </motion.button>
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setCreateQuizOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-sesm-deep shadow-sm">
-                                        <FiPlus/> Buat Kuis Baru
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setBankSoalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 shadow-sm">
+                                        <FiBookOpen/> Bank Soal
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('evaluasiKuis')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 shadow-sm">
+                                        <FiTrendingUp /> Manajemen Nilai
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setCreateQuizOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-sesm-deep shadow-sm ml-auto">
+                                        <FiPlus /> Buat Kuis Baru
                                     </motion.button>
                                 </div>
                             </motion.div>
                         </div>
                         <div className="border-t-2 border-dashed border-gray-200 mx-6"></div>
-
-                        {/* Area Detail Kuis / Dashboard View */}
                         <div className="flex-grow overflow-y-auto p-6">
                             <AnimatePresence mode="wait">
                                 <motion.div key={selectedQuiz ? selectedQuiz.id : 'dashboard'} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="h-full">
@@ -422,24 +429,25 @@ const ManajemenKuis = ({ onNavigate }) => {
                                     ) : detailLoading ? ( <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>
                                     ) : (
                                         <div>
-                                            {/* Header Detail Kuis */}
                                             <div className="pb-4 mb-4 flex-shrink-0">
                                                 <div className="flex justify-between items-start gap-4">
-                                                    <h2 className="text-2xl font-bold text-sesm-deep">{selectedQuiz.title}</h2>
+                                                    <div>
+                                                      <h2 className="text-2xl font-bold text-sesm-deep">{selectedQuiz.title}</h2>
+                                                      <p className="text-sm text-gray-500 mt-1">{selectedQuiz.description}</p>
+                                                    </div>
                                                     <div className="flex-shrink-0 flex gap-2">
                                                         <button onClick={() => setAddQuestionOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm hover:bg-opacity-90"><FiPlus/> Tambah Soal</button>
                                                         <button onClick={() => setIsSettingsModalOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold text-sm hover:bg-gray-300"><FiSettings/> Pengaturan</button>
                                                     </div>
                                                 </div>
-                                                <p className="text-sm text-gray-500 mt-1">{selectedQuiz.description}</p>
                                             </div>
 
-                                            {/* Daftar Soal */}
                                             <div className="flex justify-between items-center mb-4">
                                                 <h3 className="font-bold text-gray-700">Daftar Soal ({questions.length})</h3>
                                                 <button onClick={() => handleDeleteAllQuestions(selectedQuiz.id)} disabled={questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
                                             </div>
-                                            <div className="space-y-3 max-h-[calc(100vh-35rem)] overflow-y-auto pr-2">
+                                            {/* ===== PERBAIKAN: DAFTAR SOAL DENGAN SCROLLBAR ===== */}
+                                            <div className="space-y-3 pr-2 h-[calc(100vh-26rem)] overflow-y-auto">
                                                 {questions.length > 0 ? questions.map((q, index) => (
                                                     <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-3 rounded-lg">
                                                         <div className="flex justify-between items-start">
@@ -456,7 +464,9 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                         </div>
                                                     </motion.div>
                                                 )) : (
-                                                    <p className="text-center text-gray-500 py-8">Belum ada soal untuk kuis ini.</p>
+                                                    <div className="flex items-center justify-center h-full text-gray-400">
+                                                      <p>Belum ada soal untuk kuis ini.</p>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
