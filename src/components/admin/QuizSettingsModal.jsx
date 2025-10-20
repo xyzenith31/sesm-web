@@ -1,7 +1,6 @@
 // contoh-sesm-web/components/admin/QuizSettingsModal.jsx
 import React, { useState, useEffect } from 'react';
-// --- PERBAIKAN DI SINI: Tambahkan 'AnimatePresence' ---
-import { motion, AnimatePresence } from 'framer-motion'; 
+import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiSave, FiLoader } from 'react-icons/fi';
 
 const ToggleSwitch = ({ label, description, enabled, onToggle }) => (
@@ -17,7 +16,7 @@ const ToggleSwitch = ({ label, description, enabled, onToggle }) => (
 );
 
 const QuizSettingsModal = ({ isOpen, onClose, onSave, quizData }) => {
-    const [isTimerEnabled, setIsTimerEnabled] = useState(true);
+    // State lama + state baru untuk skor ketat
     const [settings, setSettings] = useState({
         setting_time_per_question: 20,
         setting_randomize_questions: false,
@@ -25,37 +24,47 @@ const QuizSettingsModal = ({ isOpen, onClose, onSave, quizData }) => {
         setting_show_leaderboard: true,
         setting_show_memes: true,
         setting_allow_redemption: false,
+        setting_strict_scoring: false, // <-- BARU: Default skor ketat tidak aktif
+        setting_points_per_correct: 100 // <-- BARU: Default poin jika ketat
     });
+    const [isTimerEnabled, setIsTimerEnabled] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (quizData) {
-            setIsTimerEnabled(quizData.setting_is_timer_enabled !== 0);
-
+            // Muat semua setting dari quizData
+            setIsTimerEnabled(quizData.setting_is_timer_enabled); // Ini boolean dari backend
             setSettings(currentSettings => ({
                 ...currentSettings,
+                // Pastikan semua setting diambil dari quizData jika ada, gunakan default jika tidak
                 setting_time_per_question: quizData.setting_time_per_question ?? 20,
-                setting_randomize_questions: !!quizData.setting_randomize_questions,
-                setting_randomize_answers: !!quizData.setting_randomize_answers,
-                setting_show_leaderboard: quizData.setting_show_leaderboard !== 0,
-                setting_show_memes: quizData.setting_show_memes !== 0,
-                setting_allow_redemption: !!quizData.setting_allow_redemption,
+                setting_randomize_questions: quizData.setting_randomize_questions,
+                setting_randomize_answers: quizData.setting_randomize_answers,
+                setting_show_leaderboard: quizData.setting_show_leaderboard,
+                setting_show_memes: quizData.setting_show_memes,
+                setting_allow_redemption: quizData.setting_allow_redemption,
+                setting_strict_scoring: quizData.setting_strict_scoring, // <-- BARU
+                setting_points_per_correct: quizData.setting_points_per_correct ?? 100 // <-- BARU
             }));
         }
     }, [quizData]);
 
     const handleToggle = (key) => setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-    const handleTimeChange = (e) => setSettings(prev => ({ ...prev, setting_time_per_question: e.target.value }));
+    const handleValueChange = (key, value) => setSettings(prev => ({ ...prev, [key]: value }));
 
     const handleSave = async () => {
         setIsSaving(true);
         try {
+            // Siapkan data yang akan disimpan, termasuk state isTimerEnabled
             const settingsToSave = {
                 ...settings,
                 setting_is_timer_enabled: isTimerEnabled,
+                 // Pastikan nilai integer valid atau null
                 setting_time_per_question: isTimerEnabled ? (parseInt(settings.setting_time_per_question, 10) || 20) : null,
+                setting_points_per_correct: settings.setting_strict_scoring ? (parseInt(settings.setting_points_per_correct, 10) || 100) : 100 // Gunakan 100 jika skor ketat nonaktif atau input tidak valid
             };
             await onSave(quizData.id, settingsToSave);
+             // onClose() dipanggil oleh parent jika sukses
         } catch (error) {
             alert("Gagal menyimpan pengaturan. Silakan cek konsol untuk detail.");
             console.error("Gagal menyimpan pengaturan kuis:", error);
@@ -77,33 +86,66 @@ const QuizSettingsModal = ({ isOpen, onClose, onSave, quizData }) => {
                     <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX size={22} /></button>
                 </header>
                 <main className="flex-grow overflow-y-auto p-6 space-y-4">
+                    {/* Timer */}
                     <ToggleSwitch
                         label="Aktifkan Timer per Soal"
                         description="Jika aktif, setiap soal akan memiliki batas waktu untuk dijawab."
                         enabled={isTimerEnabled}
                         onToggle={() => setIsTimerEnabled(prev => !prev)}
                     />
-                    
                     <AnimatePresence>
                         {isTimerEnabled && (
-                            <motion.div 
+                            <motion.div
                                 initial={{ height: 0, opacity: 0, marginTop: 0 }}
                                 animate={{ height: 'auto', opacity: 1, marginTop: '1rem' }}
                                 exit={{ height: 0, opacity: 0, marginTop: 0 }}
                                 className="p-4 rounded-lg bg-gray-100 overflow-hidden"
                             >
                                 <label className="font-semibold text-gray-800">Waktu per Soal (Detik)</label>
-                                <p className="text-xs text-gray-500 mb-2">Atur batas waktu untuk menjawab setiap pertanyaan (5-300 detik).</p>
-                                <input type="number" value={settings.setting_time_per_question} onChange={handleTimeChange} className="w-full p-2 border rounded-md" placeholder="Default: 20" min="5" max="300" />
+                                <p className="text-xs text-gray-500 mb-2">Atur batas waktu untuk menjawab (5-300 detik).</p>
+                                <input
+                                    type="number"
+                                    value={settings.setting_time_per_question || ''}
+                                    onChange={(e) => handleValueChange('setting_time_per_question', e.target.value)}
+                                    className="w-full p-2 border rounded-md" placeholder="Default: 20" min="5" max="300" />
                             </motion.div>
                         )}
                     </AnimatePresence>
 
+                     {/* Skor Ketat */}
+                     <ToggleSwitch
+                        label="Skor Ketat (Salah = 0 Poin)"
+                        description="Jika aktif, jawaban salah tidak mendapat poin. Jika nonaktif, salah mendapat 25 poin, benar 50 poin."
+                        enabled={settings.setting_strict_scoring}
+                        onToggle={() => handleToggle('setting_strict_scoring')}
+                    />
+                    <AnimatePresence>
+                        {settings.setting_strict_scoring && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                                animate={{ height: 'auto', opacity: 1, marginTop: '1rem' }}
+                                exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                                className="p-4 rounded-lg bg-gray-100 overflow-hidden"
+                            >
+                                <label className="font-semibold text-gray-800">Poin per Jawaban Benar (Mode Skor Ketat)</label>
+                                <p className="text-xs text-gray-500 mb-2">Atur poin untuk setiap jawaban benar (minimal 1).</p>
+                                <input
+                                    type="number"
+                                    value={settings.setting_points_per_correct || ''}
+                                    onChange={(e) => handleValueChange('setting_points_per_correct', e.target.value)}
+                                    className="w-full p-2 border rounded-md" placeholder="Default: 100" min="1" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+
+                    {/* Opsi Lain */}
                     <ToggleSwitch label="Acak Urutan Soal" description="Setiap siswa akan mendapatkan urutan soal yang berbeda." enabled={settings.setting_randomize_questions} onToggle={() => handleToggle('setting_randomize_questions')} />
                     <ToggleSwitch label="Acak Urutan Jawaban" description="Opsi jawaban untuk soal pilihan ganda akan diacak." enabled={settings.setting_randomize_answers} onToggle={() => handleToggle('setting_randomize_answers')} />
                     <ToggleSwitch label="Tampilkan Papan Skor" description="Tampilkan peringkat skor akhir setelah kuis selesai." enabled={settings.setting_show_leaderboard} onToggle={() => handleToggle('setting_show_leaderboard')} />
                     <ToggleSwitch label="Tampilkan Meme" description="Tampilkan gambar lucu (meme) setelah menjawab soal." enabled={settings.setting_show_memes} onToggle={() => handleToggle('setting_show_memes')} />
-                    <ToggleSwitch label="Izinkan Pertanyaan Tebusan" description="Siswa mendapat kesempatan kedua untuk menjawab soal yang salah." enabled={settings.setting_allow_redemption} onToggle={() => handleToggle('setting_allow_redemption')} />
+                    <ToggleSwitch label="Izinkan Pertanyaan Tebusan" description="Siswa mendapat kesempatan kedua untuk menjawab soal PG yang salah." enabled={settings.setting_allow_redemption} onToggle={() => handleToggle('setting_allow_redemption')} />
+
                 </main>
                 <footer className="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t">
                     <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200">Batal</button>

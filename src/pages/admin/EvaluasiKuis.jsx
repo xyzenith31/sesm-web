@@ -1,6 +1,7 @@
+// contoh-sesm-web/pages/admin/EvaluasiKuis.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { FiLoader, FiCalendar, FiArrowLeft, FiInbox } from 'react-icons/fi';
+import { FiLoader, FiCalendar, FiArrowLeft, FiInbox, FiAward } from 'react-icons/fi'; // Impor FiAward
 import { FaTrophy } from 'react-icons/fa';
 import DataService from '../../services/dataService';
 import CustomSelect from '../../components/ui/CustomSelect';
@@ -28,10 +29,13 @@ const EvaluasiKuis = ({ onNavigate }) => {
         setLoadingSubmissions(true);
         DataService.getSubmissionsForQuiz(selectedQuizId)
             .then(res => {
-                setSubmissions(res.data);
+                // Urutkan berdasarkan total poin (points_earned) descending
+                const sortedSubmissions = res.data.sort((a, b) => (b.points_earned ?? 0) - (a.points_earned ?? 0));
+                setSubmissions(sortedSubmissions);
             })
             .catch(err => {
                 console.error("Gagal memuat hasil kuis:", err);
+                setSubmissions([]); // Kosongkan jika error
             })
             .finally(() => {
                 setLoadingSubmissions(false);
@@ -68,15 +72,15 @@ const EvaluasiKuis = ({ onNavigate }) => {
                     >
                         <FiArrowLeft size={24} className="text-gray-700" />
                     </motion.button>
-                    <h1 className="text-3xl font-bold text-sesm-deep">Evaluasi Kuis Pengetahuan</h1>
+                    {/* --- GANTI JUDUL --- */}
+                    <h1 className="text-3xl font-bold text-sesm-deep">Papan Peringkat Kuis</h1>
                 </div>
 
                 <div className="mb-6 pb-6 border-b">
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                         Pilih Kuis untuk Melihat Papan Skor
                     </label>
-                    {/* --- PERBAIKAN LEBAR DI SINI --- */}
-                    <div className="w-full md:w-96"> 
+                    <div className="w-full md:w-96">
                         <CustomSelect
                             options={quizOptions}
                             value={selectedQuizId}
@@ -89,7 +93,8 @@ const EvaluasiKuis = ({ onNavigate }) => {
 
             {/* Konten Scrollable */}
             <div className="flex-grow overflow-y-auto -mr-6 pr-6">
-                <h2 className="text-xl font-bold text-sesm-deep mb-4">Papan Skor (Leaderboard)</h2>
+                 {/* --- GANTI JUDUL BAGIAN --- */}
+                <h2 className="text-xl font-bold text-sesm-deep mb-4">Peringkat Berdasarkan Poin</h2>
                 {loadingSubmissions ? (
                     <div className="flex justify-center items-center h-48"><FiLoader className="animate-spin text-3xl text-sesm-teal" /></div>
                 ) : !selectedQuizId ? (
@@ -110,7 +115,7 @@ const EvaluasiKuis = ({ onNavigate }) => {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="bg-gray-50 border rounded-lg p-4 flex justify-between items-center"
+                                className="bg-gray-50 border rounded-lg p-4 flex justify-between items-center hover:bg-gray-100 transition-colors"
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2 w-12">
@@ -125,8 +130,13 @@ const EvaluasiKuis = ({ onNavigate }) => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-2xl font-bold text-sesm-teal">{sub.score}</p>
-                                    <p className="text-xs font-semibold text-gray-500">Poin</p>
+                                     {/* --- Tampilkan Total Poin --- */}
+                                    <p className="text-2xl font-bold text-sesm-teal">{sub.points_earned ?? 0}</p>
+                                    <p className="text-xs font-semibold text-gray-500 flex items-center justify-end gap-1">
+                                         <FiAward size={12} className="text-yellow-500" /> Poin Didapat
+                                    </p>
+                                     {/* Tampilkan Skor Persentase sebagai info tambahan */}
+                                     <p className="text-xs text-gray-400 mt-1">{sub.score ?? 0}% Benar</p>
                                 </div>
                             </motion.div>
                         ))}
