@@ -6,7 +6,7 @@ import DataService from '../services/dataService';
 import ConfirmationModal from '../components/mod/ConfirmationModal';
 import PointsNotification from '../components/ui/PointsNotification';
 
-// --- Komponen Helper (Tidak berubah) ---
+// --- Komponen Helper ---
 const ImageLightbox = ({ imageUrl, onClose }) => (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -20,8 +20,10 @@ const ImageLightbox = ({ imageUrl, onClose }) => (
       </button>
     </motion.div>
   );
+
+// --- Komponen MediaViewer dengan Perbaikan Video ---
 const MediaViewer = ({ mediaUrls, onImageClick }) => {
-    const API_URL = 'http://localhost:8080';
+    const API_URL = 'http://localhost:8080'; // Pastikan ini sesuai
     const getYouTubeEmbedUrl = (url) => { if (!url) return null; const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null; };
 
     if (!mediaUrls || mediaUrls.length === 0) return null;
@@ -32,19 +34,52 @@ const MediaViewer = ({ mediaUrls, onImageClick }) => {
           const key = `media-${index}-${item.url || item.content}`;
 
           if (item.type === 'file') {
-            const fullFileUrl = item.url ? `${API_URL}/${item.url}` : null;
-            if (!fullFileUrl) return <p key={key} className='text-red-500 text-xs'>Error: File URL missing.</p>;
-            const fileExtension = item.url.split('.').pop().toLowerCase();
+            // Pastikan item.url ada dan merupakan string sebelum membangun URL lengkap
+            const fullFileUrl = (item.url && typeof item.url === 'string')
+              ? (item.url.startsWith('/') ? `${API_URL}${item.url}` : `${API_URL}/${item.url}`) // Handle jika url sudah ada '/' di depan
+              : null;
 
-            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) return <img key={key} src={fullFileUrl} alt={`Lampiran ${index + 1}`} className="max-w-full mx-auto rounded-lg shadow-md cursor-pointer" onClick={() => onImageClick(fullFileUrl)} />;
-            if (['mp4', 'webm', 'ogg'].includes(fileExtension)) return <video key={key} src={fullFileUrl} controls className="w-full rounded-lg shadow-md" />;
-            return <a key={key} href={fullFileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-sesm-deep font-semibold hover:bg-gray-200"><FiDownload /><span>Lihat/Unduh Lampiran ({fileExtension.toUpperCase()})</span></a>;
+            if (!fullFileUrl) {
+                console.error("URL file tidak valid:", item); // Log jika URL bermasalah
+                return <p key={key} className='text-red-500 text-xs'>Error: URL file tidak valid.</p>;
+            }
+
+            // Dapatkan ekstensi dari bagian terakhir URL setelah titik
+            const urlParts = item.url.split('.');
+            const fileExtension = urlParts.length > 1 ? urlParts[urlParts.length - 1].toLowerCase() : '';
+
+            // Render berdasarkan ekstensi
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+                return <img key={key} src={fullFileUrl} alt={`Lampiran ${index + 1}`} className="max-w-full mx-auto rounded-lg shadow-md cursor-pointer" onClick={() => onImageClick(fullFileUrl)} />;
+            }
+            // --- ✅ PERBAIKAN VIDEO TAG DI SINI ---
+            if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                return (
+                    <video
+                        key={key}
+                        src={fullFileUrl} // URL Langsung ke file di server
+                        controls // Tampilkan kontrol video
+                        playsInline // Bantu pemutaran di browser mobile
+                        className="w-full rounded-lg shadow-md bg-black" // Tambah bg-black untuk letterboxing
+                        preload="metadata" // Bisa 'auto', 'metadata', atau 'none'
+                    >
+                        Browser Anda tidak mendukung tag video untuk format ini.
+                        <a href={fullFileUrl} download>Unduh video</a> {/* Fallback link unduh */}
+                    </video>
+                );
+            }
+            // Render audio dan link download file lainnya
+             if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
+                 return <audio key={key} src={fullFileUrl} controls className="w-full" />;
+             }
+             return <a key={key} href={fullFileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-sesm-deep font-semibold hover:bg-gray-200"><FiDownload /><span>Lihat/Unduh Lampiran ({fileExtension.toUpperCase()})</span></a>;
+
 
           } else if (item.type === 'link') {
+            // Logika link YouTube/biasa tidak berubah
             const embedUrl = getYouTubeEmbedUrl(item.url);
             if (embedUrl) return (<div key={key} className="aspect-video bg-black rounded-lg overflow-hidden shadow-md"><iframe src={embedUrl} title={`YouTube video ${index}`} className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe></div>);
             return <a key={key} href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-blue-600 font-semibold hover:bg-gray-200"><FiLink /><span>Buka Tautan: {item.url}</span></a>;
-
           } else if (item.type === 'text') {
              return <div key={key} className="p-3 bg-yellow-50 border-l-4 border-yellow-400 text-gray-700 text-sm rounded-r-md whitespace-pre-wrap">{item.content}</div>
           }
@@ -53,6 +88,8 @@ const MediaViewer = ({ mediaUrls, onImageClick }) => {
       </div>
     );
 };
+// --- (Akhir Komponen MediaViewer) ---
+
 const EssayInput = ({ answer, onChange, isReviewing }) => (<textarea value={answer} onChange={onChange} disabled={isReviewing} placeholder="Tulis jawaban esaimu di sini..." className={`w-full h-40 p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal transition-colors ${isReviewing ? 'bg-gray-200' : ''}`}/>);
 const OptionButton = ({ option, userAnswer, correctAnswer, onClick, isReviewing }) => {
     const isSelected = userAnswer === option;
@@ -221,8 +258,7 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                 </aside>
 
                  {/* Konten Utama */}
-                 {/* ✅ PERBAIKAN: Tambahkan ml-0 md:ml-64 untuk memberi ruang bagi sidebar desktop */}
-                <div className="flex flex-col flex-1 ml-0 md:ml-64 overflow-hidden">
+                 <div className="flex flex-col flex-1 ml-0 md:ml-64 overflow-hidden">
                     <header className="bg-white p-4 flex items-center sticky top-0 z-10 shadow-sm flex-shrink-0">
                          <button onClick={() => setIsNavOpen(true)} className="p-2 rounded-full hover:bg-gray-100 md:hidden mr-2"> <FiMenu size={24} className="text-gray-700" /> </button>
                         <button onClick={handleExit} className="p-2 rounded-full hover:bg-gray-100"> <FiArrowLeft size={24} className="text-gray-700" /> </button>
@@ -236,7 +272,7 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                             )}
                              {initialCompletionStatus && !isReviewing && ( <span className="text-xs font-semibold text-yellow-500 ml-2">(Poin sudah didapat <FiAward className='inline -mt-1'/>)</span> )}
                         </div>
-                        {timeLeft !== null ? ( <div className="w-24 text-right flex items-center justify-end font-bold text-sesm-deep"><FiClock className="mr-2"/><span>{formatTime(timeLeft)}</span></div> ) : ( <div className="w-24"></div> )}
+                        {timeLeft !== null ? ( <div className={`w-24 text-right flex items-center justify-end font-bold ${timeLeft <= 30 ? 'text-red-500 animate-pulse' : 'text-sesm-deep'}`}><FiClock className="mr-2"/><span>{formatTime(timeLeft)}</span></div> ) : ( <div className="w-24"></div> )}
                     </header>
 
                     {/* Progress Bar */}
@@ -245,7 +281,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                     </div>
 
                     {/* Main Content Area (Scrollable) */}
-                    {/* ✅ PERBAIKAN: `main` sekarang jadi scrollable */}
                     <main className="flex-1 p-6 overflow-y-auto"> {/* flex-1 agar mengisi sisa ruang */}
                         {currentQuestion && (
                             <div className="w-full max-w-2xl mx-auto flex flex-col justify-center">
@@ -273,7 +308,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                     </main>
 
                      {/* Footer (Navigasi Soal) */}
-                    {/* ✅ PERBAIKAN: Footer tetap di bawah `main`, tidak fixed */}
                     <footer className="p-4 bg-white flex justify-between items-center border-t flex-shrink-0">
                         <motion.button onClick={() => goToQuestion(currentQuestionIndex - 1)} disabled={currentQuestionIndex === 0} className="flex items-center gap-2 font-semibold p-3 rounded-lg hover:bg-gray-100 disabled:opacity-50" whileTap={{ scale: 0.95 }}><FiChevronLeft/> Sebelumnya</motion.button>
                         {currentQuestionIndex === questions.length - 1 && !isReviewing ? (
