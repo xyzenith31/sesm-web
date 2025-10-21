@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiPlus, FiChevronRight, FiBookOpen, FiTrash2, FiLoader, FiGrid,
     FiCheckSquare, FiCopy, FiEdit, FiFileText, FiAlertTriangle, FiTrendingUp, FiSettings,
-    FiSearch, FiCheckCircle 
+    FiSearch, FiCheckCircle
 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 import CreateQuizModal from '../../components/admin/CreateQuizModal';
@@ -53,7 +53,7 @@ const ManajemenKuis = ({ onNavigate }) => {
     });
 
     const handleCloseNotif = () => setNotif(prev => ({ ...prev, isOpen: false }));
-    
+
     // ✅ PERBAIKAN: Menggabungkan fetch data untuk sinkronisasi draf
     const fetchData = useCallback((selectIdAfterFetch = null) => {
         setLoading(true);
@@ -70,11 +70,11 @@ const ManajemenKuis = ({ onNavigate }) => {
                     setSelectedQuiz(updatedQuiz);
                 }
             }
-            
+
             // Filter draf yang relevan (hanya kuis) dan valid (kuisnya masih ada)
             const allDrafts = draftsRes.data || [];
             const quizDrafts = allDrafts.filter(d => d.draft_key.startsWith('quiz_'));
-            
+
             const validQuizDrafts = quizDrafts.filter(draft => {
                 const quizIdMatch = draft.draft_key.match(/^quiz_(\d+)/);
                 if (!quizIdMatch) return false;
@@ -93,7 +93,7 @@ const ManajemenKuis = ({ onNavigate }) => {
         }).finally(() => {
             setLoading(false);
         });
-    }, []);
+    }, []); // Removed selectIdAfterFetch from deps as it changes too often
 
     useEffect(() => {
         fetchData();
@@ -216,11 +216,12 @@ const ManajemenKuis = ({ onNavigate }) => {
                 }
                 formData.append('essayAnswer', q.essayAnswer || '');
 
-                const links = q.media.filter(m => m.type === 'link').map(m => m.url);
-                const files = q.media.filter(m => m.type === 'file').map(m => m.file);
+                 // Filter media links and files correctly
+                 const links = q.media.filter(m => m.type === 'link').map(m => m.url);
+                 const files = q.media.filter(m => m.type === 'file').map(m => m.file);
 
                 if (links.length > 0) formData.append('links', JSON.stringify(links));
-                if (files.length > 0) files.forEach(file => formData.append('mediaFiles', file));
+                if (files.length > 0) files.forEach(file => formData.append('mediaFiles', file)); // Use 'mediaFiles'
 
                 await DataService.addQuestionToQuiz(quizId, formData);
             }
@@ -236,18 +237,52 @@ const ManajemenKuis = ({ onNavigate }) => {
 
     const handleOpenEditModal = (question) => { setEditingQuestion(question); setEditQuestionOpen(true); };
 
-    const handleUpdateQuestion = async (questionId, updatedData) => {
+    const handleUpdateQuestion = async (questionId, updatedQuestionData) => {
+        setIsSubmitting(true); // Mulai loading
         try {
-            await DataService.updateQuestionInQuiz(questionId, updatedData);
+            const formData = new FormData();
+            formData.append('question_text', updatedQuestionData.question);
+            formData.append('question_type', updatedQuestionData.type);
+
+            // Menyiapkan opsi untuk backend
+            if (updatedQuestionData.type.includes('pilihan-ganda')) {
+                const formattedOptions = updatedQuestionData.options.map(opt => ({
+                    text: opt,
+                    isCorrect: opt === updatedQuestionData.correctAnswer
+                }));
+                 // Validasi jawaban benar sebelum mengirim
+                 if (formattedOptions.filter(opt => opt.isCorrect).length === 0 && updatedQuestionData.options.filter(opt => opt.trim() !== '').length > 0) {
+                     throw new Error(`Soal "${updatedQuestionData.question.substring(0,20)}..." belum punya jawaban benar.`);
+                 }
+                formData.append('options', JSON.stringify(formattedOptions));
+            }
+
+            formData.append('essayAnswer', updatedQuestionData.essayAnswer || '');
+
+            // Menyiapkan media yang sudah ada (existing) dan file baru
+            const existingMedia = updatedQuestionData.media.filter(m => m.type !== 'file'); // Hanya link
+            const newFiles = updatedQuestionData.media.filter(m => m.type === 'file').map(m => m.file);
+
+            formData.append('existingMedia', JSON.stringify(existingMedia));
+            if (newFiles.length > 0) {
+                newFiles.forEach(file => formData.append('mediaFiles', file));
+            }
+
+            // Memanggil API update
+            await DataService.updateQuestionInQuiz(questionId, formData); // Mengirim formData
+
             setEditQuestionOpen(false);
             setEditingQuestion(null);
             setNotif({ isOpen: true, title: "Sukses", message: "Soal berhasil diperbarui!", success: true });
             fetchQuizDetails(selectedQuiz.id);
         } catch (error) {
             console.error("Gagal memperbarui soal:", error);
-             setNotif({ isOpen: true, title: "Gagal", message: error.response?.data?.message || "Gagal memperbarui soal.", success: false });
+            setNotif({ isOpen: true, title: "Gagal", message: error.message || "Gagal memperbarui soal.", success: false });
+        } finally {
+            setIsSubmitting(false); // Selesai loading
         }
     };
+
 
     const handleDeleteQuestion = (questionId, questionText) => {
         setNotif({
@@ -283,7 +318,7 @@ const ManajemenKuis = ({ onNavigate }) => {
              setNotif({ isOpen: true, title: "Error", message: "Kuis untuk draf ini tidak ditemukan. Mungkin sudah dihapus.", success: false });
         }
     };
-    
+
     const filteredQuizzes = useMemo(() => {
         if (!searchTerm) return quizzes;
         return quizzes.filter(quiz =>
@@ -334,10 +369,10 @@ const ManajemenKuis = ({ onNavigate }) => {
                 {isSettingsModalOpen && <QuizSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} onSave={handleSaveSettings} quizData={selectedQuiz} />}
             </AnimatePresence>
 
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-grow">
-                <div className="grid md:grid-cols-12 flex-grow">
-                    <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
-                        <div className="p-4 border-b border-gray-200">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-grow h-full"> {/* Pastikan h-full */}
+                <div className="grid md:grid-cols-12 flex-grow h-full"> {/* Pastikan h-full */}
+                    <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col h-full"> {/* Pastikan h-full */}
+                        <div className="p-4 border-b border-gray-200 flex-shrink-0"> {/* flex-shrink-0 */}
                              <div className="relative">
                                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -349,6 +384,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                 />
                             </div>
                         </div>
+                        {/* ✅ PERBAIKAN: Tambahkan overflow-y-auto di sini */}
                         <div className="flex-grow overflow-y-auto p-2">
                             {loading ? (<div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl text-sesm-teal"/></div>) : (
                                 <div className="space-y-1">
@@ -368,12 +404,12 @@ const ManajemenKuis = ({ onNavigate }) => {
                         </div>
                     </div>
 
-                    <div className="md:col-span-8 lg:col-span-9 flex flex-col">
-                        <div className="p-6 flex-shrink-0">
+                    <div className="md:col-span-8 lg:col-span-9 flex flex-col h-full"> {/* Pastikan h-full */}
+                        <div className="p-6 flex-shrink-0"> {/* flex-shrink-0 */}
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                                 <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Kuis</h1>
                                 <p className="text-gray-500 mt-1">Buat kuis baru, kelola soal, atau lihat hasil pengerjaan siswa.</p>
-                                
+
                                 <div className="flex items-center gap-3 my-6">
                                     <motion.button
                                         whileTap={{ scale: 0.95 }}
@@ -388,7 +424,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                             </span>
                                         )}
                                     </motion.button>
-                                    
+
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setBankSoalOpen(true) } className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm"><FiBookOpen/> Bank Soal</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('evaluasiKuis')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setCreateQuizOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-sesm-teal text-white rounded-lg font-semibold shadow-sm"><FiPlus /> Buat Kuis</motion.button>
@@ -396,8 +432,8 @@ const ManajemenKuis = ({ onNavigate }) => {
 
                             </motion.div>
                         </div>
-                        <div className="border-t-2 border-dashed border-gray-200 mx-6"></div>
-                        <div className="flex-grow overflow-y-auto p-6">
+                        <div className="border-t-2 border-dashed border-gray-200 mx-6 flex-shrink-0"></div> {/* flex-shrink-0 */}
+                        <div className="flex-grow overflow-y-auto p-6"> {/* overflow-y-auto */}
                             <AnimatePresence mode="wait">
                                 <motion.div key={selectedQuiz ? selectedQuiz.id : 'dashboard'} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="h-full">
                                     {!selectedQuiz ? ( <DashboardView userName={user?.nama} stats={stats} />
@@ -414,16 +450,17 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                 </div>
                                                 <p className="text-sm text-gray-500 mt-1">{selectedQuiz.description}</p>
                                             </div>
-                                            <div className="flex justify-between items-center mb-4">
+                                            <div className="flex justify-between items-center mb-4 flex-shrink-0">
                                                 <h3 className="font-bold text-gray-700">Daftar Soal ({questions.length})</h3>
                                                 <button onClick={() => handleDeleteAllQuestions(selectedQuiz.id)} disabled={questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
                                             </div>
-                                            <div className="space-y-3 max-h-[calc(110vh-35rem)] overflow-y-auto pr-2">
+                                            {/* ✅ PERBAIKAN: Hapus max-h dan overflow-y-auto dari sini */}
+                                            <div className="space-y-3 pr-2">
                                                 {questions.length > 0 ? questions.map((q, i) => {
-                                                    const creatorAvatar = q.creator_avatar 
+                                                    const creatorAvatar = q.creator_avatar
                                                         ? (q.creator_avatar.startsWith('http') ? q.creator_avatar : `${API_URL}/${q.creator_avatar}`)
                                                         : `https://api.dicebear.com/7.x/initials/svg?seed=${q.creator_name || 'G'}`;
-                                                    
+
                                                     return (
                                                         <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border">
                                                             <div className="flex justify-between items-start">
@@ -433,7 +470,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                                         <span>Dibuat oleh <strong>{q.creator_name || 'Tidak diketahui'}</strong></span>
                                                                     </div>
                                                                     <p className="font-semibold text-gray-800">{i + 1}. {q.question_text}</p>
-                                                                    
+
                                                                     {q.options && q.options.length > 0 && (
                                                                         <div className='mt-3 space-y-2 text-sm'>
                                                                             {q.options.map((opt, optIndex) => (
@@ -445,7 +482,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                                             ))}
                                                                         </div>
                                                                     )}
-                                                                    
+
                                                                     {(q.correct_essay_answer) && (
                                                                         <div className="mt-3 pt-2 border-t border-dashed">
                                                                             <p className="text-sm font-semibold text-blue-700">Kunci Jawaban Esai:</p>

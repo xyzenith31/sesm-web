@@ -504,10 +504,13 @@ const ManajemenMateri = ({ onNavigate }) => {
             </AnimatePresence>
             {isQuestionModalOpen && <QuestionFormModal isOpen onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
 
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden min-h-[calc(100vh-4rem)]">
-                <div className="grid md:grid-cols-12 h-full">
-                    <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col">
-                        <div className="p-4 border-b">
+            {/* Pastikan parent div memiliki h-full */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-grow h-full">
+                {/* Pastikan parent grid memiliki h-full */}
+                <div className="grid md:grid-cols-12 flex-grow h-full">
+                    {/* Pastikan kolom kiri flex-col dan h-full */}
+                    <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col h-full">
+                        <div className="p-4 border-b flex-shrink-0">
                             <label className="text-sm font-bold text-gray-600 mb-1 block">Pilih Jenjang & Kelas</label>
                             <CustomSelect
                                 options={jenjangSelectOptions}
@@ -515,6 +518,7 @@ const ManajemenMateri = ({ onNavigate }) => {
                                 onChange={setSelectedFilterKey}
                             />
                         </div>
+                        {/* ✅ PERBAIKAN UTAMA: Tambahkan overflow-y-auto dan flex-grow DI SINI */}
                         <div className="flex-grow overflow-y-auto p-2">
                              {isLoading ? (
                                 <div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl text-sesm-teal"/></div>
@@ -525,8 +529,13 @@ const ManajemenMateri = ({ onNavigate }) => {
                                         <div className="space-y-1 mt-1">
                                             {materiList[mapel].chapters.sort((a,b) => a.judul.localeCompare(b.judul)).map(m => (
                                                 <div key={m.materiKey} className={`group w-full p-2 rounded-md flex items-center ${selectedKey === m.materiKey ? 'bg-sesm-teal/20' : 'hover:bg-gray-100'}`}>
-                                                    <button onClick={() => setSelectedKey(m.materiKey)} className={`flex-grow flex justify-between items-center text-left pr-2 text-sm ${selectedKey === m.materiKey ? 'font-bold text-sesm-deep' : 'text-gray-700'}`}><span>{m.judul}</span><FiChevronRight /></button>
-                                                    <button onClick={e => { e.stopPropagation(); handleDeleteChapter(m.materiKey, m.judul); }} className="p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600" title="Hapus"><FiTrash2 size={14} /></button>
+                                                    <button onClick={() => setSelectedKey(m.materiKey)} className={`flex-grow flex justify-between items-center text-left pr-2 text-sm overflow-hidden ${selectedKey === m.materiKey ? 'font-bold text-sesm-deep' : 'text-gray-700'}`}>
+                                                        <span className="truncate">{m.judul}</span> {/* Tambah truncate */}
+                                                        <FiChevronRight className="flex-shrink-0"/> {/* Tambah flex-shrink-0 */}
+                                                    </button>
+                                                    <button onClick={e => { e.stopPropagation(); handleDeleteChapter(m.materiKey, m.judul); }} className="p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 flex-shrink-0" title="Hapus"> {/* Tambah flex-shrink-0 */}
+                                                        <FiTrash2 size={14} />
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
@@ -538,17 +547,17 @@ const ManajemenMateri = ({ onNavigate }) => {
                         </div>
                     </div>
 
-                    <div className="md:col-span-8 lg:col-span-9 flex flex-col">
-                        <div className="p-6">
+                    {/* Pastikan kolom kanan flex-col dan h-full */}
+                    <div className="md:col-span-8 lg:col-span-9 flex flex-col h-full">
+                        <div className="p-6 flex-shrink-0">
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                                 <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Materi & Nilai</h1>
                                 <p className="text-gray-500 mt-1">Buat materi baru, kelola soal, dan lihat hasil pengerjaan siswa.</p>
 
                                 <div className="flex items-center gap-3 my-6">
-                                    {/* --- PERBAIKAN DESAIN TOMBOL DRAF --- */}
-                                    <motion.button 
-                                        whileTap={{ scale: 0.95 }} 
-                                        onClick={() => setIsDraftsModalOpen(true)} 
+                                    <motion.button
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => setIsDraftsModalOpen(true)}
                                         className="relative flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 rounded-lg font-bold hover:bg-yellow-500 shadow-sm"
                                     >
                                         <FiFileText />
@@ -559,7 +568,6 @@ const ManajemenMateri = ({ onNavigate }) => {
                                             </span>
                                         )}
                                     </motion.button>
-                                    {/* --- AKHIR PERBAIKAN --- */}
 
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiBookOpen/> Bank Soal</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
@@ -567,10 +575,11 @@ const ManajemenMateri = ({ onNavigate }) => {
                                 </div>
                             </motion.div>
                         </div>
-                        <div className="border-t-2 border-dashed border-gray-200 mx-6"></div>
+                        <div className="border-t-2 border-dashed border-gray-200 mx-6 flex-shrink-0"></div>
+                        {/* ✅ PERBAIKAN UTAMA: Tambahkan overflow-y-auto dan flex-grow DI SINI */}
                         <div className="flex-grow overflow-y-auto p-6">
                             <AnimatePresence mode="wait">
-                                <motion.div key={selectedMateri ? selectedMateri.materiKey : 'dashboard'} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full">
+                                <motion.div key={selectedMateri ? selectedMateri.materiKey : 'dashboard'} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="h-full">
                                     {!selectedMateri ? <DashboardView userName={user?.nama} stats={stats} /> :
                                         isDetailLoading ? <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal" /></div> : (
                                             <div>
@@ -598,12 +607,13 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                     <h3 className="font-bold text-gray-700">Daftar Soal ({selectedMateri.questions?.length || 0})</h3>
                                                     <button onClick={handleDeleteAllQuestions} disabled={!selectedMateri.questions || selectedMateri.questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
                                                 </div>
-                                                <div className="space-y-3 max-h-[calc(100vh-35rem)] overflow-y-auto pr-2">
+                                                {/* Container daftar soal (tidak perlu scroll sendiri) */}
+                                                <div className="space-y-3 pr-2">
                                                      {selectedMateri.questions && selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, i) => {
-                                                        const creatorAvatar = q.creator_avatar 
+                                                        const creatorAvatar = q.creator_avatar
                                                             ? (q.creator_avatar.startsWith('http') ? q.creator_avatar : `${API_URL}/${q.creator_avatar}`)
                                                             : `https://api.dicebear.com/7.x/initials/svg?seed=${q.creator_name || 'G'}`;
-                                                        
+
                                                         return (
                                                             <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border">
                                                                 <div className="flex justify-between items-start">
@@ -613,7 +623,7 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                                             <span>Dibuat oleh <strong>{q.creator_name || 'Guru'}</strong></span>
                                                                         </div>
                                                                         <p className="font-semibold text-gray-800">{i + 1}. {q.pertanyaan}</p>
-                                                                        
+
                                                                         {q.options && q.options.length > 0 && (
                                                                             <div className='mt-3 space-y-2 text-sm'>
                                                                                 {q.options.map((opt, optIndex) => (
@@ -625,7 +635,7 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                                                 ))}
                                                                             </div>
                                                                         )}
-                                                                        
+
                                                                         {(q.jawaban_esai) && (
                                                                             <div className="mt-3 pt-2 border-t border-dashed">
                                                                                 <p className="text-sm font-semibold text-blue-700">Kunci Jawaban Esai:</p>

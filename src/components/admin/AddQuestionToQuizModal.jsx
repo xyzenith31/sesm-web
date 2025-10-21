@@ -1,4 +1,3 @@
-// contoh-sesm-web/components/admin/AddQuestionToQuizModal.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
@@ -6,23 +5,28 @@ import DataService from '../../services/dataService';
 import CustomSelect from '../ui/CustomSelect';
 import useDebounce from '../../hooks/useDebounce';
 import SaveStatusIcon from '../ui/SaveStatusIcon';
+import Notification from '../ui/Notification'; // <-- Tambahkan impor Notifikasi
 
 // Helper untuk mengubah indeks menjadi huruf
 const toAlpha = (num) => String.fromCharCode(65 + num);
 
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (file) => {
+        if (!file || !file.type) return <FiFile className="text-gray-500" size={24} />; // Fallback
         if (file.type.startsWith('image/')) return <FiImage className="text-blue-500" size={24} />;
         if (file.type.startsWith('video/')) return <FiFilm className="text-purple-500" size={24} />;
         if (file.type.startsWith('audio/')) return <FiMusic className="text-pink-500" size={24} />;
         return <FiFile className="text-gray-500" size={24} />;
     };
+    const fileName = item.type === 'file' && item.file ? item.file.name : item.url;
+    const fileSize = item.type === 'file' && item.file ? (item.file.size / 1024).toFixed(1) + ' KB' : '';
+
     return (
         <div className="bg-white border rounded-lg p-2 flex items-center gap-3">
             {item.type === 'link' ? <FiLink className="text-green-500" size={24} /> : getIcon(item.file)}
             <div className="flex-grow overflow-hidden">
-                <p className="text-sm font-medium text-gray-800 truncate">{item.type === 'link' ? item.url : item.file.name}</p>
-                {item.type === 'file' && <p className="text-xs text-gray-500">{(item.file.size / 1024).toFixed(1)} KB</p>}
+                <p className="text-sm font-medium text-gray-800 truncate">{fileName}</p>
+                {fileSize && <p className="text-xs text-gray-500">{fileSize}</p>}
             </div>
             <button type="button" onClick={onRemove} className="p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100">
                 <FiX size={16} />
@@ -38,7 +42,7 @@ const getNewQuestion = () => ({
     options: ['', ''],
     correctAnswer: '',
     essayAnswer: '',
-    media: [],
+    media: [], // Diubah untuk menyimpan objek { type: 'file'/'link', file?, url?, id }
 });
 
 const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
@@ -56,6 +60,7 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
         const newOptions = [...question.options];
         const oldOptionValue = newOptions[optIndex];
         newOptions[optIndex] = value;
+        // Jika jawaban benar sebelumnya adalah opsi yang diedit, update juga jawaban benar
         if (question.correctAnswer === oldOptionValue) {
             handleInputChange('correctAnswer', value);
         }
@@ -63,9 +68,10 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
     };
     const addOption = () => onUpdate(index, { ...question, options: [...question.options, ''] });
     const removeOption = (optIndex) => {
-        if (question.options.length <= 2) return;
+        if (question.options.length <= 2) return; // Minimum 2 opsi
         const optionToRemove = question.options[optIndex];
         const newOptions = question.options.filter((_, i) => i !== optIndex);
+        // Jika opsi yang dihapus adalah jawaban benar, reset jawaban benar
         if (question.correctAnswer === optionToRemove) {
             handleInputChange('correctAnswer', '');
         }
@@ -73,6 +79,7 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
     };
     const handleMediaUpload = (e) => {
         const files = Array.from(e.target.files);
+        // Buat objek media baru
         const newMedia = files.map(file => ({ type: 'file', file, id: Math.random() }));
         onUpdate(index, { ...question, media: [...question.media, ...newMedia] });
     };
@@ -81,6 +88,7 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
             alert('URL tidak valid. Pastikan dimulai dengan http:// atau https://');
             return;
         }
+        // Buat objek media baru untuk link
         const newLink = { type: 'link', url: linkValue, id: Math.random() };
         onUpdate(index, { ...question, media: [...question.media, newLink] });
         setLinkValue('');
@@ -93,6 +101,7 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
 
     return (
         <div className="bg-white p-5 rounded-xl border shadow-sm relative">
+             {/* Tombol hapus hanya jika lebih dari 1 soal */}
             <button type="button" onClick={() => onRemove(index)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-700" title="Hapus Soal Ini">
                 <FiX size={16} />
             </button>
@@ -178,28 +187,30 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
     const [questions, setQuestions] = useState([getNewQuestion()]);
     const [saveStatus, setSaveStatus] = useState('Tersimpan');
     const debouncedQuestions = useDebounce(questions, 200);
+    // State untuk notifikasi
+    const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
+
 
     const saveDraft = useCallback(async (data) => {
-        // Jangan simpan jika hanya ada 1 soal kosong
         if (!data || (data.length === 1 && data[0].question.trim() === '' && data[0].media.length === 0)) {
-            setSaveStatus('Tersimpan'); // Tetap set status tersimpan
+            setSaveStatus('Tersimpan');
             return;
         }
         setSaveStatus('Menyimpan...');
         try {
-            // Hapus file object sebelum serialisasi ke backend
+            // Hapus file object sebelum serialisasi
             const serializableData = data.map(({ media, ...rest }) => ({
                 ...rest,
-                media: media.filter(m => m.type === 'link') // Hanya simpan link, bukan file
+                media: media.filter(m => m.type === 'link') // Hanya simpan link
             }));
             await DataService.saveDraft(DRAFT_KEY, serializableData);
             setSaveStatus('Tersimpan');
         } catch (error) {
-            console.error("Gagal menyimpan draf kuis ke server:", error);
+            console.error("Gagal menyimpan draf kuis:", error);
             setSaveStatus('Gagal');
         }
     }, [DRAFT_KEY]);
-    
+
     useEffect(() => {
         if (isOpen) {
             saveDraft(debouncedQuestions);
@@ -212,7 +223,12 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
             DataService.getDraft(DRAFT_KEY)
                 .then(response => {
                     if (response.data && response.data.content && response.data.content.length > 0) {
-                        setQuestions(response.data.content.map(q => ({ ...getNewQuestion(), ...q, media: [] })));
+                         // Kembalikan struktur media dari link yang disimpan
+                        setQuestions(response.data.content.map(q => ({
+                             ...getNewQuestion(),
+                             ...q,
+                             media: (q.media || []).map(link => ({...link, id: Math.random()})) // Tambahkan ID acak saat load
+                         })));
                     } else {
                         setQuestions([getNewQuestion()]);
                     }
@@ -221,16 +237,23 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
                     setQuestions([getNewQuestion()]);
                 })
                 .finally(() => setSaveStatus('Tersimpan'));
+        } else {
+             // Reset state saat modal ditutup
+             setQuestions([]);
+             setNotif({ isOpen: false, message: '', success: true, title: '' });
         }
     }, [isOpen, DRAFT_KEY]);
-    
+
     const handleUpdateQuestion = (index, updatedQuestion) => {
         setQuestions(prev => prev.map((q, i) => i === index ? updatedQuestion : q));
     };
     const handleAddQuestionField = () => setQuestions(prev => [...prev, getNewQuestion()]);
     const handleRemoveQuestionField = (index) => {
-        if (questions.length > 1) {
+        if (questions.length > 1) { // Hanya hapus jika ada lebih dari 1 soal
             setQuestions(prev => prev.filter((_, i) => i !== index));
+        } else {
+            // Jika hanya 1 soal, reset saja
+            setQuestions([getNewQuestion()]);
         }
     };
 
@@ -239,48 +262,77 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         onClose();
     };
 
-    const handleSubmit = (e) => { 
-        e.preventDefault(); 
-        onSubmit(quizId, questions); 
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // Validasi jawaban benar untuk soal PG
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i];
+            if ((q.type === 'pilihan-ganda' || q.type === 'pilihan-ganda-esai') && (!q.correctAnswer || q.correctAnswer.trim() === '')) {
+                setNotif({
+                    isOpen: true,
+                    title: "Validasi Gagal",
+                    message: `Soal nomor ${i + 1} (${q.type}) belum memiliki jawaban benar. Silakan pilih jawaban yang benar.`,
+                    success: false
+                });
+                return; // Hentikan submit
+            }
+        }
+
+        onSubmit(quizId, questions);
         DataService.deleteDraft(DRAFT_KEY).catch(err => console.error("Gagal menghapus draf kuis:", err));
-        onClose(); 
+        onClose();
     };
+
+     // Handler untuk menutup notifikasi
+    const handleCloseNotif = () => setNotif({ ...notif, isOpen: false });
+
 
     if (!isOpen) return null;
 
     return (
-        <motion.div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col h-[90vh]">
-                <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                    <div className="p-6 border-b flex justify-between items-center">
-                        <div>
-                            <h3 className="text-xl font-bold text-sesm-deep">Tambah Soal Baru ke Kuis</h3>
-                            <p className="text-sm text-gray-500">Perubahan akan disimpan otomatis sebagai draf.</p>
+         <>
+            {/* Render Notifikasi */}
+            <Notification
+                isOpen={notif.isOpen}
+                onClose={handleCloseNotif}
+                title={notif.title}
+                message={notif.message}
+                success={notif.success}
+            />
+            <motion.div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col h-[90vh]">
+                    <form onSubmit={handleSubmit} className="flex flex-col h-full">
+                        <div className="p-6 border-b flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xl font-bold text-sesm-deep">Tambah Soal Baru ke Kuis</h3>
+                                <p className="text-sm text-gray-500">Perubahan akan disimpan otomatis sebagai draf.</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <SaveStatusIcon status={saveStatus} />
+                                <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <SaveStatusIcon status={saveStatus} />
-                            <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
+                        <div className="p-6 space-y-6 flex-grow overflow-y-auto bg-gray-50/50">
+                            {questions.map((q, qIndex) => (
+                                <QuestionForm key={q.id} question={q} index={qIndex} onUpdate={handleUpdateQuestion} onRemove={handleRemoveQuestionField} />
+                            ))}
+                            <button type="button" onClick={handleAddQuestionField} className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed rounded-lg text-sesm-deep hover:bg-sesm-teal/10">
+                                <FiPlus/> Tambah Soal Lagi
+                            </button>
                         </div>
-                    </div>
-                    <div className="p-6 space-y-6 flex-grow overflow-y-auto bg-gray-50/50">
-                        {questions.map((q, qIndex) => (
-                            <QuestionForm key={q.id} question={q} index={qIndex} onUpdate={handleUpdateQuestion} onRemove={handleRemoveQuestionField} />
-                        ))}
-                        <button type="button" onClick={handleAddQuestionField} className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed rounded-lg text-sesm-deep hover:bg-sesm-teal/10">
-                            <FiPlus/> Tambah Soal Lagi
-                        </button>
-                    </div>
-                    <div className="bg-gray-50 p-4 flex justify-between items-center rounded-b-2xl border-t">
-                        <span className="text-sm text-gray-600 font-semibold">Total: {questions.length} soal</span>
-                        <div>
-                            <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200 mr-2">Batal</button>
-                            <button type="button" onClick={handleSaveAndClose} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 mr-3">Simpan & Tutup</button>
-                            <button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90">Publish Soal</button>
+                        <div className="bg-gray-50 p-4 flex justify-between items-center rounded-b-2xl border-t">
+                            <span className="text-sm text-gray-600 font-semibold">Total: {questions.length} soal</span>
+                            <div>
+                                <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200 mr-2">Batal</button>
+                                <button type="button" onClick={handleSaveAndClose} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 mr-3">Simpan & Tutup</button>
+                                <button type="submit" className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90">Publish Soal</button>
+                            </div>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </motion.div>
             </motion.div>
-        </motion.div>
+        </>
     );
 };
 
