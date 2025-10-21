@@ -1,10 +1,14 @@
 // contoh-sesm-web/components/admin/AddMaterialModal.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react'; // Tambahkan useCallback
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiPlus, FiSave, FiLoader, FiTrash2 } from 'react-icons/fi';
-import DataService from '../../services/dataService';
-import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
+import DataService from '../../services/dataService'; // Impor DataService
+import CustomSelect from '../ui/CustomSelect';
+import useDebounce from '../../hooks/useDebounce'; // Impor useDebounce
+import SaveStatusIcon from '../ui/SaveStatusIcon'; // Impor SaveStatusIcon
+import Notification from '../ui/Notification'; // Impor Notification
 
+// Komponen QuestionItem dan StepIndicator tetap sama ...
 // Helper untuk mengubah indeks menjadi huruf
 const toAlpha = (num) => String.fromCharCode(65 + num);
 
@@ -97,8 +101,13 @@ const StepIndicator = ({ stepNumber, label, isActive, onClick, isDisabled }) => 
 
 
 const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
-    const DRAFT_KEY = useMemo(() => `bookmark_draft_${initialDraft?.draft_key || 'new'}`, [initialDraft]);
-    
+    // --- Auto-Save States ---
+    const DRAFT_KEY = useMemo(() => `bookmark_draft_${initialDraft?.draft_key || Date.now()}`, [initialDraft]); // Key unik
+    const [saveStatus, setSaveStatus] = useState('Tersimpan');
+    // State untuk notifikasi (sukses/gagal simpan draf)
+    const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
+
+    // --- Original States ---
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
     const [tasks, setTasks] = useState([]);
@@ -108,6 +117,10 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
     const [mainFilePreview, setMainFilePreview] = useState('');
     const [coverImagePreview, setCoverImagePreview] = useState('');
     const [mediaSourceType, setMediaSourceType] = useState('file');
+
+    // --- Debounce untuk Auto-Save ---
+    const debouncedFormData = useDebounce(formData, 1500); // Tunda 1.5 detik
+    const debouncedTasks = useDebounce(tasks, 1500);
 
     const levelOptions = [
         { value: 'Semua', label: 'Semua Jenjang' },
@@ -124,6 +137,34 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
 
     const getNewQuestionObject = () => ({ id: Date.now() + Math.random(), type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '' });
 
+    // --- Fungsi Simpan Draf ke Backend (useCallback) ---
+    const saveDraftToBackend = useCallback(async () => {
+        // Jangan simpan jika data masih kosong
+        if (!formData.title.trim() && !formData.subject.trim() && tasks.length === 0) {
+            setSaveStatus('Tersimpan'); // Anggap tersimpan jika memang kosong
+            return;
+        }
+        setSaveStatus('Menyimpan...');
+        const draftData = { formData, tasks, mediaSourceType }; // Data yang akan disimpan
+        try {
+            await DataService.saveDraft(DRAFT_KEY, draftData);
+            setSaveStatus('Tersimpan');
+        } catch (error) {
+            console.error("Gagal menyimpan draf:", error);
+            setSaveStatus('Gagal');
+            // Tampilkan notifikasi gagal
+            setNotif({ isOpen: true, title: "Gagal Simpan Draf", message: "Gagal menyimpan draf otomatis.", success: false });
+        }
+    }, [formData, tasks, mediaSourceType, DRAFT_KEY]); // Dependency array
+
+    // --- useEffect untuk memicu simpan draf ---
+    useEffect(() => {
+        if (isOpen && saveStatus !== 'Menyimpan...') { // Hanya simpan jika modal terbuka dan tidak sedang menyimpan
+            saveDraftToBackend();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debouncedFormData, debouncedTasks, isOpen]); // Picu saat data debounced berubah
+
     useEffect(() => {
         if (isOpen) {
             const draftContent = initialDraft?.content;
@@ -131,7 +172,13 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
                 setFormData(draftContent.formData || { title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
                 setTasks(draftContent.tasks || []);
                 setMediaSourceType(draftContent.mediaSourceType || 'file');
+                // Reset file states karena file tidak disimpan di draf
+                setMainFile(null);
+                setCoverImage(null);
+                setMainFilePreview('');
+                setCoverImagePreview('');
             } else {
+                // Reset state jika membuat baru
                 setFormData({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
                 setTasks([]);
                 setMediaSourceType('file');
@@ -140,27 +187,21 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
                 setMainFilePreview('');
                 setCoverImagePreview('');
             }
+             setSaveStatus('Tersimpan'); // Set status awal saat modal dibuka
         }
     }, [isOpen, initialDraft]);
 
-    useEffect(() => {
-        if (isOpen && (formData.title.trim() || tasks.length > 0 || formData.subject.trim() || formData.description.trim())) {
-            const draftData = { formData, tasks, mediaSourceType };
-            DataService.saveDraft(DRAFT_KEY, draftData).catch(err => console.error("Autosave failed:", err));
-        }
-    }, [formData, tasks, mediaSourceType, isOpen, DRAFT_KEY]);
-    
     const handleFormChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handleMainFileChange = (e) => { const file = e.target.files[0]; if (file) { setMainFile(file); setMainFilePreview(file.name); } };
     const handleCoverImageChange = (e) => { const file = e.target.files[0]; if (file) { setCoverImage(file); setCoverImagePreview(URL.createObjectURL(file)); } };
-    
+
     const updateTask = (index, updatedTask) => setTasks(prev => prev.map((task, i) => i === index ? updatedTask : task));
     const addTask = () => setTasks(prev => [...prev, getNewQuestionObject()]);
     const removeTask = (index) => setTasks(prev => prev.filter((_, i) => i !== index));
 
     const navigateToStep = (targetStep) => {
         if (targetStep > 1 && (!formData.title.trim() || !formData.subject.trim())) {
-            alert("Judul dan Mapel wajib diisi sebelum melanjutkan.");
+            setNotif({isOpen: true, title: "Info", message: "Judul dan Mapel wajib diisi sebelum melanjutkan.", success: true }); // Tampilkan notifikasi
             return;
         }
         setStep(targetStep);
@@ -180,17 +221,20 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
         if (mainFile) data.append('mainFile', mainFile);
         if (coverImage) data.append('coverImage', coverImage);
         if (mediaSourceType === 'file') data.delete('url_link');
-        
+
         try {
             await onSave(data);
-            DataService.deleteDraft(DRAFT_KEY).catch(err => console.warn("Failed to delete server draft:", err));
+            // Hapus draf setelah berhasil publish
+            DataService.deleteDraft(DRAFT_KEY)
+                .then(() => localStorage.removeItem(DRAFT_KEY)) // Juga hapus dari local storage jika ada
+                .catch(err => console.warn("Gagal menghapus draf setelah publish:", err));
         } catch (error) {
             // Error handling is in parent
         } finally {
             setIsSaving(false);
         }
     };
-    
+
     const inputStyle = "w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal";
     const stepVariants = { hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -20 } };
 
@@ -210,34 +254,48 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
     if (!isOpen) return null;
 
     return (
-         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col">
-                <form onSubmit={handleSubmit}>
-                    <header className="p-6 border-b flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-sesm-deep">Tambah Materi Baru</h3>
-                        <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
-                    </header>
-                    <main className="p-6 flex gap-8">
-                        <div className="w-1/3 border-r pr-6 space-y-6 pt-2">
-                            <StepIndicator stepNumber={1} label="Informasi Dasar" isActive={step === 1} onClick={() => navigateToStep(1)} />
-                            <StepIndicator stepNumber={2} label="Media & Materi" isActive={step === 2} onClick={() => navigateToStep(2)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
-                            <StepIndicator stepNumber={3} label="Soal & Tugas" isActive={step === 3} onClick={() => navigateToStep(3)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
-                        </div>
-                        <div className="w-2/3">
-                           <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
-                        </div>
-                    </main>
-                    <footer className="bg-gray-50 p-4 flex justify-end items-center gap-3 rounded-b-2xl border-t">
-                        <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold bg-gray-200 hover:bg-gray-300">Batal</button>
-                        {step < 3 ? (
-                            <button type="button" onClick={() => navigateToStep(step + 1)} className="px-5 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-opacity-90">Lanjutkan</button>
-                        ) : (
-                            <button type="submit" disabled={isSaving} className="px-5 py-2 bg-sesm-deep text-white rounded-lg flex items-center gap-2 disabled:bg-gray-400">{isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}{isSaving ? 'Menyimpan...' : 'Publish Materi'}</button>
-                        )}
-                    </footer>
-                </form>
+        <>
+            {/* Render Notifikasi */}
+            <Notification
+                isOpen={notif.isOpen}
+                onClose={() => setNotif({ ...notif, isOpen: false })}
+                title={notif.title}
+                message={notif.message}
+                success={notif.success}
+            />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
+                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col">
+                    <form onSubmit={handleSubmit}>
+                        <header className="p-6 border-b flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-sesm-deep">Tambah Materi Baru</h3>
+                            {/* Tambahkan SaveStatusIcon di header */}
+                            <div className="flex items-center gap-4">
+                                <SaveStatusIcon status={saveStatus} />
+                                <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
+                            </div>
+                        </header>
+                        <main className="p-6 flex gap-8">
+                            <div className="w-1/3 border-r pr-6 space-y-6 pt-2">
+                                <StepIndicator stepNumber={1} label="Informasi Dasar" isActive={step === 1} onClick={() => navigateToStep(1)} />
+                                <StepIndicator stepNumber={2} label="Media & Materi" isActive={step === 2} onClick={() => navigateToStep(2)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
+                                <StepIndicator stepNumber={3} label="Soal & Tugas" isActive={step === 3} onClick={() => navigateToStep(3)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
+                            </div>
+                            <div className="w-2/3">
+                               <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
+                            </div>
+                        </main>
+                        <footer className="bg-gray-50 p-4 flex justify-end items-center gap-3 rounded-b-2xl border-t">
+                            <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold bg-gray-200 hover:bg-gray-300">Batal</button>
+                            {step < 3 ? (
+                                <button type="button" onClick={() => navigateToStep(step + 1)} className="px-5 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-opacity-90">Lanjutkan</button>
+                            ) : (
+                                <button type="submit" disabled={isSaving} className="px-5 py-2 bg-sesm-deep text-white rounded-lg flex items-center gap-2 disabled:bg-gray-400">{isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}{isSaving ? 'Menyimpan...' : 'Publish Materi'}</button>
+                            )}
+                        </footer>
+                    </form>
+                </motion.div>
             </motion.div>
-        </motion.div>
+        </>
     );
 };
 

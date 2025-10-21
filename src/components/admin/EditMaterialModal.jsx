@@ -1,10 +1,14 @@
 // contoh-sesm-web/components/admin/EditMaterialModal.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react'; // Tambahkan useCallback
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiPlus, FiSave, FiLoader, FiTrash2 } from 'react-icons/fi';
-import DataService from '../../services/dataService';
-import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
+import DataService from '../../services/dataService'; // Impor DataService
+import CustomSelect from '../ui/CustomSelect';
+import useDebounce from '../../hooks/useDebounce'; // Impor useDebounce
+import SaveStatusIcon from '../ui/SaveStatusIcon'; // Impor SaveStatusIcon
+import Notification from '../ui/Notification'; // Impor Notification
 
+// Komponen QuestionItem dan StepIndicator tetap sama ...
 // Helper untuk mengubah indeks menjadi huruf
 const toAlpha = (num) => String.fromCharCode(65 + num);
 
@@ -39,7 +43,7 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
     ];
 
     const answerOptions = q.options
-        .filter(opt => opt && opt.trim() !== '')
+        .filter(opt => opt && opt.trim() !== '') // Pastikan opsi tidak kosong
         .map((opt, index) => ({ value: opt, label: `${toAlpha(index)}. ${opt}` }));
 
     return (
@@ -97,6 +101,13 @@ const StepIndicator = ({ stepNumber, label, isActive, onClick, isDisabled }) => 
 
 const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
     const API_URL = 'http://localhost:8080';
+    // --- Auto-Save States ---
+    const DRAFT_KEY = useMemo(() => `bookmark_draft_edit_${initialData?.id}`, [initialData]); // Key unik untuk edit
+    const [saveStatus, setSaveStatus] = useState('Tersimpan');
+    // State untuk notifikasi
+    const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
+
+    // --- Original States ---
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
     const [tasks, setTasks] = useState([]);
@@ -106,6 +117,10 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
     const [mainFilePreview, setMainFilePreview] = useState('');
     const [coverImagePreview, setCoverImagePreview] = useState('');
     const [mediaSourceType, setMediaSourceType] = useState('file');
+
+    // --- Debounce untuk Auto-Save ---
+    const debouncedFormData = useDebounce(formData, 1500);
+    const debouncedTasks = useDebounce(tasks, 1500);
 
     const levelOptions = [
         { value: 'Semua', label: 'Semua Jenjang' },
@@ -122,50 +137,101 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
 
     const getNewQuestionObject = () => ({ id: Date.now() + Math.random(), type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '' });
 
+    // --- Fungsi Simpan Draf ke Backend (useCallback) ---
+    const saveDraftToBackend = useCallback(async () => {
+        if (!formData.title.trim() && !formData.subject.trim() && tasks.length === 0) {
+            setSaveStatus('Tersimpan');
+            return;
+        }
+        setSaveStatus('Menyimpan...');
+        const draftData = { formData, tasks, mediaSourceType };
+        try {
+            await DataService.saveDraft(DRAFT_KEY, draftData);
+            setSaveStatus('Tersimpan');
+        } catch (error) {
+            console.error("Gagal menyimpan draf (edit):", error);
+            setSaveStatus('Gagal');
+            setNotif({ isOpen: true, title: "Gagal Simpan Draf", message: "Gagal menyimpan draf otomatis.", success: false });
+        }
+    }, [formData, tasks, mediaSourceType, DRAFT_KEY]);
+
+    // --- useEffect untuk memicu simpan draf ---
+    useEffect(() => {
+        if (isOpen && saveStatus !== 'Menyimpan...') {
+            saveDraftToBackend();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debouncedFormData, debouncedTasks, isOpen]);
+
     useEffect(() => {
         if (isOpen && initialData) {
-            setFormData({
-                title: initialData.title || '',
-                description: initialData.description || '',
-                subject: initialData.subject || '',
-                url_link: initialData.type === 'video_link' ? initialData.url : '',
-                grading_type: initialData.grading_type || 'manual',
-                recommended_level: initialData.recommended_level || 'Semua'
-            });
-
-            setTasks(initialData.tasks.map(t => ({...getNewQuestionObject(), ...t})));
-            
-            const sourceType = initialData.type === 'video_link' ? 'link' : 'file';
-            setMediaSourceType(sourceType);
-
-            if (sourceType === 'file' && initialData.url) {
-                setMainFilePreview(initialData.url.split('/').pop());
-            } else {
-                setMainFilePreview('');
-            }
-
-            if (initialData.cover_image_url) {
-                setCoverImagePreview(`${API_URL}/${initialData.cover_image_url}`);
-            } else {
-                setCoverImagePreview('');
-            }
-
-            setMainFile(null);
-            setCoverImage(null);
+            // Cek draf terlebih dahulu
+            DataService.getDraft(DRAFT_KEY)
+                .then(response => {
+                    const draftContent = response.data?.content;
+                    if (draftContent) {
+                        // Muat dari draf jika ada
+                        setFormData(draftContent.formData || { title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
+                        setTasks(draftContent.tasks || []);
+                        setMediaSourceType(draftContent.mediaSourceType || 'file');
+                        // Tetap ambil preview gambar dari initialData (karena draf tidak simpan URL blob)
+                        setMainFilePreview(initialData.url ? initialData.url.split('/').pop() : '');
+                        setCoverImagePreview(initialData.cover_image_url ? `${API_URL}/${initialData.cover_image_url}` : '');
+                    } else {
+                        // Muat dari initialData jika tidak ada draf
+                        setFormData({
+                            title: initialData.title || '',
+                            description: initialData.description || '',
+                            subject: initialData.subject || '',
+                            url_link: initialData.type === 'video_link' ? initialData.url : '',
+                            grading_type: initialData.grading_type || 'manual',
+                            recommended_level: initialData.recommended_level || 'Semua'
+                        });
+                        setTasks((initialData.tasks || []).map(t => ({...getNewQuestionObject(), ...t}))); // Pastikan tasks adalah array
+                        const sourceType = initialData.type === 'video_link' ? 'link' : 'file';
+                        setMediaSourceType(sourceType);
+                        setMainFilePreview(sourceType === 'file' && initialData.url ? initialData.url.split('/').pop() : '');
+                        setCoverImagePreview(initialData.cover_image_url ? `${API_URL}/${initialData.cover_image_url}` : '');
+                    }
+                    // Reset file input states
+                    setMainFile(null);
+                    setCoverImage(null);
+                     setSaveStatus('Tersimpan'); // Set status awal
+                })
+                .catch(() => {
+                    // Fallback jika getDraft gagal, muat dari initialData
+                    setFormData({
+                        title: initialData.title || '',
+                        description: initialData.description || '',
+                        subject: initialData.subject || '',
+                        url_link: initialData.type === 'video_link' ? initialData.url : '',
+                        grading_type: initialData.grading_type || 'manual',
+                        recommended_level: initialData.recommended_level || 'Semua'
+                    });
+                    setTasks((initialData.tasks || []).map(t => ({...getNewQuestionObject(), ...t})));
+                    const sourceType = initialData.type === 'video_link' ? 'link' : 'file';
+                    setMediaSourceType(sourceType);
+                    setMainFilePreview(sourceType === 'file' && initialData.url ? initialData.url.split('/').pop() : '');
+                    setCoverImagePreview(initialData.cover_image_url ? `${API_URL}/${initialData.cover_image_url}` : '');
+                    setMainFile(null);
+                    setCoverImage(null);
+                    setSaveStatus('Tersimpan');
+                });
         }
-    }, [isOpen, initialData]);
-    
+    }, [isOpen, initialData, DRAFT_KEY, API_URL]);
+
+
     const handleFormChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handleMainFileChange = (e) => { const file = e.target.files[0]; if (file) { setMainFile(file); setMainFilePreview(file.name); } };
     const handleCoverImageChange = (e) => { const file = e.target.files[0]; if (file) { setCoverImage(file); setCoverImagePreview(URL.createObjectURL(file)); } };
-    
+
     const updateTask = (index, updatedTask) => setTasks(prev => prev.map((task, i) => i === index ? updatedTask : task));
     const addTask = () => setTasks(prev => [...prev, getNewQuestionObject()]);
     const removeTask = (index) => setTasks(prev => prev.filter((_, i) => i !== index));
 
     const navigateToStep = (targetStep) => {
         if (targetStep > 1 && (!formData.title.trim() || !formData.subject.trim())) {
-            alert("Judul dan Mapel wajib diisi sebelum melanjutkan.");
+             setNotif({isOpen: true, title: "Info", message: "Judul dan Mapel wajib diisi sebelum melanjutkan.", success: true });
             return;
         }
         setStep(targetStep);
@@ -185,22 +251,24 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
         if (mainFile) data.append('mainFile', mainFile);
         if (coverImage) data.append('coverImage', coverImage);
         if (mediaSourceType === 'file') data.delete('url_link');
-        
+
         try {
-            await onSave(data, initialData.id);
+            await onSave(data, initialData.id); // Kirim ID untuk mode edit
+             // Hapus draf setelah berhasil publish
+            DataService.deleteDraft(DRAFT_KEY).catch(err => console.warn("Gagal menghapus draf edit setelah publish:", err));
         } catch (error) {
-            // Error ditangani oleh parent
+            // Error handling is in parent
         } finally {
             setIsSaving(false);
         }
     };
-    
+
     const inputStyle = "w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal";
     const stepVariants = { hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -20 } };
 
     const renderStepContent = () => {
         switch(step) {
-            case 1:
+             case 1:
                 return ( <motion.div key={1} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> <div><label className="font-semibold text-sm">Judul</label><input type="text" name="title" value={formData.title} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Mapel</label><input type="text" name="subject" value={formData.subject} onChange={handleFormChange} className={inputStyle} required /></div> <div><label className="font-semibold text-sm">Disarankan Untuk</label><CustomSelect name="recommended_level" options={levelOptions} value={formData.recommended_level} onChange={(value) => setFormData(prev => ({...prev, recommended_level: value}))} /></div> <div><label className="font-semibold text-sm">Deskripsi</label><textarea name="description" value={formData.description} onChange={handleFormChange} className={`${inputStyle} h-24`}></textarea></div> </motion.div> );
             case 2:
                 return ( <motion.div key={2} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> <div className="space-y-2"> <label className="font-semibold text-sm">Sumber Materi</label> <div className="flex gap-4"> <label className="flex items-center gap-2"><input type="radio" name="mediaSource" value="file" checked={mediaSourceType === 'file'} onChange={(e) => setMediaSourceType(e.target.value)} /> File</label> <label className="flex items-center gap-2"><input type="radio" name="mediaSource" value="link" checked={mediaSourceType === 'link'} onChange={(e) => setMediaSourceType(e.target.value)} /> Link Video</label> </div> </div> <AnimatePresence mode="wait"> <motion.div key={mediaSourceType} variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4"> {mediaSourceType === 'file' ? ( <div><label className="font-semibold text-sm">Ganti File Utama (Opsional)</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="main-upload-edit" className="hidden" onChange={handleMainFileChange} /><label htmlFor="main-upload-edit" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1"><FiPlus /><span>{mainFilePreview || "Pilih file baru..."}</span></label></div></div> ) : ( <div><label className="font-semibold text-sm">Link Video</label><input type="url" name="url_link" value={formData.url_link} onChange={handleFormChange} className={inputStyle} placeholder="https://www.youtube.com/..." /></div> )} </motion.div> </AnimatePresence> <div><label className="font-semibold text-sm">Ganti Gambar Sampul (Opsional)</label><div className="border-2 border-dashed p-4 mt-1 rounded-lg text-center"><input type="file" id="cover-upload-edit" className="hidden" onChange={handleCoverImageChange} accept="image/*" /><label htmlFor="cover-upload-edit" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center gap-1">{coverImagePreview ? <img src={coverImagePreview} alt="Preview" className="h-24 rounded-md mb-2 object-cover" /> : <FiPlus />}<span>{coverImage ? coverImage.name : "Pilih gambar baru..."}</span></label></div></div> </motion.div> );
@@ -214,34 +282,48 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
     if (!isOpen) return null;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col">
-                <form onSubmit={handleSubmit}>
-                    <header className="p-6 border-b flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-sesm-deep">Edit Materi</h3>
-                        <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
-                    </header>
-                    <main className="p-6 flex gap-8">
-                        <div className="w-1/3 border-r pr-6 space-y-6 pt-2">
-                            <StepIndicator stepNumber={1} label="Informasi Dasar" isActive={step === 1} onClick={() => navigateToStep(1)} />
-                            <StepIndicator stepNumber={2} label="Media & Materi" isActive={step === 2} onClick={() => navigateToStep(2)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
-                            <StepIndicator stepNumber={3} label="Soal & Tugas" isActive={step === 3} onClick={() => navigateToStep(3)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
-                        </div>
-                        <div className="w-2/3">
-                            <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
-                        </div>
-                    </main>
-                    <footer className="bg-gray-50 p-4 flex justify-end items-center gap-3 rounded-b-2xl border-t">
-                        <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold bg-gray-200 hover:bg-gray-300">Batal</button>
-                        {step < 3 ? (
-                            <button type="button" onClick={() => navigateToStep(step + 1)} className="px-5 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-opacity-90">Lanjutkan</button>
-                        ) : (
-                            <button type="submit" disabled={isSaving} className="px-5 py-2 bg-sesm-deep text-white rounded-lg flex items-center gap-2 disabled:bg-gray-400">{isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}{isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
-                        )}
-                    </footer>
-                </form>
+        <>
+             {/* Render Notifikasi */}
+            <Notification
+                isOpen={notif.isOpen}
+                onClose={() => setNotif({ ...notif, isOpen: false })}
+                title={notif.title}
+                message={notif.message}
+                success={notif.success}
+            />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
+                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col">
+                    <form onSubmit={handleSubmit}>
+                        <header className="p-6 border-b flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-sesm-deep">Edit Materi</h3>
+                            {/* Tambahkan SaveStatusIcon di header */}
+                            <div className="flex items-center gap-4">
+                                <SaveStatusIcon status={saveStatus} />
+                                <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
+                            </div>
+                        </header>
+                        <main className="p-6 flex gap-8">
+                            <div className="w-1/3 border-r pr-6 space-y-6 pt-2">
+                                <StepIndicator stepNumber={1} label="Informasi Dasar" isActive={step === 1} onClick={() => navigateToStep(1)} />
+                                <StepIndicator stepNumber={2} label="Media & Materi" isActive={step === 2} onClick={() => navigateToStep(2)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
+                                <StepIndicator stepNumber={3} label="Soal & Tugas" isActive={step === 3} onClick={() => navigateToStep(3)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
+                            </div>
+                            <div className="w-2/3">
+                                <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
+                            </div>
+                        </main>
+                        <footer className="bg-gray-50 p-4 flex justify-end items-center gap-3 rounded-b-2xl border-t">
+                            <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold bg-gray-200 hover:bg-gray-300">Batal</button>
+                            {step < 3 ? (
+                                <button type="button" onClick={() => navigateToStep(step + 1)} className="px-5 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-opacity-90">Lanjutkan</button>
+                            ) : (
+                                <button type="submit" disabled={isSaving} className="px-5 py-2 bg-sesm-deep text-white rounded-lg flex items-center gap-2 disabled:bg-gray-400">{isSaving ? <FiLoader className="animate-spin" /> : <FiSave />}{isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
+                            )}
+                        </footer>
+                    </form>
+                </motion.div>
             </motion.div>
-        </motion.div>
+        </>
     );
 };
 
