@@ -43,6 +43,7 @@ const ManajemenKuis = ({ onNavigate }) => {
     const [drafts, setDrafts] = useState([]);
     const [showDraftsNotification, setShowDraftsNotification] = useState(false);
 
+    // State untuk notifikasi, termasuk konfirmasi
     const [notif, setNotif] = useState({
         isOpen: false,
         title: '',
@@ -54,7 +55,6 @@ const ManajemenKuis = ({ onNavigate }) => {
 
     const handleCloseNotif = () => setNotif(prev => ({ ...prev, isOpen: false }));
 
-    // ✅ PERBAIKAN: Menggabungkan fetch data untuk sinkronisasi draf
     const fetchData = useCallback((selectIdAfterFetch = null) => {
         setLoading(true);
         Promise.all([
@@ -71,7 +71,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                 }
             }
 
-            // Filter draf yang relevan (hanya kuis) dan valid (kuisnya masih ada)
             const allDrafts = draftsRes.data || [];
             const quizDrafts = allDrafts.filter(d => d.draft_key.startsWith('quiz_'));
 
@@ -93,7 +92,7 @@ const ManajemenKuis = ({ onNavigate }) => {
         }).finally(() => {
             setLoading(false);
         });
-    }, []); // Removed selectIdAfterFetch from deps as it changes too often
+    }, []);
 
     useEffect(() => {
         fetchData();
@@ -131,24 +130,46 @@ const ManajemenKuis = ({ onNavigate }) => {
             title: "Konfirmasi Hapus",
             message: `Yakin ingin menghapus kuis "${quizTitle}" beserta semua soal di dalamnya?`,
             isConfirmation: true,
-            success: false,
+            success: false, // Tampilan warning
             onConfirm: () => confirmDeleteQuiz(quizId, quizTitle)
         });
     };
 
+    // --- ✅ FUNGSI CONFIRM DELETE YANG DIPERBAIKI ---
     const confirmDeleteQuiz = async (quizId, quizTitle) => {
+        // 1. Tutup modal konfirmasi dulu
+        setNotif(prev => ({ ...prev, isOpen: false }));
+        // 2. Beri jeda agar animasi exit selesai (sesuaikan durasi jika perlu)
+        await new Promise(resolve => setTimeout(resolve, 300));
+
         try {
+            // 3. Lakukan proses hapus
             await DataService.deleteQuiz(quizId);
-            fetchData();
+            fetchData(); // Muat ulang data daftar kuis
             if (selectedQuiz?.id === quizId) {
-                setSelectedQuiz(null);
+                setSelectedQuiz(null); // Reset detail jika kuis yang dipilih dihapus
             }
-            setNotif({ isOpen: true, title: "Sukses", message: `Kuis "${quizTitle}" berhasil dihapus.`, success: true, isConfirmation: false });
+            // 4. Tampilkan notifikasi sukses
+            setNotif({
+                isOpen: true,
+                title: "Sukses",
+                message: `Kuis "${quizTitle}" berhasil dihapus.`,
+                success: true,
+                isConfirmation: false // Pastikan ini bukan konfirmasi lagi
+            });
         } catch (e) {
             console.error("Gagal menghapus kuis:", e);
-            setNotif({ isOpen: true, title: "Gagal", message: e.response?.data?.message || "Gagal menghapus kuis.", success: false, isConfirmation: false });
+            // 5. Tampilkan notifikasi gagal
+            setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: e.response?.data?.message || "Gagal menghapus kuis.",
+                success: false,
+                isConfirmation: false // Pastikan ini bukan konfirmasi lagi
+            });
         }
     };
+    // --- ✅ AKHIR PERBAIKAN ---
 
     const handleDeleteAllQuestions = (quizId) => {
         if (!selectedQuiz || questions.length === 0) {
@@ -165,26 +186,48 @@ const ManajemenKuis = ({ onNavigate }) => {
         });
     };
 
+    // --- PERBAIKI JUGA CONFIRM DELETE ALL QUESTIONS ---
     const confirmDeleteAllQuestions = async (quizId) => {
-         try {
-            for (const question of questions) {
-                await DataService.deleteQuestionFromQuiz(question.id);
-            }
-            setNotif({ isOpen: true, title: "Sukses", message: "Semua soal berhasil dihapus.", success: true, isConfirmation: false });
+        // 1. Tutup modal konfirmasi
+        setNotif(prev => ({ ...prev, isOpen: false }));
+        await new Promise(resolve => setTimeout(resolve, 300)); // Jeda animasi
+
+        try {
+            // 2. Lakukan penghapusan
+            // Menggunakan Promise.all agar lebih efisien jika jumlah soal banyak
+            await Promise.all(questions.map(question => DataService.deleteQuestionFromQuiz(question.id)));
+
+            // 3. Tampilkan notifikasi sukses
+            setNotif({
+                isOpen: true,
+                title: "Sukses",
+                message: "Semua soal berhasil dihapus.",
+                success: true,
+                isConfirmation: false
+            });
+            // Muat ulang detail (akan menampilkan 0 soal) & refresh data list kuis
             fetchQuizDetails(quizId);
             fetchData(quizId);
         } catch (error) {
             console.error("Gagal menghapus semua soal:", error);
-            setNotif({ isOpen: true, title: "Gagal", message: "Gagal menghapus semua soal.", success: false, isConfirmation: false });
+            // 4. Tampilkan notifikasi gagal
+            setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: "Gagal menghapus semua soal.",
+                success: false,
+                isConfirmation: false
+            });
         }
     };
+    // --- AKHIR PERBAIKAN ---
 
     const handleSaveSettings = async (quizId, settings) => {
         try {
             await DataService.updateQuizSettings(quizId, settings);
             setNotif({ isOpen: true, title: "Sukses", message: "Pengaturan berhasil disimpan!", success: true });
             setIsSettingsModalOpen(false);
-            fetchData(quizId);
+            fetchData(quizId); // Refresh data kuis
         } catch (error) {
             console.error("Gagal menyimpan pengaturan:", error);
             setNotif({ isOpen: true, title: "Gagal", message: "Gagal menyimpan pengaturan kuis.", success: false });
@@ -194,16 +237,20 @@ const ManajemenKuis = ({ onNavigate }) => {
     const handleQuestionsFromBankAdded = (updatedQuizId) => {
         setBankSoalOpen(false);
         setNotif({ isOpen: true, title: "Sukses", message: "Soal berhasil ditambahkan dari bank!", success: true });
-        fetchData(updatedQuizId);
+        fetchData(updatedQuizId); // Refresh list kuis
         if (updatedQuizId === selectedQuiz?.id) {
-            fetchQuizDetails(updatedQuizId);
+            fetchQuizDetails(updatedQuizId); // Refresh detail jika kuis yang dipilih
         }
     };
 
     const handleBatchAddQuestions = async (quizId, questionsArray) => {
         setDetailLoading(true);
+        let successCount = 0;
+        let errors = [];
+
         try {
-            for (const q of questionsArray) {
+            // Menggunakan Promise.allSettled untuk mencoba menambah semua soal
+            const results = await Promise.allSettled(questionsArray.map(async (q) => {
                 const formData = new FormData();
                 formData.append('question_text', q.question);
                 formData.append('question_type', q.type);
@@ -216,17 +263,34 @@ const ManajemenKuis = ({ onNavigate }) => {
                 }
                 formData.append('essayAnswer', q.essayAnswer || '');
 
-                 // Filter media links and files correctly
                  const links = q.media.filter(m => m.type === 'link').map(m => m.url);
                  const files = q.media.filter(m => m.type === 'file').map(m => m.file);
 
                 if (links.length > 0) formData.append('links', JSON.stringify(links));
-                if (files.length > 0) files.forEach(file => formData.append('mediaFiles', file)); // Use 'mediaFiles'
+                if (files.length > 0) files.forEach(file => formData.append('mediaFiles', file));
 
-                await DataService.addQuestionToQuiz(quizId, formData);
+                return DataService.addQuestionToQuiz(quizId, formData);
+            }));
+
+            // Hitung hasil
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    successCount++;
+                } else {
+                    errors.push(`Soal ${index + 1}: ${result.reason?.message || 'Gagal ditambah'}`);
+                }
+            });
+
+            // Tampilkan notifikasi berdasarkan hasil
+            if (errors.length === 0) {
+                 setNotif({ isOpen: true, title: "Sukses", message: `${successCount} soal berhasil dipublikasikan!`, success: true });
+            } else if (successCount > 0) {
+                 setNotif({ isOpen: true, title: "Sebagian Berhasil", message: `${successCount} soal berhasil, ${errors.length} gagal: ${errors.join(', ')}`, success: true }); // Tetap hijau jika ada yg berhasil
+            } else {
+                 setNotif({ isOpen: true, title: "Gagal", message: `Semua soal gagal dipublikasikan. Error: ${errors.join(', ')}`, success: false });
             }
-             setNotif({ isOpen: true, title: "Sukses", message: `${questionsArray.length} soal berhasil dipublikasikan!`, success: true });
-        } catch (error) {
+
+        } catch (error) { // Catch error tak terduga
              console.error("Gagal menambah soal batch:", error);
              setNotif({ isOpen: true, title: "Gagal", message: `Gagal menambah soal: ${error.message}`, success: false });
         } finally {
@@ -238,38 +302,28 @@ const ManajemenKuis = ({ onNavigate }) => {
     const handleOpenEditModal = (question) => { setEditingQuestion(question); setEditQuestionOpen(true); };
 
     const handleUpdateQuestion = async (questionId, updatedQuestionData) => {
-        setIsSubmitting(true); // Mulai loading
+        // State loading internal untuk tombol simpan di modal edit
+        // const [isSubmitting, setIsSubmitting] = useState(false); // Definisikan di dalam modal jika perlu
+        // setIsSubmitting(true);
         try {
-            const formData = new FormData();
+            // ... (logika FormData tetap sama)
+             const formData = new FormData();
             formData.append('question_text', updatedQuestionData.question);
             formData.append('question_type', updatedQuestionData.type);
-
-            // Menyiapkan opsi untuk backend
             if (updatedQuestionData.type.includes('pilihan-ganda')) {
-                const formattedOptions = updatedQuestionData.options.map(opt => ({
-                    text: opt,
-                    isCorrect: opt === updatedQuestionData.correctAnswer
-                }));
-                 // Validasi jawaban benar sebelum mengirim
+                const formattedOptions = updatedQuestionData.options.map(opt => ({ text: opt, isCorrect: opt === updatedQuestionData.correctAnswer }));
                  if (formattedOptions.filter(opt => opt.isCorrect).length === 0 && updatedQuestionData.options.filter(opt => opt.trim() !== '').length > 0) {
                      throw new Error(`Soal "${updatedQuestionData.question.substring(0,20)}..." belum punya jawaban benar.`);
                  }
                 formData.append('options', JSON.stringify(formattedOptions));
             }
-
             formData.append('essayAnswer', updatedQuestionData.essayAnswer || '');
-
-            // Menyiapkan media yang sudah ada (existing) dan file baru
-            const existingMedia = updatedQuestionData.media.filter(m => m.type !== 'file'); // Hanya link
+            const existingMedia = updatedQuestionData.media.filter(m => m.type !== 'file');
             const newFiles = updatedQuestionData.media.filter(m => m.type === 'file').map(m => m.file);
-
             formData.append('existingMedia', JSON.stringify(existingMedia));
-            if (newFiles.length > 0) {
-                newFiles.forEach(file => formData.append('mediaFiles', file));
-            }
+            if (newFiles.length > 0) newFiles.forEach(file => formData.append('mediaFiles', file));
 
-            // Memanggil API update
-            await DataService.updateQuestionInQuiz(questionId, formData); // Mengirim formData
+            await DataService.updateQuestionInQuiz(questionId, formData);
 
             setEditQuestionOpen(false);
             setEditingQuestion(null);
@@ -278,11 +332,12 @@ const ManajemenKuis = ({ onNavigate }) => {
         } catch (error) {
             console.error("Gagal memperbarui soal:", error);
             setNotif({ isOpen: true, title: "Gagal", message: error.message || "Gagal memperbarui soal.", success: false });
+             // Jika error, jangan tutup modal agar user bisa perbaiki
+             throw error; // Lemparkan error agar modal tahu proses gagal
         } finally {
-            setIsSubmitting(false); // Selesai loading
+            // setIsSubmitting(false);
         }
     };
-
 
     const handleDeleteQuestion = (questionId, questionText) => {
         setNotif({
@@ -295,17 +350,40 @@ const ManajemenKuis = ({ onNavigate }) => {
         });
     };
 
+    // --- PERBAIKI JUGA CONFIRM DELETE QUESTION ---
     const confirmDeleteQuestion = async (questionId, questionText) => {
+        // 1. Tutup modal konfirmasi
+        setNotif(prev => ({ ...prev, isOpen: false }));
+        await new Promise(resolve => setTimeout(resolve, 300)); // Jeda animasi
+
         try {
+            // 2. Lakukan penghapusan
             await DataService.deleteQuestionFromQuiz(questionId);
-            setNotif({ isOpen: true, title: "Sukses", message: "Soal berhasil dihapus.", success: true, isConfirmation: false });
+
+            // 3. Tampilkan notifikasi sukses
+            setNotif({
+                isOpen: true,
+                title: "Sukses",
+                message: "Soal berhasil dihapus.",
+                success: true,
+                isConfirmation: false
+            });
+            // Muat ulang detail & refresh data list kuis
             fetchQuizDetails(selectedQuiz.id);
             fetchData(selectedQuiz.id);
         } catch (error) {
              console.error("Gagal menghapus soal:", error);
-             setNotif({ isOpen: true, title: "Gagal", message: "Gagal menghapus soal.", success: false, isConfirmation: false });
+             // 4. Tampilkan notifikasi gagal
+             setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: "Gagal menghapus soal.",
+                success: false,
+                isConfirmation: false
+            });
         }
     };
+    // --- AKHIR PERBAIKAN ---
 
     const handleContinueQuestionDraft = (quizId) => {
         const quizToSelect = quizzes.find(q => q.id === quizId);
@@ -330,6 +408,7 @@ const ManajemenKuis = ({ onNavigate }) => {
 
     return (
         <>
+            {/* AnimatePresence untuk semua notifikasi */}
             <AnimatePresence>
                 {notif.isOpen && (
                     <Notification
@@ -340,6 +419,9 @@ const ManajemenKuis = ({ onNavigate }) => {
                         success={notif.success}
                         isConfirmation={notif.isConfirmation}
                         onConfirm={notif.onConfirm}
+                        // Tambahkan prop untuk teks tombol konfirmasi jika perlu
+                        confirmText={notif.isConfirmation ? "Ya, Hapus" : "Oke"}
+                        cancelText="Batal"
                     />
                 )}
             </AnimatePresence>
@@ -359,6 +441,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                 {isCreateQuizOpen && <CreateQuizModal isOpen={isCreateQuizOpen} onClose={() => setCreateQuizOpen(false)} onSubmit={handleCreateQuiz} />}
                 {isAddQuestionOpen && <AddQuestionToQuizModal isOpen={isAddQuestionOpen} onClose={() => setAddQuestionOpen(false)} onSubmit={handleBatchAddQuestions} quizId={selectedQuiz?.id} />}
                 {isBankSoalOpen && <BankSoalQuizModal isOpen={isBankSoalOpen} onClose={() => setBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
+                {/* Modal Edit mungkin perlu prop isSubmitting jika tombol simpan ada di sana */}
                 {isEditQuestionOpen && <EditQuestionToQuizModal isOpen={isEditQuestionOpen} onClose={() => setEditQuestionOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
                 {isDraftQuizOpen && (
                     <DraftQuizModal
@@ -385,20 +468,37 @@ const ManajemenKuis = ({ onNavigate }) => {
                             </div>
                         </div>
                         {/* ✅ PERBAIKAN: Tambahkan overflow-y-auto di sini */}
-                        <div className="flex-grow overflow-y-auto p-2">
+                        <div className="flex-grow overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                             {loading ? (<div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl text-sesm-teal"/></div>) : (
                                 <div className="space-y-1">
-                                    {filteredQuizzes.map(quiz => (
-                                        <div key={quiz.id} className={`group w-full p-3 rounded-lg flex justify-between items-center transition-colors ${selectedQuiz?.id === quiz.id ? 'bg-sesm-teal/20' : 'hover:bg-gray-100'}`}>
-                                            <button onClick={() => setSelectedQuiz(quiz)} className="flex-grow text-left">
-                                                <p className={`font-semibold ${selectedQuiz?.id === quiz.id ? 'text-sesm-deep' : 'text-gray-800'}`}>{quiz.title}</p>
-                                                <p className="text-xs text-gray-500">{quiz.question_count} Soal</p>
+                                    {filteredQuizzes.length > 0 ? filteredQuizzes.map(quiz => (
+                                        <motion.div
+                                            key={quiz.id}
+                                            layout // Animasikan perubahan layout
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className={`group w-full p-3 rounded-lg flex justify-between items-center transition-colors duration-200 ${selectedQuiz?.id === quiz.id ? 'bg-sesm-teal/20' : 'hover:bg-gray-100'}`}
+                                        >
+                                            <button onClick={() => setSelectedQuiz(quiz)} className="flex-grow text-left overflow-hidden mr-2"> {/* Tambah overflow-hidden mr-2 */}
+                                                <p className={`font-semibold truncate ${selectedQuiz?.id === quiz.id ? 'text-sesm-deep' : 'text-gray-800'}`}>{quiz.title}</p> {/* Tambah truncate */}
+                                                <p className="text-xs text-gray-500">{quiz.question_count || 0} Soal</p>
                                             </button>
-                                            <button onClick={(e) => handleDeleteQuiz(e, quiz.id, quiz.title)} className="p-2 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 ml-2" title="Hapus Kuis">
+                                            <motion.button
+                                                onClick={(e) => handleDeleteQuiz(e, quiz.id, quiz.title)}
+                                                className="p-2 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 ml-auto flex-shrink-0" /* Tambah ml-auto flex-shrink-0 */
+                                                title="Hapus Kuis"
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                exit={{ scale: 0 }}
+                                                whileTap={{ scale: 0.9 }}
+                                            >
                                                 <FiTrash2 size={16}/>
-                                            </button>
-                                        </div>
-                                    ))}
+                                            </motion.button>
+                                        </motion.div>
+                                    )) : (
+                                         <p className="text-center text-gray-500 py-6 px-4">Tidak ada kuis yang cocok.</p>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -433,7 +533,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                             </motion.div>
                         </div>
                         <div className="border-t-2 border-dashed border-gray-200 mx-6 flex-shrink-0"></div> {/* flex-shrink-0 */}
-                        <div className="flex-grow overflow-y-auto p-6"> {/* overflow-y-auto */}
+                        <div className="flex-grow overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"> {/* overflow-y-auto */}
                             <AnimatePresence mode="wait">
                                 <motion.div key={selectedQuiz ? selectedQuiz.id : 'dashboard'} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="h-full">
                                     {!selectedQuiz ? ( <DashboardView userName={user?.nama} stats={stats} />
@@ -448,7 +548,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                         <button onClick={() => setIsSettingsModalOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold text-sm hover:bg-gray-300"><FiSettings/> Pengaturan</button>
                                                     </div>
                                                 </div>
-                                                <p className="text-sm text-gray-500 mt-1">{selectedQuiz.description}</p>
+                                                <p className="text-sm text-gray-500 mt-1">{selectedQuiz.description || "Tidak ada deskripsi."}</p>
                                             </div>
                                             <div className="flex justify-between items-center mb-4 flex-shrink-0">
                                                 <h3 className="font-bold text-gray-700">Daftar Soal ({questions.length})</h3>
@@ -462,7 +562,15 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                         : `https://api.dicebear.com/7.x/initials/svg?seed=${q.creator_name || 'G'}`;
 
                                                     return (
-                                                        <motion.div key={q.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="group bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border">
+                                                        <motion.div
+                                                            key={q.id}
+                                                            layout // Animasikan perubahan posisi
+                                                            initial={{ opacity: 0, y: -10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: -10 }}
+                                                            transition={{ delay: i * 0.05, type: 'spring', stiffness: 100 }}
+                                                            className="group bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border transition-colors"
+                                                        >
                                                             <div className="flex justify-between items-start">
                                                                 <div className="flex-grow">
                                                                     <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
