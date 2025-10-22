@@ -233,7 +233,7 @@ const ProfilePage = ({ onNavigate }) => {
                                 <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-2">Pengaturan</h3>
                                 <div className="space-y-3">
                                     <ProfileMenuItem icon={FiUser} label="Pengaturan Akun" onClick={() => onNavigate('accountSettings')} />
-                                    <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" />
+                                    <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" onClick={() => onNavigate('bantuan')} />
                                 </div>
                             </div>
                              {/* --- Tombol Logout di Mobile Dihapus --- */}
@@ -283,7 +283,7 @@ const ProfilePage = ({ onNavigate }) => {
                                     <div className="space-y-3">
                                         {/* Ganti FiUser ke FiSettings agar ikon sesuai */}
                                         <ProfileMenuItem icon={FiSettings} label="Pengaturan Akun" onClick={() => onNavigate('accountSettings')} />
-                                        <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" />
+                                        <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" onClick={() => onNavigate('bantuan')} />
                                     </div>
                                 </div>
                                 {/* --- Tombol Logout di Desktop Dihapus --- */}

@@ -47,6 +47,7 @@ import StudyReportPage from './pages/StudyReportPage';
 import ManajemenPengguna from './pages/admin/ManajemenPengguna';
 import ManajemenBookmark from './pages/admin/ManajemenBookmark';
 import ManajemenCerita from './pages/admin/ManajemenCerita'; // Impor halaman baru
+import BantuanPage from './pages/BantuanPage';
 
 // --- TAMBAHKAN IMPORT PROFIL GURU DISINI ---
 import TeacherProfilePage from './pages/admin/TeacherProfilePage';
@@ -98,7 +99,7 @@ function App() {
       'matematika', 'membaca', 'menulis', 'berhitung', 'pai',
       'bahasaIndonesia', 'bahasaInggris', 'pkn', 'ipa', 'ips',
       'accountSettings', 'dailyChallenge', 'creativeZone', 'interactiveStory',
-      'diary', 'studyReport'
+      'diary', 'studyReport', 'bantuan'
     ];
     
     const viewsInAdminLayout = [
@@ -132,6 +133,7 @@ function App() {
         interactiveStory: <InteractiveStoryPage onNavigate={navigate} />,
         diary: <DiaryPage onNavigate={navigate} />,
         studyReport: <StudyReportPage onNavigate={navigate} />,
+        bantuan: <BantuanPage onNavigate={navigate} />, 
       };
       const pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
 
