@@ -4,7 +4,7 @@ import { FiX } from 'react-icons/fi';
 import CustomSelect from '../ui/CustomSelect';
 import Notification from '../ui/Notification';
 
-const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
+const AddChapterMateriModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
     const [selectedSubjectId, setSelectedSubjectId] = useState('');
     const [judulBab, setJudulBab] = useState('');
 
@@ -118,4 +118,4 @@ const AddChapterModal = ({ isOpen, onClose, onSubmit, mapelList, jenjang }) => {
     );
 };
 
-export default AddChapterModal;
+export default AddChapterMateriModal;

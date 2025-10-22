@@ -1,8 +1,7 @@
-// contoh-sesm-web/components/admin/CreateQuizModal.jsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiUpload } from 'react-icons/fi';
-import CustomSelect from '../ui/CustomSelect'; // Impor CustomSelect
+import CustomSelect from '../ui/CustomSelect';
 
 const CreateQuizModal = ({ isOpen, onClose, onSubmit }) => {
     const [title, setTitle] = useState('');

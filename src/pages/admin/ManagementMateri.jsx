@@ -68,7 +68,7 @@ const ToggleSwitch = ({ enabled, onToggle }) => (
     </button>
 );
 
-const ManajemenMateri = ({ onNavigate }) => {
+const ManagementMateri = ({ onNavigate }) => {
     const { user } = useAuth();
     const API_URL = 'http://localhost:8080';
     const [materiList, setMateriList] = useState({});
@@ -656,4 +656,4 @@ const ManajemenMateri = ({ onNavigate }) => {
     );
 };
 
-export default ManajemenMateri;
+export default ManagementMateri;

@@ -1,12 +1,11 @@
-// contoh-sesm-web/pages/admin/EvaluasiKuis.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { FiLoader, FiCalendar, FiArrowLeft, FiInbox, FiAward } from 'react-icons/fi'; // Impor FiAward
+import { FiLoader, FiCalendar, FiArrowLeft, FiInbox, FiAward } from 'react-icons/fi';
 import { FaTrophy } from 'react-icons/fa';
 import DataService from '../../services/dataService';
 import CustomSelect from '../../components/ui/CustomSelect';
 
-const EvaluasiKuis = ({ onNavigate }) => {
+const QuizManagementValue = ({ onNavigate }) => {
     const [quizzes, setQuizzes] = useState([]);
     const [selectedQuizId, setSelectedQuizId] = useState('');
     const [submissions, setSubmissions] = useState([]);
@@ -29,13 +28,12 @@ const EvaluasiKuis = ({ onNavigate }) => {
         setLoadingSubmissions(true);
         DataService.getSubmissionsForQuiz(selectedQuizId)
             .then(res => {
-                // Urutkan berdasarkan total poin (points_earned) descending
                 const sortedSubmissions = res.data.sort((a, b) => (b.points_earned ?? 0) - (a.points_earned ?? 0));
                 setSubmissions(sortedSubmissions);
             })
             .catch(err => {
                 console.error("Gagal memuat hasil kuis:", err);
-                setSubmissions([]); // Kosongkan jika error
+                setSubmissions([]);
             })
             .finally(() => {
                 setLoadingSubmissions(false);
@@ -62,7 +60,6 @@ const EvaluasiKuis = ({ onNavigate }) => {
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-md flex flex-col h-full">
-            {/* Header */}
             <div className="flex-shrink-0">
                 <div className="flex items-center gap-4 mb-6">
                     <motion.button
@@ -72,7 +69,6 @@ const EvaluasiKuis = ({ onNavigate }) => {
                     >
                         <FiArrowLeft size={24} className="text-gray-700" />
                     </motion.button>
-                    {/* --- GANTI JUDUL --- */}
                     <h1 className="text-3xl font-bold text-sesm-deep">Papan Peringkat Kuis</h1>
                 </div>
 
@@ -91,9 +87,7 @@ const EvaluasiKuis = ({ onNavigate }) => {
                 </div>
             </div>
 
-            {/* Konten Scrollable */}
             <div className="flex-grow overflow-y-auto -mr-6 pr-6">
-                 {/* --- GANTI JUDUL BAGIAN --- */}
                 <h2 className="text-xl font-bold text-sesm-deep mb-4">Peringkat Berdasarkan Poin</h2>
                 {loadingSubmissions ? (
                     <div className="flex justify-center items-center h-48"><FiLoader className="animate-spin text-3xl text-sesm-teal" /></div>
@@ -130,12 +124,10 @@ const EvaluasiKuis = ({ onNavigate }) => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                     {/* --- Tampilkan Total Poin --- */}
                                     <p className="text-2xl font-bold text-sesm-teal">{sub.points_earned ?? 0}</p>
                                     <p className="text-xs font-semibold text-gray-500 flex items-center justify-end gap-1">
                                          <FiAward size={12} className="text-yellow-500" /> Poin Didapat
                                     </p>
-                                     {/* Tampilkan Skor Persentase sebagai info tambahan */}
                                      <p className="text-xs text-gray-400 mt-1">{sub.score ?? 0}% Benar</p>
                                 </div>
                             </motion.div>
@@ -147,4 +139,4 @@ const EvaluasiKuis = ({ onNavigate }) => {
     );
 };
 
-export default EvaluasiKuis;
+export default QuizManagementValue;

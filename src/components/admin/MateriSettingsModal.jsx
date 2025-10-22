@@ -17,7 +17,7 @@ const ToggleSwitch = ({ label, description, enabled, onToggle }) => (
     </div>
 );
 
-const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
+const MateriSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
     const [settings, setSettings] = useState({
         setting_penalty_on_wrong: false,
         setting_randomize_questions: false,
@@ -168,4 +168,4 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
     );
 };
 
-export default ChapterSettingsModal;
+export default MateriSettingsModal;

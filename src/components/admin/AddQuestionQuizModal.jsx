@@ -5,9 +5,8 @@ import DataService from '../../services/dataService';
 import CustomSelect from '../ui/CustomSelect';
 import useDebounce from '../../hooks/useDebounce';
 import SaveStatusIcon from '../ui/SaveStatusIcon';
-import Notification from '../ui/Notification'; // <-- Tambahkan impor Notifikasi
+import Notification from '../ui/Notification';
 
-// Helper untuk mengubah indeks menjadi huruf
 const toAlpha = (num) => String.fromCharCode(65 + num);
 
 const MediaPreview = ({ item, onRemove }) => {
@@ -42,7 +41,7 @@ const getNewQuestion = () => ({
     options: ['', ''],
     correctAnswer: '',
     essayAnswer: '',
-    media: [], // Diubah untuk menyimpan objek { type: 'file'/'link', file?, url?, id }
+    media: [],
 });
 
 const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
@@ -60,7 +59,6 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
         const newOptions = [...question.options];
         const oldOptionValue = newOptions[optIndex];
         newOptions[optIndex] = value;
-        // Jika jawaban benar sebelumnya adalah opsi yang diedit, update juga jawaban benar
         if (question.correctAnswer === oldOptionValue) {
             handleInputChange('correctAnswer', value);
         }
@@ -68,10 +66,9 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
     };
     const addOption = () => onUpdate(index, { ...question, options: [...question.options, ''] });
     const removeOption = (optIndex) => {
-        if (question.options.length <= 2) return; // Minimum 2 opsi
+        if (question.options.length <= 2) return;
         const optionToRemove = question.options[optIndex];
         const newOptions = question.options.filter((_, i) => i !== optIndex);
-        // Jika opsi yang dihapus adalah jawaban benar, reset jawaban benar
         if (question.correctAnswer === optionToRemove) {
             handleInputChange('correctAnswer', '');
         }
@@ -79,7 +76,6 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
     };
     const handleMediaUpload = (e) => {
         const files = Array.from(e.target.files);
-        // Buat objek media baru
         const newMedia = files.map(file => ({ type: 'file', file, id: Math.random() }));
         onUpdate(index, { ...question, media: [...question.media, ...newMedia] });
     };
@@ -88,7 +84,6 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
             alert('URL tidak valid. Pastikan dimulai dengan http:// atau https://');
             return;
         }
-        // Buat objek media baru untuk link
         const newLink = { type: 'link', url: linkValue, id: Math.random() };
         onUpdate(index, { ...question, media: [...question.media, newLink] });
         setLinkValue('');
@@ -101,7 +96,6 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
 
     return (
         <div className="bg-white p-5 rounded-xl border shadow-sm relative">
-             {/* Tombol hapus hanya jika lebih dari 1 soal */}
             <button type="button" onClick={() => onRemove(index)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-700" title="Hapus Soal Ini">
                 <FiX size={16} />
             </button>
@@ -182,12 +176,11 @@ const QuestionForm = ({ question, index, onUpdate, onRemove }) => {
 };
 
 
-const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
+const AddQuestionQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
     const DRAFT_KEY = `quiz_${quizId}`;
     const [questions, setQuestions] = useState([getNewQuestion()]);
     const [saveStatus, setSaveStatus] = useState('Tersimpan');
     const debouncedQuestions = useDebounce(questions, 200);
-    // State untuk notifikasi
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
 
 
@@ -198,10 +191,9 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         }
         setSaveStatus('Menyimpan...');
         try {
-            // Hapus file object sebelum serialisasi
             const serializableData = data.map(({ media, ...rest }) => ({
                 ...rest,
-                media: media.filter(m => m.type === 'link') // Hanya simpan link
+                media: media.filter(m => m.type === 'link')
             }));
             await DataService.saveDraft(DRAFT_KEY, serializableData);
             setSaveStatus('Tersimpan');
@@ -223,11 +215,10 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
             DataService.getDraft(DRAFT_KEY)
                 .then(response => {
                     if (response.data && response.data.content && response.data.content.length > 0) {
-                         // Kembalikan struktur media dari link yang disimpan
                         setQuestions(response.data.content.map(q => ({
                              ...getNewQuestion(),
                              ...q,
-                             media: (q.media || []).map(link => ({...link, id: Math.random()})) // Tambahkan ID acak saat load
+                             media: (q.media || []).map(link => ({...link, id: Math.random()})) 
                          })));
                     } else {
                         setQuestions([getNewQuestion()]);
@@ -238,7 +229,6 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
                 })
                 .finally(() => setSaveStatus('Tersimpan'));
         } else {
-             // Reset state saat modal ditutup
              setQuestions([]);
              setNotif({ isOpen: false, message: '', success: true, title: '' });
         }
@@ -249,10 +239,9 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
     };
     const handleAddQuestionField = () => setQuestions(prev => [...prev, getNewQuestion()]);
     const handleRemoveQuestionField = (index) => {
-        if (questions.length > 1) { // Hanya hapus jika ada lebih dari 1 soal
+        if (questions.length > 1) { 
             setQuestions(prev => prev.filter((_, i) => i !== index));
         } else {
-            // Jika hanya 1 soal, reset saja
             setQuestions([getNewQuestion()]);
         }
     };
@@ -265,7 +254,6 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validasi jawaban benar untuk soal PG
         for (let i = 0; i < questions.length; i++) {
             const q = questions[i];
             if ((q.type === 'pilihan-ganda' || q.type === 'pilihan-ganda-esai') && (!q.correctAnswer || q.correctAnswer.trim() === '')) {
@@ -275,7 +263,7 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
                     message: `Soal nomor ${i + 1} (${q.type}) belum memiliki jawaban benar. Silakan pilih jawaban yang benar.`,
                     success: false
                 });
-                return; // Hentikan submit
+                return; 
             }
         }
 
@@ -284,7 +272,6 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         onClose();
     };
 
-     // Handler untuk menutup notifikasi
     const handleCloseNotif = () => setNotif({ ...notif, isOpen: false });
 
 
@@ -292,7 +279,6 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
 
     return (
          <>
-            {/* Render Notifikasi */}
             <Notification
                 isOpen={notif.isOpen}
                 onClose={handleCloseNotif}
@@ -336,4 +322,4 @@ const AddQuestionToQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
     );
 };
 
-export default AddQuestionToQuizModal;
+export default AddQuestionQuizModal;

@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from './hooks/useNavigation';
 
-// --- Impor semua halaman ---
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -31,10 +30,10 @@ import IPSPage from './pages/mapel/IPSPage';
 import WorksheetPage from './pages/WorksheetPage';
 import AdminLayout from './layouts/AdminLayout';
 import DashboardGuru from './pages/admin/DashboardGuru';
-import ManajemenMateri from './pages/admin/ManajemenMateri';
+import ManajemenMateri from './pages/admin/ManagementMateri';
 import ManajemenNilai from './pages/admin/ManajemenNilai';
-import ManajemenKuis from './pages/admin/ManajemenKuis';
-import EvaluasiKuis from './pages/admin/EvaluasiKuis';
+import ManajemenKuis from './pages/admin/ManagementQuiz';
+import EvaluasiKuis from './pages/admin/QuizManagementValue';
 import MainLayout from './layouts/MainLayout';
 import QuizForm from './components/auth/QuizForm';
 import DailyChallengePage from './pages/DailyChallengePage';
@@ -46,9 +45,10 @@ import DiaryPage from './pages/DiaryPage';
 import StudyReportPage from './pages/StudyReportPage';
 import ManajemenPengguna from './pages/admin/ManajemenPengguna';
 import ManajemenBookmark from './pages/admin/ManajemenBookmark';
-import ManajemenCerita from './pages/admin/ManajemenCerita'; // Impor halaman baru
+import ManajemenCerita from './pages/admin/ManajemenCerita';
 import BantuanPage from './pages/BantuanPage';
 import FeedbackPage from './pages/FeedbackPage.jsx';
+import EditQuizModal from './components/admin/EditQuizModal.jsx';
 
 // --- TAMBAHKAN IMPORT PROFIL GURU DISINI ---
 import TeacherProfilePage from './pages/admin/TeacherProfilePage';

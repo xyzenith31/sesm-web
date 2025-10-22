@@ -1,4 +1,3 @@
-// contoh-sesm-web/pages/admin/ManajemenKuis.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,12 +7,13 @@ import {
 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 import CreateQuizModal from '../../components/admin/CreateQuizModal';
-import AddQuestionToQuizModal from '../../components/admin/AddQuestionToQuizModal';
+import AddQuestionToQuizModal from '../../components/admin/AddQuestionQuizModal';
 import { useAuth } from '../../hooks/useAuth';
-import BankSoalQuizModal from '../../components/admin/BankSoalModal';
-import EditQuestionToQuizModal from '../../components/admin/EditQuestionToQuizModal';
-import DraftQuizModal from '../../components/admin/DraftQuizModal';
+import BankSoalQuizModal from '../../components/admin/BankQuestionModalQuiz';
+import EditQuestionToQuizModal from '../../components/admin/EditQuestionQuizModal';
+import DraftQuizModal from '../../components/admin/DraftsQuizModal';
 import QuizSettingsModal from '../../components/admin/QuizSettingsModal';
+import EditQuizModal from '../../components/admin/EditQuizModal';
 import Notification from '../../components/ui/Notification';
 import CustomSelect from '../../components/ui/CustomSelect';
 
@@ -22,7 +22,7 @@ const toAlpha = (num) => String.fromCharCode(65 + num);
 const StatCard = ({ icon: Icon, value, label, color }) => ( <div className="bg-gray-100 p-4 rounded-lg flex-1 border hover:border-sesm-teal transition-colors"><div className="flex items-center"><Icon className={`text-xl mr-3 ${color}`} /><div><p className="text-xl font-bold text-sesm-deep">{value}</p><p className="text-xs text-gray-500 font-semibold">{label}</p></div></div></div> );
 const DashboardView = ({ userName, stats }) => ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col justify-center h-full text-center px-4"><FiBookOpen className="text-6xl text-gray-300 mx-auto mb-4" /><h2 className="text-2xl font-bold text-gray-800">Selamat Datang, {userName || 'Guru'}!</h2><p className="text-gray-500 max-w-md mx-auto mb-8">Pilih kuis dari daftar di sebelah kiri untuk melihat detail atau kelola soal. Gunakan tombol di atas untuk membuat kuis baru.</p><div className="space-y-6 text-left"><div><h3 className="font-bold text-gray-700 mb-3">Ringkasan Kuis</h3><div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4"><StatCard icon={FiGrid} value={stats.totalQuizzes} label="Total Kuis" color="text-blue-500" /><StatCard icon={FiCheckSquare} value={stats.totalQuestions} label="Total Soal" color="text-orange-500" /></div></div></div></motion.div> );
 
-const ManajemenKuis = ({ onNavigate }) => {
+const ManagementQuiz = ({ onNavigate }) => {
     const { user } = useAuth();
     const API_URL = 'http://localhost:8080';
     const [quizzes, setQuizzes] = useState([]);
@@ -33,6 +33,8 @@ const ManajemenKuis = ({ onNavigate }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const [isCreateQuizOpen, setCreateQuizOpen] = useState(false);
+    const [isEditQuizModalOpen, setIsEditQuizModalOpen] = useState(false);
+    const [editingQuiz, setEditingQuiz] = useState(null);
     const [isAddQuestionOpen, setAddQuestionOpen] = useState(false);
     const [isBankSoalOpen, setBankSoalOpen] = useState(false);
     const [isEditQuestionOpen, setEditQuestionOpen] = useState(false);
@@ -43,7 +45,6 @@ const ManajemenKuis = ({ onNavigate }) => {
     const [drafts, setDrafts] = useState([]);
     const [showDraftsNotification, setShowDraftsNotification] = useState(false);
 
-    // State untuk notifikasi, termasuk konfirmasi
     const [notif, setNotif] = useState({
         isOpen: false,
         title: '',
@@ -130,46 +131,40 @@ const ManajemenKuis = ({ onNavigate }) => {
             title: "Konfirmasi Hapus",
             message: `Yakin ingin menghapus kuis "${quizTitle}" beserta semua soal di dalamnya?`,
             isConfirmation: true,
-            success: false, // Tampilan warning
+            success: false,
             onConfirm: () => confirmDeleteQuiz(quizId, quizTitle)
         });
     };
 
-    // --- ✅ FUNGSI CONFIRM DELETE YANG DIPERBAIKI ---
     const confirmDeleteQuiz = async (quizId, quizTitle) => {
-        // 1. Tutup modal konfirmasi dulu
         setNotif(prev => ({ ...prev, isOpen: false }));
-        // 2. Beri jeda agar animasi exit selesai (sesuaikan durasi jika perlu)
         await new Promise(resolve => setTimeout(resolve, 300));
 
         try {
-            // 3. Lakukan proses hapus
             await DataService.deleteQuiz(quizId);
-            fetchData(); // Muat ulang data daftar kuis
+            fetchData(); 
             if (selectedQuiz?.id === quizId) {
-                setSelectedQuiz(null); // Reset detail jika kuis yang dipilih dihapus
+                setSelectedQuiz(null); 
             }
-            // 4. Tampilkan notifikasi sukses
+
             setNotif({
                 isOpen: true,
                 title: "Sukses",
                 message: `Kuis "${quizTitle}" berhasil dihapus.`,
                 success: true,
-                isConfirmation: false // Pastikan ini bukan konfirmasi lagi
+                isConfirmation: false
             });
         } catch (e) {
             console.error("Gagal menghapus kuis:", e);
-            // 5. Tampilkan notifikasi gagal
             setNotif({
                 isOpen: true,
                 title: "Gagal",
                 message: e.response?.data?.message || "Gagal menghapus kuis.",
                 success: false,
-                isConfirmation: false // Pastikan ini bukan konfirmasi lagi
+                isConfirmation: false 
             });
         }
     };
-    // --- ✅ AKHIR PERBAIKAN ---
 
     const handleDeleteAllQuestions = (quizId) => {
         if (!selectedQuiz || questions.length === 0) {
@@ -186,18 +181,32 @@ const ManajemenKuis = ({ onNavigate }) => {
         });
     };
 
-    // --- PERBAIKI JUGA CONFIRM DELETE ALL QUESTIONS ---
+    const handleOpenEditQuizModal = (e, quiz) => {
+        e.stopPropagation();
+        setEditingQuiz(quiz);
+        setIsEditQuizModalOpen(true);
+    };
+
+    const handleUpdateQuiz = async (quizId, formData) => {
+        try {
+            await DataService.updateQuiz(quizId, formData);
+            setIsEditQuizModalOpen(false);
+            setEditingQuiz(null);
+            setNotif({ isOpen: true, title: "Sukses", message: "Detail kuis berhasil diperbarui!", success: true });
+            fetchData(quizId);
+        } catch (error) {
+            console.error("Gagal memperbarui kuis:", error);
+            setNotif({ isOpen: true, title: "Gagal", message: error.response?.data?.message || "Gagal memperbarui detail kuis.", success: false });
+        }
+    };
+    
     const confirmDeleteAllQuestions = async (quizId) => {
-        // 1. Tutup modal konfirmasi
         setNotif(prev => ({ ...prev, isOpen: false }));
-        await new Promise(resolve => setTimeout(resolve, 300)); // Jeda animasi
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         try {
-            // 2. Lakukan penghapusan
-            // Menggunakan Promise.all agar lebih efisien jika jumlah soal banyak
             await Promise.all(questions.map(question => DataService.deleteQuestionFromQuiz(question.id)));
 
-            // 3. Tampilkan notifikasi sukses
             setNotif({
                 isOpen: true,
                 title: "Sukses",
@@ -205,12 +214,10 @@ const ManajemenKuis = ({ onNavigate }) => {
                 success: true,
                 isConfirmation: false
             });
-            // Muat ulang detail (akan menampilkan 0 soal) & refresh data list kuis
             fetchQuizDetails(quizId);
             fetchData(quizId);
         } catch (error) {
             console.error("Gagal menghapus semua soal:", error);
-            // 4. Tampilkan notifikasi gagal
             setNotif({
                 isOpen: true,
                 title: "Gagal",
@@ -220,14 +227,13 @@ const ManajemenKuis = ({ onNavigate }) => {
             });
         }
     };
-    // --- AKHIR PERBAIKAN ---
 
     const handleSaveSettings = async (quizId, settings) => {
         try {
             await DataService.updateQuizSettings(quizId, settings);
             setNotif({ isOpen: true, title: "Sukses", message: "Pengaturan berhasil disimpan!", success: true });
             setIsSettingsModalOpen(false);
-            fetchData(quizId); // Refresh data kuis
+            fetchData(quizId);
         } catch (error) {
             console.error("Gagal menyimpan pengaturan:", error);
             setNotif({ isOpen: true, title: "Gagal", message: "Gagal menyimpan pengaturan kuis.", success: false });
@@ -237,9 +243,9 @@ const ManajemenKuis = ({ onNavigate }) => {
     const handleQuestionsFromBankAdded = (updatedQuizId) => {
         setBankSoalOpen(false);
         setNotif({ isOpen: true, title: "Sukses", message: "Soal berhasil ditambahkan dari bank!", success: true });
-        fetchData(updatedQuizId); // Refresh list kuis
+        fetchData(updatedQuizId);
         if (updatedQuizId === selectedQuiz?.id) {
-            fetchQuizDetails(updatedQuizId); // Refresh detail jika kuis yang dipilih
+            fetchQuizDetails(updatedQuizId);
         }
     };
 
@@ -249,7 +255,6 @@ const ManajemenKuis = ({ onNavigate }) => {
         let errors = [];
 
         try {
-            // Menggunakan Promise.allSettled untuk mencoba menambah semua soal
             const results = await Promise.allSettled(questionsArray.map(async (q) => {
                 const formData = new FormData();
                 formData.append('question_text', q.question);
@@ -272,7 +277,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                 return DataService.addQuestionToQuiz(quizId, formData);
             }));
 
-            // Hitung hasil
             results.forEach((result, index) => {
                 if (result.status === 'fulfilled') {
                     successCount++;
@@ -281,7 +285,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                 }
             });
 
-            // Tampilkan notifikasi berdasarkan hasil
             if (errors.length === 0) {
                  setNotif({ isOpen: true, title: "Sukses", message: `${successCount} soal berhasil dipublikasikan!`, success: true });
             } else if (successCount > 0) {
@@ -290,7 +293,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                  setNotif({ isOpen: true, title: "Gagal", message: `Semua soal gagal dipublikasikan. Error: ${errors.join(', ')}`, success: false });
             }
 
-        } catch (error) { // Catch error tak terduga
+        } catch (error) { 
              console.error("Gagal menambah soal batch:", error);
              setNotif({ isOpen: true, title: "Gagal", message: `Gagal menambah soal: ${error.message}`, success: false });
         } finally {
@@ -302,11 +305,7 @@ const ManajemenKuis = ({ onNavigate }) => {
     const handleOpenEditModal = (question) => { setEditingQuestion(question); setEditQuestionOpen(true); };
 
     const handleUpdateQuestion = async (questionId, updatedQuestionData) => {
-        // State loading internal untuk tombol simpan di modal edit
-        // const [isSubmitting, setIsSubmitting] = useState(false); // Definisikan di dalam modal jika perlu
-        // setIsSubmitting(true);
         try {
-            // ... (logika FormData tetap sama)
              const formData = new FormData();
             formData.append('question_text', updatedQuestionData.question);
             formData.append('question_type', updatedQuestionData.type);
@@ -332,10 +331,8 @@ const ManajemenKuis = ({ onNavigate }) => {
         } catch (error) {
             console.error("Gagal memperbarui soal:", error);
             setNotif({ isOpen: true, title: "Gagal", message: error.message || "Gagal memperbarui soal.", success: false });
-             // Jika error, jangan tutup modal agar user bisa perbaiki
-             throw error; // Lemparkan error agar modal tahu proses gagal
+             throw error;
         } finally {
-            // setIsSubmitting(false);
         }
     };
 
@@ -350,17 +347,13 @@ const ManajemenKuis = ({ onNavigate }) => {
         });
     };
 
-    // --- PERBAIKI JUGA CONFIRM DELETE QUESTION ---
     const confirmDeleteQuestion = async (questionId, questionText) => {
-        // 1. Tutup modal konfirmasi
         setNotif(prev => ({ ...prev, isOpen: false }));
-        await new Promise(resolve => setTimeout(resolve, 300)); // Jeda animasi
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         try {
-            // 2. Lakukan penghapusan
             await DataService.deleteQuestionFromQuiz(questionId);
 
-            // 3. Tampilkan notifikasi sukses
             setNotif({
                 isOpen: true,
                 title: "Sukses",
@@ -368,12 +361,10 @@ const ManajemenKuis = ({ onNavigate }) => {
                 success: true,
                 isConfirmation: false
             });
-            // Muat ulang detail & refresh data list kuis
             fetchQuizDetails(selectedQuiz.id);
             fetchData(selectedQuiz.id);
         } catch (error) {
              console.error("Gagal menghapus soal:", error);
-             // 4. Tampilkan notifikasi gagal
              setNotif({
                 isOpen: true,
                 title: "Gagal",
@@ -383,7 +374,6 @@ const ManajemenKuis = ({ onNavigate }) => {
             });
         }
     };
-    // --- AKHIR PERBAIKAN ---
 
     const handleContinueQuestionDraft = (quizId) => {
         const quizToSelect = quizzes.find(q => q.id === quizId);
@@ -408,7 +398,17 @@ const ManajemenKuis = ({ onNavigate }) => {
 
     return (
         <>
-            {/* AnimatePresence untuk semua notifikasi */}
+            <AnimatePresence>
+                {isEditQuizModalOpen && editingQuiz && (
+                    <EditQuizModal
+                        isOpen={isEditQuizModalOpen}
+                        onClose={() => { setIsEditQuizModalOpen(false); setEditingQuiz(null); }}
+                        onSubmit={handleUpdateQuiz}
+                        initialData={editingQuiz}
+                    />
+                )}
+            </AnimatePresence>
+
             <AnimatePresence>
                 {notif.isOpen && (
                     <Notification
@@ -419,7 +419,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                         success={notif.success}
                         isConfirmation={notif.isConfirmation}
                         onConfirm={notif.onConfirm}
-                        // Tambahkan prop untuk teks tombol konfirmasi jika perlu
                         confirmText={notif.isConfirmation ? "Ya, Hapus" : "Oke"}
                         cancelText="Batal"
                     />
@@ -441,7 +440,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                 {isCreateQuizOpen && <CreateQuizModal isOpen={isCreateQuizOpen} onClose={() => setCreateQuizOpen(false)} onSubmit={handleCreateQuiz} />}
                 {isAddQuestionOpen && <AddQuestionToQuizModal isOpen={isAddQuestionOpen} onClose={() => setAddQuestionOpen(false)} onSubmit={handleBatchAddQuestions} quizId={selectedQuiz?.id} />}
                 {isBankSoalOpen && <BankSoalQuizModal isOpen={isBankSoalOpen} onClose={() => setBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
-                {/* Modal Edit mungkin perlu prop isSubmitting jika tombol simpan ada di sana */}
                 {isEditQuestionOpen && <EditQuestionToQuizModal isOpen={isEditQuestionOpen} onClose={() => setEditQuestionOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
                 {isDraftQuizOpen && (
                     <DraftQuizModal
@@ -452,10 +450,10 @@ const ManajemenKuis = ({ onNavigate }) => {
                 {isSettingsModalOpen && <QuizSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} onSave={handleSaveSettings} quizData={selectedQuiz} />}
             </AnimatePresence>
 
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-grow h-full"> {/* Pastikan h-full */}
-                <div className="grid md:grid-cols-12 flex-grow h-full"> {/* Pastikan h-full */}
-                    <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col h-full"> {/* Pastikan h-full */}
-                        <div className="p-4 border-b border-gray-200 flex-shrink-0"> {/* flex-shrink-0 */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-grow h-full">
+                <div className="grid md:grid-cols-12 flex-grow h-full">
+                    <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col h-full">
+                        <div className="p-4 border-b border-gray-200 flex-shrink-0">
                              <div className="relative">
                                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -467,26 +465,33 @@ const ManajemenKuis = ({ onNavigate }) => {
                                 />
                             </div>
                         </div>
-                        {/* ✅ PERBAIKAN: Tambahkan overflow-y-auto di sini */}
                         <div className="flex-grow overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                             {loading ? (<div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl text-sesm-teal"/></div>) : (
                                 <div className="space-y-1">
                                     {filteredQuizzes.length > 0 ? filteredQuizzes.map(quiz => (
                                         <motion.div
                                             key={quiz.id}
-                                            layout // Animasikan perubahan layout
+                                            layout
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             className={`group w-full p-3 rounded-lg flex justify-between items-center transition-colors duration-200 ${selectedQuiz?.id === quiz.id ? 'bg-sesm-teal/20' : 'hover:bg-gray-100'}`}
                                         >
-                                            <button onClick={() => setSelectedQuiz(quiz)} className="flex-grow text-left overflow-hidden mr-2"> {/* Tambah overflow-hidden mr-2 */}
-                                                <p className={`font-semibold truncate ${selectedQuiz?.id === quiz.id ? 'text-sesm-deep' : 'text-gray-800'}`}>{quiz.title}</p> {/* Tambah truncate */}
+                                            <button onClick={() => setSelectedQuiz(quiz)} className="flex-grow text-left overflow-hidden mr-2">
+                                                <p className={`font-semibold truncate ${selectedQuiz?.id === quiz.id ? 'text-sesm-deep' : 'text-gray-800'}`}>{quiz.title}</p>
                                                 <p className="text-xs text-gray-500">{quiz.question_count || 0} Soal</p>
                                             </button>
                                             <motion.button
+                                                    onClick={(e) => handleOpenEditQuizModal(e, quiz)}
+                                                    className="p-2 rounded-full text-gray-400 hover:bg-blue-100 hover:text-blue-600"
+                                                    title="Edit Detail Kuis"
+                                                    initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} whileTap={{ scale: 0.9 }}
+                                                >
+                                                    <FiEdit size={16}/>
+                                            </motion.button>
+                                            <motion.button
                                                 onClick={(e) => handleDeleteQuiz(e, quiz.id, quiz.title)}
-                                                className="p-2 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 ml-auto flex-shrink-0" /* Tambah ml-auto flex-shrink-0 */
+                                                className="p-2 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 ml-auto flex-shrink-0"
                                                 title="Hapus Kuis"
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
@@ -504,8 +509,8 @@ const ManajemenKuis = ({ onNavigate }) => {
                         </div>
                     </div>
 
-                    <div className="md:col-span-8 lg:col-span-9 flex flex-col h-full"> {/* Pastikan h-full */}
-                        <div className="p-6 flex-shrink-0"> {/* flex-shrink-0 */}
+                    <div className="md:col-span-8 lg:col-span-9 flex flex-col h-full">
+                        <div className="p-6 flex-shrink-0">
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                                 <h1 className="text-3xl font-bold text-sesm-deep">Manajemen Kuis</h1>
                                 <p className="text-gray-500 mt-1">Buat kuis baru, kelola soal, atau lihat hasil pengerjaan siswa.</p>
@@ -532,8 +537,8 @@ const ManajemenKuis = ({ onNavigate }) => {
 
                             </motion.div>
                         </div>
-                        <div className="border-t-2 border-dashed border-gray-200 mx-6 flex-shrink-0"></div> {/* flex-shrink-0 */}
-                        <div className="flex-grow overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"> {/* overflow-y-auto */}
+                        <div className="border-t-2 border-dashed border-gray-200 mx-6 flex-shrink-0"></div>
+                        <div className="flex-grow overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                             <AnimatePresence mode="wait">
                                 <motion.div key={selectedQuiz ? selectedQuiz.id : 'dashboard'} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="h-full">
                                     {!selectedQuiz ? ( <DashboardView userName={user?.nama} stats={stats} />
@@ -554,7 +559,6 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                 <h3 className="font-bold text-gray-700">Daftar Soal ({questions.length})</h3>
                                                 <button onClick={() => handleDeleteAllQuestions(selectedQuiz.id)} disabled={questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
                                             </div>
-                                            {/* ✅ PERBAIKAN: Hapus max-h dan overflow-y-auto dari sini */}
                                             <div className="space-y-3 pr-2">
                                                 {questions.length > 0 ? questions.map((q, i) => {
                                                     const creatorAvatar = q.creator_avatar
@@ -564,7 +568,7 @@ const ManajemenKuis = ({ onNavigate }) => {
                                                     return (
                                                         <motion.div
                                                             key={q.id}
-                                                            layout // Animasikan perubahan posisi
+                                                            layout 
                                                             initial={{ opacity: 0, y: -10 }}
                                                             animate={{ opacity: 1, y: 0 }}
                                                             exit={{ opacity: 0, y: -10 }}
@@ -619,4 +623,4 @@ const ManajemenKuis = ({ onNavigate }) => {
     );
 };
 
-export default ManajemenKuis;
+export default ManagementQuiz;

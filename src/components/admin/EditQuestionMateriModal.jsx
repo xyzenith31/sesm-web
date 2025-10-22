@@ -48,7 +48,7 @@ const MediaPreview = ({ item, onRemove }) => {
 };
 
 
-const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
+const EditQuestionMateriModal = ({ isOpen, onClose, onSubmit, questionData }) => {
     const DRAFT_KEY = useMemo(() => `edit_question_draft_${questionData?.id}`, [questionData]);
     const [question, setQuestion] = useState(null);
     const [linkInputVisible, setLinkInputVisible] = useState(false);
@@ -301,4 +301,4 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
     );
 };
 
-export default EditQuestionModal;
+export default EditQuestionMateriModal;

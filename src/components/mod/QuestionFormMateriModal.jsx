@@ -42,7 +42,7 @@ const TextPreview = ({ text, onRemove }) => (
 );
 
 
-const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
+const QuestionFormMateriModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const questionTypeOptions = [
         { value: 'pilihan-ganda', label: 'Pilihan Ganda' },
         { value: 'esai', label: 'Esai' },
@@ -322,4 +322,4 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     );
 };
 
-export default QuestionFormModal;
+export default QuestionFormMateriModal;

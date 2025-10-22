@@ -1,4 +1,3 @@
-// contoh-sesm-web/components/admin/EditQuestionToQuizModal.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FiSave, FiX, FiPaperclip, FiLink, FiImage, FiFilm, FiMusic, FiFile, FiTrash2, FiPlus } from 'react-icons/fi';
@@ -7,7 +6,6 @@ import useDebounce from '../../hooks/useDebounce';
 import DataService from '../../services/dataService';
 import SaveStatusIcon from '../ui/SaveStatusIcon';
 
-// Helper untuk mengubah indeks menjadi huruf
 const toAlpha = (num) => String.fromCharCode(65 + num);
 
 const MediaPreview = ({ item, onRemove }) => {
@@ -29,7 +27,7 @@ const MediaPreview = ({ item, onRemove }) => {
     );
 };
 
-const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) => {
+const EditQuestionQuizModal = ({ isOpen, onClose, onSubmit, questionData }) => {
     const DRAFT_KEY = `edit_quiz_question_draft_${questionData?.id}`;
     const [question, setQuestion] = useState(null);
     const [isLinkInputVisible, setLinkInputVisible] = useState(false);
@@ -231,4 +229,4 @@ const EditQuestionToQuizModal = ({ isOpen, onClose, onSubmit, questionData }) =>
     );
 };
 
-export default EditQuestionToQuizModal;
+export default EditQuestionQuizModal;

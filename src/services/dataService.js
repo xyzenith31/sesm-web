@@ -100,6 +100,13 @@ const addQuestionsFromBankToChapter = (materiKey, questionIds) => {
     return apiClient.post(`/admin/materi/${materiKey}/add-from-bank`, { questionIds });
 };
 
+const updateQuiz = (quizId, formData) => {
+    return apiClient.put(`/admin/quizzes/${quizId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+};
+
 // --- ✅ FUNGSI BARU UNTUK KONEKSI KE BACKEND ---
 const updateChapterSettings = (chapterId, settings) => {
     return apiClient.put(`/admin/materi/chapters/${chapterId}/settings`, settings);
@@ -282,7 +289,7 @@ const DataService = {
   getAllDrafts,
   deleteDraft,
   addQuestionsFromBankToBookmark,
-  // Ekspor fungsi agenda
+  updateQuiz,
   getAgendas,
   createAgenda,
   deleteAgenda,

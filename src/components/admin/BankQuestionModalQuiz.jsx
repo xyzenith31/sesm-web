@@ -1,11 +1,10 @@
-// contoh-sesm-web/components/admin/BankSoalModal.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiSearch, FiLoader, FiInbox, FiCheckSquare, FiArrowRight, FiArrowLeft, FiPlus } from 'react-icons/fi';
 import DataService from '../../services/dataService';
-import CreateQuizModal from './CreateQuizModal'; // Impor modal untuk membuat kuis
-import Notification from '../../components/ui/Notification'; // <-- Impor Notifikasi
-import CustomSelect from '../../components/ui/CustomSelect'; // <-- Impor CustomSelect
+import CreateQuizModal from './CreateQuizModal';
+import Notification from '../ui/Notification';
+import CustomSelect from '../ui/CustomSelect';
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -17,34 +16,28 @@ const jenjangOptions = {
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
 
-// Opsi untuk CustomSelect Jenjang
 const jenjangSelectOptions = Object.keys(jenjangOptions).map(key => ({
     value: key,
     label: key,
 }));
 
 
-const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti nama komponen
+const BankQuestionModalQuiz = ({ isOpen, onClose, onQuestionsAdded }) => {
     const [step, setStep] = useState(1);
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
-    // Hapus state error, ganti dengan notifikasi
-    // const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedSubject, setSelectedSubject] = useState('Semua');
     const [selectedQuestionIds, setSelectedQuestionIds] = useState(new Set());
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
 
-    // State untuk Step 2
     const [allQuizzes, setAllQuizzes] = useState([]);
     const [targetQuizLoading, setTargetQuizLoading] = useState(false);
     const [targetQuizId, setTargetQuizId] = useState('');
 
-    // State untuk membuka modal tambah kuis
     const [isCreateQuizOpen, setIsCreateQuizOpen] = useState(false);
 
-    // State untuk Notifikasi
      const [notif, setNotif] = useState({
         isOpen: false,
         message: '',
@@ -52,16 +45,13 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
         title: '',
     });
 
-    // Effect untuk Step 1 (Mengambil daftar soal dari bank)
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
-            // setError(null); // Hapus setError
             const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
             DataService.getAllQuestionsForBank(jenjang, kelas)
                 .then(response => setQuestions(response.data))
                 .catch(err => {
-                    // Tampilkan notifikasi error
                     setNotif({ isOpen: true, title: "Error", message: "Gagal memuat bank soal.", success: false });
                     console.error(err);
                 })
@@ -72,12 +62,11 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
             setSelectedQuestionIds(new Set());
             setSearchTerm('');
             setSelectedSubject('Semua');
-            setTargetQuizId(''); // Reset pilihan target
-            // setError(null); // Hapus setError
+            setTargetQuizId('');
+
         }
     }, [isOpen, selectedFilterKey]);
 
-    // Fungsi untuk mengambil daftar kuis tujuan
     const fetchTargetQuizzes = useCallback(() => {
         setTargetQuizLoading(true);
         DataService.getAllQuizzes()
@@ -94,14 +83,12 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
             });
     }, []);
 
-    // Effect untuk Step 2 (Mengambil daftar kuis tujuan)
     useEffect(() => {
         if (isOpen && step === 2) {
             fetchTargetQuizzes();
         }
     }, [isOpen, step, fetchTargetQuizzes]);
 
-    // Opsi untuk CustomSelect Subject
     const subjectOptions = useMemo(() => [
         { value: 'Semua', label: 'Semua Mapel' },
         ...Array.from(new Set(questions.map(q => q.nama_mapel)))
@@ -127,7 +114,6 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
 
     const handleNextStep = () => {
         if (selectedQuestionIds.size === 0) {
-            // Tampilkan notifikasi info
             setNotif({ isOpen: true, title: "Info", message: "Pilih setidaknya satu soal.", success: true });
             return;
         }
@@ -136,17 +122,14 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
 
     const handleAddQuestionsToQuiz = async () => {
         if (!targetQuizId) {
-            // Tampilkan notifikasi info
             setNotif({ isOpen: true, title: "Info", message: "Pilih kuis tujuan terlebih dahulu.", success: true });
             return;
         }
         setIsAdding(true);
         try {
             await DataService.addQuestionsFromBank(targetQuizId, Array.from(selectedQuestionIds));
-            onQuestionsAdded(targetQuizId); // Kirim ID kuis yang diperbarui
-            // Notifikasi sukses akan ditampilkan oleh parent
+            onQuestionsAdded(targetQuizId);
         } catch (error) {
-            // Tampilkan notifikasi error
             setNotif({
                 isOpen: true,
                 title: "Gagal",
@@ -158,16 +141,13 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
         }
     };
 
-    // Handler untuk submit pembuatan kuis baru
     const handleCreateQuizSubmit = async (formData) => {
         try {
             await DataService.createQuiz(formData);
              setNotif({ isOpen: true, title: "Sukses", message: `Kuis baru berhasil dibuat!`, success: true });
             setIsCreateQuizOpen(false);
 
-            // Muat ulang daftar kuis dan pilih yang baru
             fetchTargetQuizzes();
-            // Kita tidak bisa langsung tahu ID kuis baru, jadi biarkan user memilihnya dari daftar yang diperbarui
             setTargetQuizId('');
 
         } catch (e) {
@@ -175,7 +155,6 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
         }
     };
 
-    // Opsi untuk CustomSelect Kuis Tujuan
     const targetQuizOptions = useMemo(() =>
         allQuizzes.map(q => ({
             value: q.id,
@@ -183,7 +162,6 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
         })),
     [allQuizzes]);
 
-    // Handler untuk menutup notifikasi
     const handleCloseNotif = () => setNotif({ ...notif, isOpen: false });
 
 
@@ -191,7 +169,6 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
 
     return (
         <>
-            {/* Render Notifikasi */}
             <Notification
                 isOpen={notif.isOpen}
                 onClose={handleCloseNotif}
@@ -223,7 +200,6 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
                     {step === 1 && (
                         <>
                            <div className="p-4 border-b bg-gray-50 flex flex-col md:flex-row gap-4">
-                               {/* Ganti select Jenjang */}
                                <div className="w-full md:w-56">
                                     <CustomSelect
                                         options={jenjangSelectOptions}
@@ -235,7 +211,6 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
                                     <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                     <input type="text" placeholder="Cari pertanyaan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-2 pl-10 border rounded-lg"/>
                                 </div>
-                               {/* Ganti select Mapel */}
                                <div className="w-full md:w-56">
                                     <CustomSelect
                                         options={subjectOptions}
@@ -247,7 +222,7 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
                             </div>
                             <div className="flex-grow overflow-y-auto p-4">
                                 {loading ? <div className="flex justify-center items-center h-full"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>
-                                : filteredQuestions.length === 0 ? ( // Cek error tidak perlu lagi
+                                : filteredQuestions.length === 0 ? ( 
                                     <div className="text-center text-gray-400 h-full flex flex-col items-center justify-center"><FiInbox size={48} /><p className="mt-2 font-semibold">Tidak ada soal ditemukan.</p></div>
                                 ) : (
                                     <div className="space-y-3">
@@ -289,7 +264,6 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
                                         <FiPlus size={14}/> Buat Kuis Baru
                                       </button>
                                     </div>
-                                    {/* Ganti select Kuis Tujuan */}
                                     <CustomSelect
                                         options={targetQuizOptions}
                                         value={targetQuizId}
@@ -325,4 +299,4 @@ const BankSoalQuizModal = ({ isOpen, onClose, onQuestionsAdded }) => { // Ganti 
     );
 };
 
-export default BankSoalQuizModal; // Ganti nama export
+export default BankQuestionModalQuiz;

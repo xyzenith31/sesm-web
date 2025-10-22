@@ -4,7 +4,7 @@ import { FiX, FiFileText, FiTrash2 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 import Notification from '../ui/Notification';
 
-const DraftsModal = ({ isOpen, onClose, allData, drafts: initialDrafts, onContinue, onDraftDeleted }) => {
+const DraftsMateriModal = ({ isOpen, onClose, allData, drafts: initialDrafts, onContinue, onDraftDeleted }) => {
     const [drafts, setDrafts] = useState([]);
     const [notif, setNotif] = useState({ isOpen: false, title: '', message: '', success: true });
     const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, draftKey: null, title: '' });
@@ -137,4 +137,4 @@ const DraftsModal = ({ isOpen, onClose, allData, drafts: initialDrafts, onContin
     );
 };
 
-export default DraftsModal;
+export default DraftsMateriModal;

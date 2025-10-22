@@ -1,4 +1,3 @@
-// contoh-sesm-web/pages/admin/ManajemenNilai.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { FiLoader, FiSearch, FiStar, FiBarChart2, FiCheckCircle, FiEdit, FiArrowLeft } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -112,7 +111,7 @@ const ManajemenNilai = ({ onNavigate }) => {
             {selectedSubmission && (
                 <SubmissionDetailModal 
                     submission={selectedSubmission}
-                    isViewOnly={false} // <-- ✅ PERBAIKAN DI SINI
+                    isViewOnly={false}
                     onClose={() => setSelectedSubmission(null)}
                     onGradeSubmitted={handleGradeSubmitted}
                 />
