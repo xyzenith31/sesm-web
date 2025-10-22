@@ -53,6 +53,10 @@ import FeedbackPage from './pages/FeedbackPage.jsx';
 // --- TAMBAHKAN IMPORT PROFIL GURU DISINI ---
 import TeacherProfilePage from './pages/admin/TeacherProfilePage';
 
+// === PERUBAHAN DI SINI: Impor LaporanKendala ===
+import LaporanKendala from './pages/admin/LaporanKendala'; 
+// === AKHIR PERUBAHAN ===
+
 
 const pageVariants = {
   initial: { opacity: 0, scale: 0.98 },
@@ -107,7 +111,8 @@ function App() {
         'dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 
         'evaluasiKuis', 'manajemenPengguna', 'manajemenBookmark', 'manajemenCerita',
         // --- TAMBAHKAN 'teacherProfile' DISINI ---
-        'teacherProfile'
+        'teacherProfile',
+        'laporanKendala' // <-- === PERUBAHAN DI SINI ===
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
@@ -135,7 +140,7 @@ function App() {
         diary: <DiaryPage onNavigate={navigate} />,
         studyReport: <StudyReportPage onNavigate={navigate} />,
         bantuan: <BantuanPage onNavigate={navigate} />, 
-        feedback: <FeedbackPage onNavigate={navigate} />,
+        feedback: <FeedbackPage onNavigate={navigate} />, // Ini halaman feedback siswa/user
       };
       const pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
 
@@ -157,7 +162,11 @@ function App() {
           manajemenBookmark: <ManajemenBookmark onNavigate={navigate} />,
           manajemenCerita: <ManajemenCerita onNavigate={navigate} />,
           // --- TAMBAHKAN MAPPING PROFIL DISINI ---
-          teacherProfile: <TeacherProfilePage onNavigate={navigate} />
+          teacherProfile: <TeacherProfilePage onNavigate={navigate} />,
+
+          // === PERUBAHAN DI SINI: Mapping LaporanKendala ===
+          laporanKendala: <LaporanKendala onNavigate={navigate} />
+          // === AKHIR PERUBAHAN ===
       };
       const pageComponent = pageMap[currentView];
 
@@ -199,6 +208,7 @@ function App() {
           onPasswordReset={() => {
             setResetIdentifier('');
             setResetCode(null);
+            navigate('login'); // Arahkan ke login setelah reset sukses
           }} 
         />;
       

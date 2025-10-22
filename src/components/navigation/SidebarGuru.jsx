@@ -1,6 +1,10 @@
 // contoh-sesm-web/components/navigation/SidebarGuru.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { FiBookOpen, FiLogOut, FiHelpCircle, FiAlertTriangle, FiUsers, FiBookmark, FiBook, FiUser, FiChevronDown, FiSettings, FiClock, FiCalendar } from 'react-icons/fi';
+import { 
+    FiBookOpen, FiLogOut, FiHelpCircle, FiAlertTriangle, FiUsers, 
+    FiBookmark, FiBook, FiUser, FiChevronDown, FiSettings, 
+    FiClock, FiCalendar, FiTool // <-- Tambahkan FiTool
+} from 'react-icons/fi'; 
 import Logo from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -164,6 +168,16 @@ const SidebarGuru = ({ activePage, onNavigate }) => {
             isActive={activePage === 'manajemenPengguna'}
             onClick={() => onNavigate('manajemenPengguna')}
           />
+
+          {/* === PERUBAHAN DI SINI === */}
+          <NavLink
+            icon={<FiTool size={20} />}
+            label="Laporan Kendala"
+            isActive={activePage === 'laporanKendala'}
+            onClick={() => onNavigate('laporanKendala')}
+          />
+          {/* === AKHIR PERUBAHAN === */}
+
         </nav>
         
         <div className="p-4 border-t space-y-3">

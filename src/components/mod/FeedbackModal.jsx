@@ -4,13 +4,14 @@ import React, { useState, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiX, FiGift, FiFileText, FiUpload, FiLoader,
-    FiCheckCircle, FiAlertCircle, FiTag, FiPaperclip, FiChevronDown
+    FiCheckCircle, FiAlertCircle, FiTag, FiPaperclip, FiChevronDown,
+    FiTool // <-- Tambahkan FiTool
 } from 'react-icons/fi';
-import { FaBug } from 'react-icons/fa';
-// ✅ Tambahkan import Listbox dan Transition dari @headlessui/react
+import { FaBug, FaCommentDots, FaLightbulb } from 'react-icons/fa'; // <-- Tambahkan Ikon
 import { Listbox, Transition } from '@headlessui/react';
+import FeedbackService from '../../services/feedbackService'; // <-- Gunakan service asli
 
-
+// Opsi halaman terkait
 const pages = [
     { id: 'home', name: 'Halaman Utama (Home)' },
     { id: 'mapel', name: 'Halaman Mata Pelajaran' },
@@ -24,28 +25,44 @@ const pages = [
     { id: 'lainnya', name: 'Lainnya / Tidak Spesifik' },
 ];
 
-// Placeholder function - replace with your actual API call
-const submitFeedback = async (formData) => {
-    console.log("Mengirim feedback ke server:", {
-        type: formData.get('type'),
-        title: formData.get('title'),
-        page: formData.get('page'),
-        description: formData.get('description'),
-        attachment: formData.get('attachment'),
-    });
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    // Simulate success/failure
-    if (Math.random() > 0.1) { // 90% chance of success
-        return { success: true, message: "Laporan Anda berhasil dikirim! Terima kasih." };
-    } else {
-        return { success: false, message: "Gagal mengirim laporan. Silakan coba lagi nanti." };
+// === PERUBAHAN DI SINI: Helper untuk detail tipe ===
+const feedbackTypeDetails = {
+    bug: {
+        name: 'Lapor Bug',
+        icon: FaBug,
+        color: 'sesm-deep',
+        placeholderTitle: 'cth: Tombol Home tidak bisa diklik',
+        placeholderDesc: 'Jelaskan langkah-langkah agar bug ini terjadi...'
+    },
+    fitur: {
+        name: 'Usul Fitur',
+        icon: FaLightbulb, // Ganti ikon agar konsisten
+        color: 'sesm-teal',
+        placeholderTitle: 'cth: Tambah fitur dark mode',
+        placeholderDesc: 'Jelaskan bagaimana fitur ini akan bekerja...'
+    },
+    saran: {
+        name: 'Saran Umum',
+        icon: FaCommentDots,
+        color: 'green-600',
+        placeholderTitle: 'cth: Tampilan profil kurang jelas (Opsional)',
+        placeholderDesc: 'Tuliskan saran umum Anda di sini...'
+    },
+    kendala: {
+        name: 'Lapor Kendala',
+        icon: FiTool,
+        color: 'orange-600',
+        placeholderTitle: 'cth: Materi sulit dipahami (Opsional)',
+        placeholderDesc: 'Jelaskan kendala yang Anda alami...'
     }
 };
+// === AKHIR PERUBAHAN ===
 
+
+// HAPUS FUNGSI SIMULASI (submitFeedback)
 
 const FeedbackModal = ({ isOpen, onClose }) => {
-    const [feedbackType, setFeedbackType] = useState('bug'); // 'bug' or 'fitur'
+    const [feedbackType, setFeedbackType] = useState('bug'); // 'bug', 'fitur', 'saran', 'kendala'
     const [title, setTitle] = useState('');
     const [selectedPage, setSelectedPage] = useState(pages[pages.length - 1]); // Default 'Lainnya'
     const [description, setDescription] = useState('');
@@ -58,9 +75,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            // Basic validation (example: size limit 5MB)
             if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                 // Show error notification or message
                  setSubmitStatus({ success: false, message: "Ukuran file maksimal 5MB." });
                  return;
             }
@@ -82,9 +97,15 @@ const FeedbackModal = ({ isOpen, onClose }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Simple validation
-        if (!title || !description) {
-            setSubmitStatus({ success: false, message: "Judul dan Deskripsi wajib diisi." });
+        
+        // Validasi: Deskripsi selalu wajib
+        if (!description.trim()) {
+            setSubmitStatus({ success: false, message: "Deskripsi wajib diisi." });
+            return;
+        }
+        // Validasi: Judul wajib untuk bug/fitur
+        if ((feedbackType === 'bug' || feedbackType === 'fitur') && !title.trim()) {
+             setSubmitStatus({ success: false, message: "Judul wajib diisi untuk Bug/Fitur." });
             return;
         }
 
@@ -93,27 +114,32 @@ const FeedbackModal = ({ isOpen, onClose }) => {
 
         const formData = new FormData();
         formData.append('type', feedbackType);
-        formData.append('title', title);
-        formData.append('page', selectedPage.name); // Send the name of the selected page
+        formData.append('title', title.trim());
+        formData.append('page_context', selectedPage.name); // <-- PERBAIKAN: Ganti 'page' jadi 'page_context'
         formData.append('description', description);
         if (attachment) {
             formData.append('attachment', attachment);
         }
 
-        // Call your API function here
-        const result = await submitFeedback(formData);
+        // === PERUBAHAN DI SINI: Panggil Service Asli ===
+        try {
+            const response = await FeedbackService.submitFeedback(formData);
 
-        setIsLoading(false);
-        setSubmitStatus(result);
+            setIsLoading(false);
+            setSubmitStatus({ success: true, message: response.data.message || "Laporan berhasil dikirim!" });
 
-        // If successful, close modal after a delay and reset
-        if (result.success) {
+            // Jika successful, close modal after a delay and reset
             setTimeout(() => {
                 onClose(); // Close the modal
-                // Reset form after modal animation finishes
-                setTimeout(resetForm, 300); // Adjust delay based on exit animation duration
-            }, 2000); // Show success message for 2 seconds
+                setTimeout(resetForm, 300); // Reset form setelah modal tertutup
+            }, 2000); // Tampilkan pesan sukses 2 detik
+
+        } catch (error) {
+            setIsLoading(false);
+            const message = error.response?.data?.message || error.message || "Gagal mengirim laporan.";
+            setSubmitStatus({ success: false, message: message });
         }
+        // === AKHIR PERUBAHAN ===
     };
 
     // Animation variants for the modal
@@ -122,6 +148,8 @@ const FeedbackModal = ({ isOpen, onClose }) => {
         visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
         exit: { opacity: 0, scale: 0.9, y: 50, transition: { duration: 0.2 } }
     };
+
+    const CurrentIcon = feedbackTypeDetails[feedbackType].icon; // Helper ikon dinamis
 
     return (
         <AnimatePresence>
@@ -138,10 +166,12 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b">
-                            <h3 className="text-lg font-bold text-sesm-deep flex items-center gap-2">
-                                {feedbackType === 'bug' ? <FaBug /> : <FiGift />}
-                                {feedbackType === 'bug' ? 'Laporkan Bug' : 'Usulkan Fitur'}
+                            {/* === PERUBAHAN DI SINI: Judul & Ikon Dinamis === */}
+                            <h3 className={`text-lg font-bold text-${feedbackTypeDetails[feedbackType].color} flex items-center gap-2`}>
+                                <CurrentIcon />
+                                {feedbackTypeDetails[feedbackType].name}
                             </h3>
+                            {/* === AKHIR PERUBAHAN === */}
                             <motion.button
                                 onClick={onClose}
                                 disabled={isLoading}
@@ -157,54 +187,49 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                             <fieldset disabled={isLoading}>
                                 {/* Report Type Selection */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipe Laporan</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipe Masukan</label>
+                                    {/* === PERUBAHAN DI SINI: 4 Tombol Tipe === */}
                                     <div className="grid grid-cols-2 gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setFeedbackType('bug')}
-                                            className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-                                                feedbackType === 'bug'
-                                                ? 'bg-sesm-deep/10 border-sesm-deep text-sesm-deep'
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
-                                            }`}
-                                        >
-                                            <FaBug /> <span className="font-semibold">Lapor Bug</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setFeedbackType('fitur')}
-                                            className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-                                                feedbackType === 'fitur'
-                                                ? 'bg-sesm-teal/10 border-sesm-teal text-sesm-teal'
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
-                                            }`}
-                                        >
-                                            <FiGift /> <span className="font-semibold">Usul Fitur</span>
-                                        </button>
+                                        {Object.entries(feedbackTypeDetails).map(([key, { name, icon: Icon, color }]) => (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => setFeedbackType(key)}
+                                                className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                                                    feedbackType === key
+                                                    ? `bg-${color}/10 border-${color} text-${color}`
+                                                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
+                                                }`}
+                                            >
+                                                <Icon /> <span className="font-semibold text-sm">{name}</span>
+                                            </button>
+                                        ))}
                                     </div>
+                                    {/* === AKHIR PERUBAHAN === */}
                                 </div>
 
                                 {/* Title */}
                                 <div>
-                                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">Judul Singkat</label>
+                                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                                        Judul Singkat {feedbackType === 'saran' || feedbackType === 'kendala' ? '(Opsional)' : ''}
+                                    </label>
                                     <div className="relative mt-1">
                                         <input
                                             type="text"
                                             id="title"
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
-                                            placeholder={feedbackType === 'bug' ? 'cth: Tombol Home tidak bisa diklik' : 'cth: Tambah fitur dark mode'}
+                                            placeholder={feedbackTypeDetails[feedbackType].placeholderTitle} // <-- Placeholder dinamis
                                             className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-sesm-deep focus:border-sesm-deep"
-                                            required
+                                            required={feedbackType === 'bug' || feedbackType === 'fitur'} // <-- Required dinamis
                                         />
                                     </div>
                                 </div>
 
                                 {/* Related Page (Dropdown using Headless UI Listbox) */}
                                 <div>
-                                    {/* ✅ Gunakan Listbox dari Headless UI */}
                                     <Listbox value={selectedPage} onChange={setSelectedPage}>
-                                        <Listbox.Label className="block text-sm font-medium text-gray-700">Halaman Terkait</Listbox.Label>
+                                        <Listbox.Label className="block text-sm font-medium text-gray-700">Halaman Terkait (Opsional)</Listbox.Label>
                                         <div className="relative mt-1">
                                             <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-sesm-deep focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-sesm-teal/50 sm:text-sm">
                                                 <span className="block truncate">{selectedPage.name}</span>
@@ -255,7 +280,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                         rows="4"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
-                                        placeholder={feedbackType === 'bug' ? 'Jelaskan langkah-langkah agar bug ini terjadi...' : 'Jelaskan bagaimana fitur ini akan bekerja...'}
+                                        placeholder={feedbackTypeDetails[feedbackType].placeholderDesc} // <-- Placeholder dinamis
                                         className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-sesm-deep focus:border-sesm-deep"
                                         required
                                     ></textarea>
@@ -264,7 +289,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                 {/* Attachment Upload */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Lampiran (Screenshot/Video Pendek)</label>
-                                    <label htmlFor="file-upload" className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <label htmlFor="file-upload-modal" className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                                         <div className="space-y-1 text-center">
                                             <FiUpload className="mx-auto h-10 w-10 text-gray-400" />
                                             {attachmentName ? (
@@ -272,11 +297,11 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                             ) : (
                                                 <div className="flex text-sm text-gray-600">
                                                     <span className="font-medium text-sesm-deep hover:text-sesm-teal">Upload file</span>
-                                                    <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept="image/*,video/mp4,video/quicktime" />
+                                                    <input id="file-upload-modal" name="file-upload-modal" type="file" className="sr-only" onChange={handleFileChange} accept="image/*,video/mp4,video/quicktime,.pdf,.doc,.docx" />
                                                     <p className="pl-1">atau drag and drop</p>
                                                 </div>
                                             )}
-                                            <p className="text-xs text-gray-500">PNG, JPG, GIF, MP4 (Max. 5MB)</p>
+                                            <p className="text-xs text-gray-500">Gambar, Video, PDF, Dokumen (Max. 5MB)</p>
                                         </div>
                                     </label>
                                 </div>
@@ -327,7 +352,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                     ) : (
                                         <FiCheckCircle className="-ml-1 mr-2 h-5 w-5" />
                                     )}
-                                    {isLoading ? 'Mengirim...' : 'Kirim Laporan'}
+                                    {isLoading ? 'Mengirim...' : 'Kirim Masukan'}
                                 </motion.button>
                             </div>
                         </div>
