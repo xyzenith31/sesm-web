@@ -176,8 +176,11 @@ const DailyChallengePage = ({ onNavigate }) => {
     }
   };
 
-  // --- Callback untuk Menangani Submit Jawaban dari Modal ---
-  const handleAnswerSubmit = useCallback(async (isCorrect) => {
+  // --- [PERBAIKAN] ---
+  // Menghapus 'useCallback' dari fungsi ini.
+  // Ini memastikan fungsi selalu mendapatkan 'activeChallenge' dan 'setChallenges'
+  // versi terbaru, dan mencegah 'stale state' yang membuat UI tidak ter-update.
+  const handleAnswerSubmit = async (isCorrect) => {
     if (!activeChallenge) return;
 
     const currentChallengeId = activeChallenge.id;
@@ -189,10 +192,11 @@ const DailyChallengePage = ({ onNavigate }) => {
         const awarded = response.data.pointsAwarded;
 
         // Update state tantangan
+        // Ini adalah bagian yang akan me-render ulang UI
         setChallenges(prevChallenges =>
           prevChallenges.map(c =>
             c.id === currentChallengeId
-              ? { ...c, completed: true, points: awarded }
+              ? { ...c, completed: true, points: awarded } // <-- Mengubah completed jadi true
               : c
           )
         );
@@ -214,7 +218,8 @@ const DailyChallengePage = ({ onNavigate }) => {
       }
     }
     // Jika tidak benar, tidak perlu panggil backend, modal sudah tertutup
-  }, [activeChallenge, refreshUser]); // Tambahkan refreshUser ke dependency array
+  };
+  // --- Akhir Perbaikan ---
 
 
   // --- Fungsi Klaim Hadiah (Placeholder - Butuh Backend) ---
@@ -231,6 +236,8 @@ const DailyChallengePage = ({ onNavigate }) => {
   };
 
   // --- Kalkulasi Progress ---
+  // Bagian ini sudah benar. 'completedCount' akan otomatis ter-update
+  // ketika state 'challenges' berubah (setelah 'handleAnswerSubmit' sukses)
   const completedCount = challenges.filter(c => c.completed).length;
   const totalCount = challenges.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
@@ -296,6 +303,7 @@ const DailyChallengePage = ({ onNavigate }) => {
           >
             <div className="flex justify-between items-center mb-2">
               <p className="font-bold text-gray-800">Progress Hari Ini</p>
+              {/* Ini akan otomatis ter-update menjadi 1/3, 2/3, dst. */}
               <p className="font-bold text-sesm-deep">{completedCount}/{totalCount}</p>
             </div>
             {/* Progress Bar */}
