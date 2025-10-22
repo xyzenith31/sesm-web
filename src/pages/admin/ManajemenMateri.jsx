@@ -1,4 +1,3 @@
-// contoh-sesm-web/pages/admin/ManajemenMateri.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,12 +6,12 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
-import AddChapterModal from '../../components/mod/AddChapterModal';
-import QuestionFormModal from '../../components/mod/QuestionFormModal';
-import DraftsModal from '../../components/mod/DraftsModal';
+import AddChapterModal from '../../components/mod/AddChapterMateriModal';
+import QuestionFormModal from '../../components/mod/QuestionFormMateriModal';
+import DraftsModal from '../../components/mod/DraftsMateriModal';
 import BankSoalMateriModal from '../../components/admin/BankSoalMateriModal';
-import EditQuestionModal from '../../components/admin/EditQuestionModal';
-import ChapterSettingsModal from '../../components/admin/ChapterSettingsModal';
+import EditQuestionModal from '../../components/admin/EditQuestionMateriModal';
+import ChapterSettingsModal from '../../components/admin/MateriSettingsModal';
 import Notification from '../../components/ui/Notification';
 import CustomSelect from '../../components/ui/CustomSelect';
 
@@ -504,11 +503,8 @@ const ManajemenMateri = ({ onNavigate }) => {
             </AnimatePresence>
             {isQuestionModalOpen && <QuestionFormModal isOpen onClose={() => setIsQuestionModalOpen(false)} onSubmit={handleBatchQuestionSubmit} chapterId={selectedKey} />}
 
-            {/* Pastikan parent div memiliki h-full */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col flex-grow h-full">
-                {/* Pastikan parent grid memiliki h-full */}
                 <div className="grid md:grid-cols-12 flex-grow h-full">
-                    {/* Pastikan kolom kiri flex-col dan h-full */}
                     <div className="md:col-span-4 lg:col-span-3 border-r border-gray-200 flex flex-col h-full">
                         <div className="p-4 border-b flex-shrink-0">
                             <label className="text-sm font-bold text-gray-600 mb-1 block">Pilih Jenjang & Kelas</label>
@@ -518,7 +514,6 @@ const ManajemenMateri = ({ onNavigate }) => {
                                 onChange={setSelectedFilterKey}
                             />
                         </div>
-                        {/* ✅ PERBAIKAN UTAMA: Tambahkan overflow-y-auto dan flex-grow DI SINI */}
                         <div className="flex-grow overflow-y-auto p-2">
                              {isLoading ? (
                                 <div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl text-sesm-teal"/></div>
@@ -530,8 +525,8 @@ const ManajemenMateri = ({ onNavigate }) => {
                                             {materiList[mapel].chapters.sort((a,b) => a.judul.localeCompare(b.judul)).map(m => (
                                                 <div key={m.materiKey} className={`group w-full p-2 rounded-md flex items-center ${selectedKey === m.materiKey ? 'bg-sesm-teal/20' : 'hover:bg-gray-100'}`}>
                                                     <button onClick={() => setSelectedKey(m.materiKey)} className={`flex-grow flex justify-between items-center text-left pr-2 text-sm overflow-hidden ${selectedKey === m.materiKey ? 'font-bold text-sesm-deep' : 'text-gray-700'}`}>
-                                                        <span className="truncate">{m.judul}</span> {/* Tambah truncate */}
-                                                        <FiChevronRight className="flex-shrink-0"/> {/* Tambah flex-shrink-0 */}
+                                                        <span className="truncate">{m.judul}</span>
+                                                        <FiChevronRight className="flex-shrink-0"/>
                                                     </button>
                                                     <button onClick={e => { e.stopPropagation(); handleDeleteChapter(m.materiKey, m.judul); }} className="p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 flex-shrink-0" title="Hapus"> {/* Tambah flex-shrink-0 */}
                                                         <FiTrash2 size={14} />
@@ -547,7 +542,6 @@ const ManajemenMateri = ({ onNavigate }) => {
                         </div>
                     </div>
 
-                    {/* Pastikan kolom kanan flex-col dan h-full */}
                     <div className="md:col-span-8 lg:col-span-9 flex flex-col h-full">
                         <div className="p-6 flex-shrink-0">
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -576,7 +570,6 @@ const ManajemenMateri = ({ onNavigate }) => {
                             </motion.div>
                         </div>
                         <div className="border-t-2 border-dashed border-gray-200 mx-6 flex-shrink-0"></div>
-                        {/* ✅ PERBAIKAN UTAMA: Tambahkan overflow-y-auto dan flex-grow DI SINI */}
                         <div className="flex-grow overflow-y-auto p-6">
                             <AnimatePresence mode="wait">
                                 <motion.div key={selectedMateri ? selectedMateri.materiKey : 'dashboard'} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="h-full">
@@ -607,7 +600,6 @@ const ManajemenMateri = ({ onNavigate }) => {
                                                     <h3 className="font-bold text-gray-700">Daftar Soal ({selectedMateri.questions?.length || 0})</h3>
                                                     <button onClick={handleDeleteAllQuestions} disabled={!selectedMateri.questions || selectedMateri.questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
                                                 </div>
-                                                {/* Container daftar soal (tidak perlu scroll sendiri) */}
                                                 <div className="space-y-3 pr-2">
                                                      {selectedMateri.questions && selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, i) => {
                                                         const creatorAvatar = q.creator_avatar

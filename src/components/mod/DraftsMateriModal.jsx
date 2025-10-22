@@ -1,15 +1,12 @@
-// contoh-sesm-web/components/mod/DraftsModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiFileText, FiTrash2 } from 'react-icons/fi';
 import DataService from '../../services/dataService';
-import Notification from '../ui/Notification'; // Impor Notification
+import Notification from '../ui/Notification';
 
 const DraftsModal = ({ isOpen, onClose, allData, drafts: initialDrafts, onContinue, onDraftDeleted }) => {
     const [drafts, setDrafts] = useState([]);
-    // State untuk notifikasi
     const [notif, setNotif] = useState({ isOpen: false, title: '', message: '', success: true });
-    // State untuk konfirmasi hapus
     const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, draftKey: null, title: '' });
 
     useEffect(() => {
@@ -44,42 +41,34 @@ const DraftsModal = ({ isOpen, onClose, allData, drafts: initialDrafts, onContin
         }
     }, [isOpen, allData, initialDrafts]);
 
-    // Fungsi untuk menampilkan konfirmasi hapus
     const handleDeleteClick = (draftKey, title, e) => {
-        e.stopPropagation(); // Mencegah klik menyebar ke elemen parent
+        e.stopPropagation();
         setConfirmDelete({ isOpen: true, draftKey, title });
     };
 
-    // Fungsi yang dijalankan saat konfirmasi hapus
     const confirmDeleteAction = async () => {
         const { draftKey, title } = confirmDelete;
-        setConfirmDelete({ isOpen: false, draftKey: null, title: '' }); // Tutup modal konfirmasi dulu
+        setConfirmDelete({ isOpen: false, draftKey: null, title: '' });
 
         try {
             await DataService.deleteDraft(draftKey);
-            // Tampilkan notifikasi sukses
             setNotif({ isOpen: true, title: "Berhasil", message: `Draf "${title}" berhasil dihapus.`, success: true });
             if (onDraftDeleted) {
-                onDraftDeleted(); // Panggil callback parent
+                onDraftDeleted();
             }
-            // Update UI lokal
             setDrafts(prevDrafts => prevDrafts.filter(d => d.key !== draftKey));
         } catch (error) {
-            // Tampilkan notifikasi error
             setNotif({ isOpen: true, title: "Gagal", message: "Gagal menghapus draf dari server.", success: false });
             console.error("Gagal hapus draf:", error);
         }
     };
 
-    // Fungsi untuk menutup notifikasi
     const handleCloseNotif = () => setNotif(prev => ({ ...prev, isOpen: false }));
-    // Fungsi untuk menutup modal konfirmasi
     const handleCloseConfirm = () => setConfirmDelete({ isOpen: false, draftKey: null, title: '' });
 
 
     return (
         <>
-             {/* Notifikasi Umum */}
             <Notification
                 isOpen={notif.isOpen}
                 onClose={handleCloseNotif}
@@ -87,7 +76,6 @@ const DraftsModal = ({ isOpen, onClose, allData, drafts: initialDrafts, onContin
                 message={notif.message}
                 success={notif.success}
             />
-             {/* Modal Konfirmasi Hapus */}
             <AnimatePresence>
                 {confirmDelete.isOpen && (
                     <Notification
@@ -96,7 +84,7 @@ const DraftsModal = ({ isOpen, onClose, allData, drafts: initialDrafts, onContin
                         onConfirm={confirmDeleteAction}
                         title="Konfirmasi Hapus Draf"
                         message={`Yakin ingin menghapus draf untuk "${confirmDelete.title}"?`}
-                        success={false} // Tampilan warning
+                        success={false}
                         isConfirmation={true}
                         confirmText="Ya, Hapus"
                     />
@@ -125,11 +113,9 @@ const DraftsModal = ({ isOpen, onClose, allData, drafts: initialDrafts, onContin
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                            {/* Panggil handleDeleteClick */}
                                             <button onClick={(e) => handleDeleteClick(draft.key, draft.title, e)} className="p-2 text-red-500 hover:bg-red-100 rounded-md" title="Hapus Draf">
                                                 <FiTrash2/>
                                             </button>
-                                            {/* Tombol Lanjutkan tidak perlu onClick, ditangani oleh div parent */}
                                             <span className="px-4 py-2 text-sm bg-sesm-teal text-white font-semibold rounded-md">
                                                 Lanjutkan
                                             </span>

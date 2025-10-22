@@ -57,7 +57,6 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
     const [textValue, setTextValue] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    // State untuk auto-save
     const [saveStatus, setSaveStatus] = useState('Tersimpan');
     const debouncedQuestion = useDebounce(question, 200);
 
@@ -65,7 +64,6 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
         if (!draftData) return;
         setSaveStatus('Menyimpan...');
         try {
-            // Hapus file object sebelum serialisasi
             const serializableData = {
                 ...draftData,
                 attachments: draftData.attachments.map(({ file, ...rest }) => rest)
@@ -79,7 +77,7 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
     }, [DRAFT_KEY]);
 
     useEffect(() => {
-        if (isOpen && question) { // Pastikan question tidak null
+        if (isOpen && question) { 
             saveDraftToBackend(debouncedQuestion);
         }
     }, [debouncedQuestion, isOpen, saveDraftToBackend, question]);
@@ -92,7 +90,6 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
                     if (draftContent) {
                         setQuestion(draftContent);
                     } else {
-                        // Inisialisasi dari props jika tidak ada draf
                         const initialAttachments = (questionData.media_urls || []).map(item => ({ id: Math.random(), ...item }));
                         setQuestion({
                             id: questionData.id,
@@ -106,7 +103,6 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
                     }
                 })
                 .catch(() => {
-                    // Fallback jika fetch draft gagal
                     const initialAttachments = (questionData.media_urls || []).map(item => ({ id: Math.random(), ...item }));
                     setQuestion({
                         id: questionData.id,
@@ -194,7 +190,7 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
             await onSubmit(question.id, finalQuestionData);
             await DataService.deleteDraft(DRAFT_KEY);
         } catch(error) {
-            // Error ditangani oleh parent
+
         } finally {
             setIsSaving(false);
         }
@@ -239,9 +235,6 @@ const EditQuestionModal = ({ isOpen, onClose, onSubmit, questionData }) => {
                                     </label>
                                     <button type="button" onClick={() => { setLinkInputVisible(!linkInputVisible); setTextInputVisible(false); }} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">
                                         <FiLink size={16} /> Lampirkan Link
-                                    </button>
-                                    <button type="button" onClick={() => { setTextInputVisible(!textInputVisible); setLinkInputVisible(false); }} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">
-                                        <FiType size={16} /> Lampirkan Teks
                                     </button>
                                 </div>
                                 <AnimatePresence>

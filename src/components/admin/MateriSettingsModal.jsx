@@ -1,9 +1,7 @@
-// contoh-sesm-web/components/admin/ChapterSettingsModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiSave, FiLoader } from 'react-icons/fi';
 
-// Komponen Toggle Switch internal
 const ToggleSwitch = ({ label, description, enabled, onToggle }) => (
     <div
         onClick={onToggle}
@@ -30,7 +28,6 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
         setting_fail_on_any_wrong: false,
     });
     
-    // ✅ 1. State baru untuk saklar timer
     const [isTimeLimitEnabled, setIsTimeLimitEnabled] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -38,7 +35,6 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
         if (chapterData && chapterData.settings) {
             const timeLimit = chapterData.settings.setting_time_limit_minutes;
             
-            // ✅ 2. Atur status saklar berdasarkan data dari server
             setIsTimeLimitEnabled(timeLimit !== null && timeLimit !== undefined && timeLimit !== '');
 
             setSettings({
@@ -60,7 +56,6 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // ✅ 3. Sesuaikan data yang dikirim berdasarkan status saklar
             const settingsToSave = {
                 ...settings,
                 setting_time_limit_minutes: isTimeLimitEnabled ? (parseInt(settings.setting_time_limit_minutes, 10) || null) : null
@@ -87,7 +82,6 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
                 </header>
 
                 <main className="flex-grow overflow-y-auto p-6 space-y-4">
-                    {/* ... Opsi pengaturan lainnya tidak berubah ... */}
                     <ToggleSwitch
                         label="Penalti Jawaban Salah"
                         description="Jika aktif, jawaban salah akan mengurangi total skor siswa."
@@ -125,7 +119,6 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
                         onToggle={() => handleToggle('setting_show_correct_answers')}
                     />
                     
-                    {/* ✅ 4. Tambahkan saklar untuk batas waktu */}
                     <ToggleSwitch
                         label="Aktifkan Batas Waktu"
                         description="Jika aktif, siswa akan memiliki batas waktu total untuk mengerjakan semua soal."
@@ -133,7 +126,6 @@ const ChapterSettingsModal = ({ isOpen, onClose, onSave, chapterData }) => {
                         onToggle={() => setIsTimeLimitEnabled(prev => !prev)}
                     />
 
-                    {/* ✅ 5. Tampilkan input waktu secara kondisional */}
                     <AnimatePresence>
                         {isTimeLimitEnabled && (
                             <motion.div

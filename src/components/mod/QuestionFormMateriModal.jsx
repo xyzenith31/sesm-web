@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react'; // ✅ PERBAIKAN: Tambahkan useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiPaperclip, FiImage, FiFilm, FiMusic, FiFile, FiX, FiLink, FiType } from 'react-icons/fi';
 import DataService from '../../services/dataService';
 import CustomSelect from '../ui/CustomSelect';
 import useDebounce from '../../hooks/useDebounce';
-import SaveStatusIcon from '../ui/SaveStatusIcon'; // Impor komponen SaveStatusIcon
-import Notification from '../ui/Notification'; // <-- Tambahkan impor Notifikasi
+import SaveStatusIcon from '../ui/SaveStatusIcon';
+import Notification from '../ui/Notification'; 
 
 const MediaPreview = ({ file, onRemove }) => {
     const getIcon = () => {
@@ -54,7 +54,7 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const [linkInput, setLinkInput] = useState({ qIndex: null, value: '' });
     const [textInput, setTextInput] = useState({ qIndex: null, value: '' });
     const [saveStatus, setSaveStatus] = useState('Tersimpan');
-    // State untuk notifikasi
+
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
 
     const getNewQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', media: [], links: [], texts: [], subQuestions: [], id: Date.now() + Math.random() });
@@ -69,10 +69,8 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
         }
         setSaveStatus('Menyimpan...');
         try {
-            // Hapus 'media' (file object) sebelum serialisasi
             const serializableData = draftData.map(({ media, ...rest }) => ({
                 ...rest,
-                // Pastikan subQuestions juga diserialisasi tanpa file object jika ada
                 subQuestions: rest.subQuestions?.map(({ media, ...subRest }) => subRest) || []
             }));
             await DataService.saveDraft(DRAFT_KEY, serializableData);
@@ -96,14 +94,13 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
             DataService.getDraft(DRAFT_KEY)
                 .then(response => {
                     if (response.data && response.data.content && response.data.content.length > 0) {
-                        // Pastikan struktur data dari draf cocok, tambahkan media: [] jika tidak ada
                         setQuestions(response.data.content.map(q => ({
                             ...getNewQuestion(),
                             ...q,
-                            media: [], // File object tidak disimpan di draf
+                            media: [], 
                             links: q.links || [],
                             texts: q.texts || [],
-                            subQuestions: (q.subQuestions || []).map(sq => ({...getNewSubQuestion(), ...sq, media: []})) // Muat subQuestions
+                            subQuestions: (q.subQuestions || []).map(sq => ({...getNewSubQuestion(), ...sq, media: []}))
                          })));
                     } else {
                         setQuestions([getNewQuestion()]);
@@ -114,7 +111,6 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                 })
                 .finally(() => setSaveStatus('Tersimpan'));
         } else {
-            // Reset state saat modal ditutup
              setQuestions([]);
              setLinkInput({ qIndex: null, value: '' });
              setTextInput({ qIndex: null, value: '' });
@@ -129,14 +125,11 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
         }
         saveDraftToBackend(questions);
         setNotif({isOpen: true, title: "Berhasil", message: "Draf berhasil disimpan!", success: true });
-        // Jangan tutup modal saat hanya menyimpan draf
-        // onClose();
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validasi jawaban benar untuk soal PG
         for (let i = 0; i < questions.length; i++) {
             const q = questions[i];
             if ((q.type === 'pilihan-ganda' || q.type === 'pilihan-ganda-esai') && (!q.correctAnswer || q.correctAnswer.trim() === '')) {
@@ -146,9 +139,9 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                     message: `Soal nomor ${i + 1} (${q.type}) belum memiliki jawaban benar. Silakan pilih jawaban yang benar.`,
                     success: false
                 });
-                return; // Hentikan submit
+                return; 
             }
-             // Validasi jawaban benar untuk sub soal PG
+
             if(q.subQuestions && q.subQuestions.length > 0) {
                 for (let j = 0; j < q.subQuestions.length; j++){
                     const subQ = q.subQuestions[j];
@@ -159,7 +152,7 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                             message: `Sub Soal nomor ${i + 1}.${j+1} (${subQ.type}) belum memiliki jawaban benar. Silakan pilih jawaban yang benar.`,
                             success: false
                         });
-                        return; // Hentikan submit
+                        return; 
                     }
                 }
             }
@@ -189,14 +182,12 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const addSubOptionField = (qIndex, subQIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions[subQIndex].options.push(''); setQuestions(newQuestions); };
     const removeSubOptionField = (qIndex, subQIndex, oIndex) => { const newQuestions = [...questions]; const subQ = newQuestions[qIndex].subQuestions[subQIndex]; const removedOption = subQ.options[oIndex]; if (subQ.correctAnswer === removedOption) { subQ.correctAnswer = ''; } subQ.options = subQ.options.filter((_, i) => i !== oIndex); setQuestions(newQuestions); };
 
-     // Handler untuk menutup notifikasi
     const handleCloseNotif = () => setNotif({ ...notif, isOpen: false });
 
     if (!isOpen) return null;
 
     return (
         <>
-            {/* Render Notifikasi */}
             <Notification
                 isOpen={notif.isOpen}
                 onClose={handleCloseNotif}
@@ -250,7 +241,6 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                                     />
                                                 </label>
                                                 <button type="button" onClick={() => { setLinkInput({ qIndex, value: '' }); setTextInput({ qIndex: null, value: '' }); }} className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors cursor-pointer"><FiLink/> Lampirkan Link</button>
-                                                <button type="button" onClick={() => { setTextInput({ qIndex, value: '' }); setLinkInput({ qIndex: null, value: '' }); }} className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors cursor-pointer"><FiType/> Lampirkan Teks</button>
                                             </div>
                                             <AnimatePresence>
                                                 {linkInput.qIndex === qIndex && (
@@ -272,7 +262,6 @@ const QuestionFormModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
                                                     </motion.div>
                                                 )}
                                             </AnimatePresence>
-                                            {/* Preview Lampiran */}
                                             {(q.media.length > 0 || q.links.length > 0 || q.texts.length > 0) && (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2 border rounded-md bg-gray-100">
                                                     {q.media.map((file, mIndex) => <MediaPreview key={`file-${q.id}-${mIndex}`} file={file} onRemove={() => removeMedia(qIndex, mIndex)} /> )}
