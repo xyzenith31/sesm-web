@@ -9,7 +9,7 @@ import {
 import { FaBug, FaLightbulb, FaCommentDots } from 'react-icons/fa';
 import { Listbox, Transition } from '@headlessui/react';
 import Notification from '../components/ui/Notification'; // Sesuaikan path jika perlu
-// import FeedbackService from '../services/feedbackService'; // Komentari atau hapus
+// import FeedbackService from '../services/feedbackService'; // Komentari atau hapus jika hanya simulasi
 import { useNavigation } from '../hooks/useNavigation';
 
 // Opsi tipe feedback
@@ -33,6 +33,25 @@ const pages = [
     { id: 'lainnya', name: 'Lainnya / Tidak Spesifik' },
 ];
 
+// Simulasi fungsi submit (Ganti dengan API call asli jika sudah ada)
+const submitFeedbackSim = async (formData) => {
+    console.log("Mengirim feedback ke server (simulasi):", {
+        type: formData.get('type'),
+        title: formData.get('title'),
+        page: formData.get('page_context'), // Ganti nama field jika diperlukan
+        description: formData.get('description'),
+        attachment: formData.get('attachment'),
+    });
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Simulate success/failure
+    if (Math.random() > 0.1) { // 90% chance of success
+        return { success: true, message: "Masukan Anda telah diterima! Terima kasih." };
+    } else {
+        throw new Error("Gagal mengirim laporan. Silakan coba lagi nanti.");
+    }
+};
+
 const FeedbackPage = () => {
     const { navigate } = useNavigation();
     const [selectedType, setSelectedType] = useState(feedbackTypes[0]);
@@ -44,43 +63,75 @@ const FeedbackPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
 
-    // Fungsi handleFileChange, removeAttachment, resetForm (TIDAK BERUBAH)
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            if (file.size > 5 * 1024 * 1024) { setNotif({ isOpen: true, title: "Gagal", message: "Ukuran file maksimal 5MB.", success: false }); return; }
-            setAttachment(file); setAttachmentName(file.name);
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                 setNotif({ isOpen: true, title: "Gagal", message: "Ukuran file maksimal 5MB.", success: false });
+                 return;
+            }
+            setAttachment(file);
+            setAttachmentName(file.name);
         }
     };
     const removeAttachment = () => {
-        setAttachment(null); setAttachmentName('');
-        const fileInput = document.getElementById('file-upload'); if (fileInput) fileInput.value = null;
+        setAttachment(null);
+        setAttachmentName('');
+        // Reset file input value agar bisa memilih file yang sama lagi
+        const fileInput = document.getElementById('file-upload');
+        if (fileInput) fileInput.value = null;
     };
     const resetForm = () => {
-        setSelectedType(feedbackTypes[0]); setTitle(''); setSelectedPage(pages[pages.length - 1]);
-        setDescription(''); removeAttachment(); setIsLoading(false);
+        setSelectedType(feedbackTypes[0]);
+        setTitle('');
+        setSelectedPage(pages[pages.length - 1]);
+        setDescription('');
+        removeAttachment(); // Panggil fungsi remove attachment
+        setIsLoading(false);
     };
 
-    // Fungsi handleSubmit (Simulasi)
     const handleSubmit = async (e) => {
         e.preventDefault();
         // Validasi
-        if ((selectedType.id === 'bug' || selectedType.id === 'fitur') && !title.trim()) { setNotif({ isOpen: true, title: "Input Kurang", message: "Judul wajib diisi untuk laporan bug atau usulan fitur.", success: false }); return; }
-        if (!description.trim()) { setNotif({ isOpen: true, title: "Input Kurang", message: "Deskripsi wajib diisi.", success: false }); return; }
-        setIsLoading(true); setNotif(prev => ({ ...prev, isOpen: false }));
+        if ((selectedType.id === 'bug' || selectedType.id === 'fitur') && !title.trim()) {
+            setNotif({ isOpen: true, title: "Input Kurang", message: "Judul wajib diisi untuk laporan bug atau usulan fitur.", success: false });
+            return;
+        }
+        if (!description.trim()) {
+            setNotif({ isOpen: true, title: "Input Kurang", message: "Deskripsi wajib diisi.", success: false });
+            return;
+        }
 
-        console.log("Data yang akan dikirim (simulasi):", { type: selectedType.id, title: title.trim(), page_context: selectedPage.name, description: description, attachment: attachment ? attachment.name : null, });
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setNotif({ isOpen: true, title: "Berhasil!", message: "Masukan Anda telah diterima (simulasi). Terima kasih!", success: true });
-        resetForm(); setIsLoading(false);
+        setIsLoading(true);
+        setNotif(prev => ({ ...prev, isOpen: false })); // Tutup notif sebelumnya
+
+        const formData = new FormData();
+        formData.append('type', selectedType.id);
+        formData.append('title', title.trim());
+        formData.append('page_context', selectedPage.name); // Nama field bisa disesuaikan dengan backend
+        formData.append('description', description);
+        if (attachment) {
+            formData.append('attachment', attachment);
+        }
+
+        try {
+            // Ganti submitFeedbackSim dengan FeedbackService.submitFeedback(formData) jika menggunakan API asli
+            const result = await submitFeedbackSim(formData);
+            setNotif({ isOpen: true, title: "Berhasil!", message: result.message, success: true });
+            resetForm(); // Reset form setelah berhasil
+        } catch (error) {
+            setNotif({ isOpen: true, title: "Gagal!", message: error.message || "Terjadi kesalahan saat mengirim.", success: false });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    // Fungsi handleCloseNotif (TIDAK BERUBAH)
     const handleCloseNotif = () => setNotif({ ...notif, isOpen: false });
 
 
     return (
         <>
+            {/* Notifikasi */}
             <Notification
                 isOpen={notif.isOpen}
                 onClose={handleCloseNotif}
@@ -90,14 +141,13 @@ const FeedbackPage = () => {
             />
 
             {/* Layout Utama Halaman (Full Width) */}
-            {/* Menggunakan min-h-screen agar mengisi tinggi layar, bg-gray-100 untuk latar belakang */}
             <div className="min-h-screen bg-gray-100 flex flex-col">
 
                 {/* Header */}
                 <header className="bg-white p-4 pt-8 md:pt-4 flex items-center sticky top-0 z-10 shadow-sm flex-shrink-0">
                     <motion.button
                         onClick={() => navigate('profile')}
-                        className="p-2 rounded-full hover:bg-gray-200 transition-colors" // Ganti hover bg
+                        className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                         whileTap={{ scale: 0.9 }}
                     >
                         <FiArrowLeft size={24} className="text-gray-700" />
@@ -108,18 +158,19 @@ const FeedbackPage = () => {
                     <div className="w-10"></div> {/* Spacer */}
                 </header>
 
-                {/* Konten Utama (Scrollable jika perlu) */}
-                <main className="flex-grow overflow-y-auto p-4 md:p-8"> {/* Tambahkan padding */}
-                    {/* Wadah untuk Form dengan max-width agar tidak terlalu lebar di desktop */}
+                {/* Konten Utama (Scrollable) */}
+                <main className="flex-grow overflow-y-auto p-4 md:p-8">
+                    {/* Wadah untuk Form */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, ease: 'easeOut' }}
-                        className="w-full max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden" // max-w-3xl atau sesuaikan
+                        // ✅ PERBAIKAN: Hapus lg:max-w-3xl dan mx-auto
+                        className="w-full bg-white rounded-2xl shadow-xl overflow-hidden"
                     >
                         <form onSubmit={handleSubmit}>
                             {/* Konten Form */}
-                            <div className="p-6 md:p-8 space-y-6"> {/* Tambahkan padding */}
+                            <div className="p-6 md:p-8 space-y-6">
                                 {/* Tipe Feedback */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-2">Jenis Masukan</label>
@@ -147,11 +198,19 @@ const FeedbackPage = () => {
                                     <label htmlFor="title" className="block text-sm font-bold text-gray-700">
                                         Judul Singkat {selectedType.id !== 'saran' ? '*' : '(Opsional)'}
                                     </label>
-                                    <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={
-                                            selectedType.id === 'bug' ? 'cth: Tombol submit hilang' :
-                                            selectedType.id === 'fitur' ? 'cth: Fitur leaderboard mingguan' :
-                                            'cth: Tampilan kurang jelas'
-                                        } className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sesm-teal focus:border-transparent bg-white" required={selectedType.id !== 'saran'} />
+                                    <input
+                                        type="text"
+                                        id="title"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        placeholder={
+                                            selectedType.id === 'bug' ? 'cth: Tombol submit hilang saat...' :
+                                            selectedType.id === 'fitur' ? 'cth: Usulan fitur leaderboard mingguan' :
+                                            'cth: Tampilan profil kurang jelas'
+                                        }
+                                        className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sesm-teal focus:border-transparent bg-white text-gray-900"
+                                        required={selectedType.id !== 'saran'}
+                                    />
                                 </div>
 
                                 {/* Halaman Terkait */}
@@ -159,18 +218,39 @@ const FeedbackPage = () => {
                                     <Listbox value={selectedPage} onChange={setSelectedPage}>
                                         <Listbox.Label className="block text-sm font-bold text-gray-700">Halaman Terkait (Opsional)</Listbox.Label>
                                         <div className="relative mt-1">
-                                            <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-sesm-teal focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-sesm-teal/50 sm:text-sm">
+                                            <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-sesm-teal focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-sesm-teal/50 sm:text-sm text-gray-900">
                                                 <span className="block truncate">{selectedPage.name}</span>
-                                                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"> <FiChevronDown className="h-5 w-5 text-gray-400" /> </span>
+                                                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                                    <FiChevronDown className="h-5 w-5 text-gray-400" />
+                                                </span>
                                             </Listbox.Button>
-                                            <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                                            <Transition
+                                                as={Fragment}
+                                                leave="transition ease-in duration-100"
+                                                leaveFrom="opacity-100"
+                                                leaveTo="opacity-0"
+                                            >
                                                 <Listbox.Options className="absolute mt-1 max-h-48 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-20">
                                                     {pages.map((page) => (
-                                                        <Listbox.Option key={page.id} className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${ active ? 'bg-sesm-teal/10 text-sesm-deep' : 'text-gray-900' }`} value={page}>
+                                                        <Listbox.Option
+                                                            key={page.id}
+                                                            className={({ active }) =>
+                                                                `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                                                active ? 'bg-sesm-teal/10 text-sesm-deep' : 'text-gray-900'
+                                                                }`
+                                                            }
+                                                            value={page}
+                                                        >
                                                             {({ selected }) => (
                                                                 <>
-                                                                    <span className={`block truncate ${ selected ? 'font-medium' : 'font-normal' }`}>{page.name}</span>
-                                                                    {selected ? (<span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sesm-teal"><FiCheckCircle className="h-5 w-5" /></span>) : null}
+                                                                    <span className={`block truncate ${ selected ? 'font-medium' : 'font-normal' }`}>
+                                                                        {page.name}
+                                                                    </span>
+                                                                    {selected ? (
+                                                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sesm-teal">
+                                                                            <FiCheckCircle className="h-5 w-5" />
+                                                                        </span>
+                                                                    ) : null}
                                                                 </>
                                                             )}
                                                         </Listbox.Option>
@@ -184,24 +264,39 @@ const FeedbackPage = () => {
                                 {/* Deskripsi */}
                                 <div>
                                     <label htmlFor="description" className="block text-sm font-bold text-gray-700">Deskripsi Detail *</label>
-                                    <textarea id="description" rows="5" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={
-                                            selectedType.id === 'bug' ? 'Jelaskan masalah yang Anda temui, langkah-langkahnya, dan apa yang seharusnya terjadi...' :
-                                            selectedType.id === 'fitur' ? 'Jelaskan fitur yang Anda inginkan dan mengapa itu berguna...' :
-                                            'Tuliskan saran atau masukan umum Anda di sini...'
-                                        } className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sesm-teal focus:border-transparent resize-y bg-white" required></textarea>
+                                    <textarea
+                                        id="description"
+                                        rows="5"
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        placeholder={
+                                            selectedType.id === 'bug' ? 'Jelaskan masalah yang Anda temui, langkah-langkah untuk mereproduksinya, dan apa yang seharusnya terjadi...' :
+                                            selectedType.id === 'fitur' ? 'Jelaskan fitur baru yang Anda inginkan dan mengapa fitur ini akan berguna bagi pengguna lain...' :
+                                            'Tuliskan saran atau masukan umum Anda untuk pengembangan SESM di sini...'
+                                        }
+                                        className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sesm-teal focus:border-transparent resize-y bg-white text-gray-900"
+                                        required
+                                    ></textarea>
                                 </div>
 
                                 {/* Lampiran */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Lampiran (Opsional)</label>
-                                    <label htmlFor="file-upload" className="mt-1 flex justify-center px-6 py-8 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"> {/* Ganti bg */}
+                                    <label htmlFor="file-upload" className="mt-1 flex justify-center px-6 py-8 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
                                         <div className="space-y-1 text-center">
                                             <FiUpload className="mx-auto h-10 w-10 text-gray-400" />
                                             {attachmentName ? (
                                                 <div className="flex items-center justify-center text-sm text-sesm-deep font-semibold">
                                                     <FiPaperclip className="mr-1.5" />
                                                     <span className="truncate max-w-[200px]">{attachmentName}</span>
-                                                    <button type="button" onClick={(e) => { e.preventDefault(); removeAttachment(); }} className="ml-2 text-red-500 hover:text-red-700" title="Hapus file"> <FiX size={16}/> </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.preventDefault(); removeAttachment(); }}
+                                                        className="ml-2 text-red-500 hover:text-red-700"
+                                                        title="Hapus file"
+                                                    >
+                                                        <FiX size={16}/>
+                                                    </button>
                                                 </div>
                                             ) : (
                                                 <div className="flex text-sm text-gray-600">
@@ -217,8 +312,13 @@ const FeedbackPage = () => {
                             </div> {/* Akhir dari padding konten form */}
 
                             {/* Footer Form */}
-                            <footer className="p-6 bg-gray-50 border-t border-gray-200"> {/* Ganti bg dan tambah border */}
-                                <motion.button type="submit" disabled={isLoading} className="w-full flex items-center justify-center gap-2 bg-sesm-deep text-white font-bold py-3 rounded-lg shadow-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sesm-deep disabled:bg-gray-400 disabled:cursor-not-allowed" whileTap={{ scale: 0.98 }}>
+                            <footer className="p-6 bg-gray-50 border-t border-gray-200">
+                                <motion.button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full flex items-center justify-center gap-2 bg-sesm-deep text-white font-bold py-3 rounded-lg shadow-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sesm-deep disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    whileTap={{ scale: 0.98 }}
+                                >
                                     {isLoading ? <FiLoader className="animate-spin" /> : <FiSend />}
                                     {isLoading ? 'Mengirim...' : 'Kirim Masukan'}
                                 </motion.button>
@@ -231,13 +331,14 @@ const FeedbackPage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.5 }}
-                        className="mt-8 w-full max-w-3xl mx-auto bg-gradient-to-r from-cyan-100 to-blue-100 p-4 rounded-lg flex items-start gap-3 border border-cyan-200"
+                        // ✅ PERBAIKAN: Gunakan w-full di mobile, max-w-3xl di desktop (lg:)
+                        className="mt-8 w-full lg:max-w-3xl mx-auto bg-gradient-to-r from-cyan-100 to-blue-100 p-4 rounded-lg flex items-start gap-3 border border-cyan-200"
                     >
                         <FiInfo size={24} className="mt-0.5 flex-shrink-0 text-cyan-700" />
                         <p className="text-sm text-cyan-800">
-                            Jika Anda butuh bantuan teknis atau jawaban cepat, silakan kunjungi
+                            Masukan Anda sangat berharga untuk pengembangan SESM. Jika Anda butuh bantuan teknis atau jawaban cepat, silakan kunjungi
                             <span
-                                onClick={() => navigate('bantuan')}
+                                onClick={() => navigate('bantuan')} // Navigasi ke halaman bantuan
                                 className="font-bold text-sesm-deep cursor-pointer ml-1 transition-colors duration-200 hover:text-sesm-teal hover:underline"
                             >
                                 Pusat Bantuan
