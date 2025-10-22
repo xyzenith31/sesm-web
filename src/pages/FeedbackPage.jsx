@@ -325,26 +325,6 @@ const FeedbackPage = () => {
                             </footer>
                         </form>
                     </motion.div>
-
-                    {/* Blok Info Bantuan di Bawah Kartu */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 0.5 }}
-                        // ✅ PERBAIKAN: Gunakan w-full di mobile, max-w-3xl di desktop (lg:)
-                        className="mt-8 w-full lg:max-w-3xl mx-auto bg-gradient-to-r from-cyan-100 to-blue-100 p-4 rounded-lg flex items-start gap-3 border border-cyan-200"
-                    >
-                        <FiInfo size={24} className="mt-0.5 flex-shrink-0 text-cyan-700" />
-                        <p className="text-sm text-cyan-800">
-                            Masukan Anda sangat berharga untuk pengembangan SESM. Jika Anda butuh bantuan teknis atau jawaban cepat, silakan kunjungi
-                            <span
-                                onClick={() => navigate('bantuan')} // Navigasi ke halaman bantuan
-                                className="font-bold text-sesm-deep cursor-pointer ml-1 transition-colors duration-200 hover:text-sesm-teal hover:underline"
-                            >
-                                Pusat Bantuan
-                            </span>.
-                        </p>
-                    </motion.div>
                 </main>
             </div>
         </>

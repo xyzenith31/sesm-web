@@ -409,7 +409,7 @@ const HomePage = ({ onNavigate }) => {
                 ))}
               </div>
               <motion.button
-                onClick={() => setShowSuggestionModal(true)}
+                onClick={() => onNavigate('feedback')}
                 className="w-full mt-6 bg-sesm-teal text-white font-bold rounded-full flex items-center justify-center p-3 text-sm shadow-md"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.95 }}
@@ -533,7 +533,7 @@ const HomePage = ({ onNavigate }) => {
                     ))}
                   </div>
                   <motion.button
-                    onClick={() => setShowSuggestionModal(true)}
+                    onClick={() => onNavigate('feedback')}
                     className="w-full mt-6 bg-sesm-teal text-white font-bold rounded-full flex items-center justify-center p-3 text-sm shadow-md"
                     whileHover={{ scale: 1.03, backgroundColor: '#0f766e' }}
                     whileTap={{ scale: 0.95 }}
