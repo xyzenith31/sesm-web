@@ -3,8 +3,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, animate } from 'framer-motion';
 import {
   FiChevronRight, FiUser, FiHelpCircle, FiLogOut, FiTrendingUp,
-  FiFeather, FiCheckSquare, FiClock, FiZap, FiAlertTriangle, FiLoader, FiSettings
-} from 'react-icons/fi'; // <-- Pastikan FiSettings diimpor
+  FiFeather, FiCheckSquare, FiClock, FiZap, FiAlertTriangle, FiLoader, FiSettings,
+  FiMessageSquare // <-- 1. PASTIKAN IKON INI DITAMBAHKAN
+} from 'react-icons/fi'; 
 import { useAuth } from '../hooks/useAuth';
 import { useData } from '../hooks/useData';
 
@@ -115,16 +116,14 @@ const AnimatedNumber = ({ value = 0 }) => {
     return <>{displayValue.toLocaleString()}</>;
 };
 
-// --- ProfileMenuItem DIPERBARUI: Hapus prop isLogout ---
+// --- ProfileMenuItem (tidak berubah) ---
 const ProfileMenuItem = ({ icon: Icon, label, hasChevron = true, onClick }) => (
     <motion.button
         onClick={onClick}
-        // --- Hilangkan class text-red-500 ---
         className={`w-full flex items-center justify-between text-left px-5 py-4 bg-white rounded-xl shadow-sm transition-colors text-gray-700 hover:bg-gray-50`}
         whileTap={{ scale: 0.98 }}
     >
         <div className="flex items-center space-x-4">
-            {/* --- Hilangkan ternary color icon --- */}
             <Icon className='text-sesm-deep' size={22} />
             <span className="font-semibold">{label}</span>
         </div>
@@ -230,16 +229,17 @@ const ProfilePage = ({ onNavigate }) => {
                                 </div>
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-2">Pengaturan</h3>
+                                {/* --- 2. JUDUL BAGIAN DIPERBARUI --- */}
+                                <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-2">Pengaturan & Bantuan</h3>
                                 <div className="space-y-3">
-                                    <ProfileMenuItem icon={FiUser} label="Pengaturan Akun" onClick={() => onNavigate('accountSettings')} />
+                                    {/* --- Gunakan FiSettings & Tambahkan Item Baru --- */}
+                                    <ProfileMenuItem icon={FiSettings} label="Pengaturan Akun" onClick={() => onNavigate('accountSettings')} />
                                     <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" onClick={() => onNavigate('bantuan')} />
+                                    {/* --- 3. INI ITEM MENU BARU UNTUK FEEDBACK (MOBILE) --- */}
+                                    <ProfileMenuItem icon={FiMessageSquare} label="Saran & Masukan" onClick={() => onNavigate('feedback')} />
                                 </div>
                             </div>
                              {/* --- Tombol Logout di Mobile Dihapus --- */}
-                            {/* <div className="pt-4">
-                                <ProfileMenuItem icon={FiLogOut} label="Logout" hasChevron={false} isLogout={true} onClick={() => setIsLogoutModalOpen(true)} />
-                            </div> */}
                         </div>
                     </main>
                 </div>
@@ -247,11 +247,9 @@ const ProfilePage = ({ onNavigate }) => {
 
             {/* --- Tampilan Desktop (Struktur Baru) --- */}
             <div className="hidden md:block min-h-screen bg-gray-100 p-8">
-                 {/* --- PERBAIKAN: Gunakan flex-grow agar konten mengisi tinggi --- */}
                 <div className="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-8 flex flex-col flex-grow">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start flex-grow"> {/* Tambahkan flex-grow di sini */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start flex-grow"> 
                         {/* Kolom Kiri */}
-                         {/* --- PERBAIKAN: Gunakan flex flex-col agar konten mengisi tinggi --- */}
                         <div className="lg:col-span-1 space-y-8 flex flex-col h-full">
                             <div className="bg-gradient-to-br from-sesm-teal to-sesm-deep text-white p-8 rounded-2xl shadow-lg">
                                 <div className="flex flex-col items-center text-center">
@@ -260,16 +258,14 @@ const ProfilePage = ({ onNavigate }) => {
                                     <p className="text-md opacity-80 mb-4">{userLevel}</p>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-2xl shadow-md p-6 space-y-4 border flex-grow"> {/* Tambahkan flex-grow */}
+                            <div className="bg-white rounded-2xl shadow-md p-6 space-y-4 border flex-grow"> 
                                 <h3 className="font-bold text-gray-800 text-lg">Statistik Belajar</h3>
                                 {userStats.map(stat => <StatItem key={stat.label} {...stat} />)}
                             </div>
                         </div>
                         {/* Kolom Kanan */}
-                        {/* --- PERBAIKAN: Gunakan flex flex-col agar konten mengisi tinggi --- */}
                         <div className="lg:col-span-2 space-y-8 flex flex-col h-full">
                             <RankCard currentRankInfo={pointsData.currentRank} onNavigate={onNavigate} />
-                            {/* --- PERBAIKAN: Tambahkan flex-grow pada div ini --- */}
                             <div className="space-y-6 flex flex-col flex-grow">
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-3">Aktivitas Saya</h3>
@@ -279,17 +275,16 @@ const ProfilePage = ({ onNavigate }) => {
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-3">PENGATURAN</h3>
+                                    {/* --- 4. JUDUL BAGIAN DIPERBARUI --- */}
+                                    <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-3">PENGATURAN & BANTUAN</h3>
                                     <div className="space-y-3">
-                                        {/* Ganti FiUser ke FiSettings agar ikon sesuai */}
                                         <ProfileMenuItem icon={FiSettings} label="Pengaturan Akun" onClick={() => onNavigate('accountSettings')} />
                                         <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" onClick={() => onNavigate('bantuan')} />
+                                        {/* --- 5. INI ITEM MENU BARU UNTUK FEEDBACK (DESKTOP) --- */}
+                                        <ProfileMenuItem icon={FiMessageSquare} label="Saran & Masukan" onClick={() => onNavigate('feedback')} />
                                     </div>
                                 </div>
                                 {/* --- Tombol Logout di Desktop Dihapus --- */}
-                                {/* <div className="pt-4 mt-auto"> {/* Tambahkan mt-auto agar tombol ke bawah */}
-                                    {/* <ProfileMenuItem icon={FiLogOut} label="Logout" hasChevron={false} isLogout={true} onClick={() => setIsLogoutModalOpen(true)} /> */}
-                                {/* </div> */}
                             </div>
                         </div>
                     </div>
