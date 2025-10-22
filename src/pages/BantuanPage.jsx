@@ -5,10 +5,16 @@ import {
     FiArrowLeft, FiHelpCircle, FiHome, FiBookOpen, FiSearch, FiBookmark,
     FiUser, FiAward, FiZap, FiEdit, FiCamera, FiSettings, FiLogOut, FiTrendingUp,
     FiMessageSquare, FiStar, FiCalendar, FiClock, FiChevronDown, FiChevronUp,
-    FiCheckSquare, FiBook as FiBookIcon, FiFlag, FiSave, FiFilter, FiList, FiFolder, FiCloud
+    FiCheckSquare, FiBook as FiBookIcon, FiFlag, FiSave, FiFilter, FiList, FiFolder, FiCloud,
+    FiMail, FiUsers, FiCheckCircle // Added FiCheckCircle if needed, FiMail is already there
 } from 'react-icons/fi';
-import { FaPalette, FaTrophy, FaQuestionCircle, FaPenFancy } from 'react-icons/fa';
-import { useNavigation } from '../hooks/useNavigation'; // Pastikan path ini benar
+import {
+    FaPalette, FaTrophy, FaQuestionCircle, FaPenFancy,
+    FaBug
+} from 'react-icons/fa';
+import { useNavigation } from '../hooks/useNavigation';
+import FeedbackModal from '../components/mod/FeedbackModal';
+import SupportChoiceModal from '../components/mod/SupportChoiceModal'; // Import modal kustom
 
 // Data Bantuan (Bisa dipisah ke file lain jika terlalu besar)
 const helpSections = [
@@ -312,25 +318,27 @@ const helpSections = [
     },
 ];
 
-// Komponen Accordion
+// Komponen Accordion Item
 const AccordionItem = ({ section, isOpen, onClick }) => {
     const Icon = section.icon;
     return (
         <motion.div
             layout
-            className={`bg-white rounded-xl shadow-sm border overflow-hidden mb-4 transition-colors ${isOpen ? 'border-sesm-teal' : 'border-gray-200'}`}
+            className={`bg-white rounded-xl shadow-sm border overflow-hidden mb-4 transition-all duration-300 ${isOpen ? 'border-sesm-teal ring-2 ring-sesm-teal/20' : 'border-gray-200'}`}
+            whileHover={{ y: -3, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05)" }}
         >
             <motion.header
                 layout
                 initial={false}
                 onClick={onClick}
                 className={`p-4 flex justify-between items-center cursor-pointer ${isOpen ? 'bg-sesm-teal/10' : 'hover:bg-gray-50'}`}
+                whileTap={{ backgroundColor: isOpen ? 'rgba(13, 148, 136, 0.15)' : 'rgba(243, 244, 246, 1)' }} // Efek tap
             >
                 <div className="flex items-center gap-3">
-                    <Icon className={`text-xl ${isOpen ? 'text-sesm-deep' : 'text-gray-500'}`} />
-                    <h3 className={`font-bold text-lg ${isOpen ? 'text-sesm-deep' : 'text-gray-700'}`}>{section.title}</h3>
+                    <Icon className={`text-xl transition-colors ${isOpen ? 'text-sesm-deep' : 'text-gray-500'}`} />
+                    <h3 className={`font-bold text-lg transition-colors ${isOpen ? 'text-sesm-deep' : 'text-gray-700'}`}>{section.title}</h3>
                 </div>
-                <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
+                <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.3 }}>
                     <FiChevronDown className="text-gray-500" />
                 </motion.div>
             </motion.header>
@@ -372,39 +380,80 @@ const AccordionItem = ({ section, isOpen, onClick }) => {
     );
 };
 
-
+// Komponen Utama BantuanPage
 const BantuanPage = () => {
     const { navigate } = useNavigation();
-    const [openSection, setOpenSection] = useState(null); // ID section yang terbuka
+    const [openSection, setOpenSection] = useState(null);
+    const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
     const toggleSection = (id) => {
         setOpenSection(openSection === id ? null : id);
     };
 
+    const handleContactClick = () => {
+        setIsChoiceModalOpen(true);
+    };
+
+    const handleEmailAction = () => {
+        window.location.href = 'mailto:sesmweb@gmail.com?subject=Kritik%20dan%20Saran%20untuk%20SESM';
+        setIsChoiceModalOpen(false); // Close the choice modal
+    };
+
+    const handleFeedbackFormAction = () => {
+        setIsChoiceModalOpen(false); // Close the choice modal first
+        setTimeout(() => {
+            setIsFeedbackModalOpen(true); // Open feedback modal after a short delay
+        }, 150); // Delay allows the choice modal to animate out
+    };
+
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col">
+        <div className="h-screen bg-gray-100 flex flex-col overflow-hidden">
+
+            {/* === MODAL 1: Pilihan Kontak (Menggunakan SupportChoiceModal) === */}
+            <AnimatePresence>
+                {isChoiceModalOpen && (
+                    <SupportChoiceModal
+                        isOpen={isChoiceModalOpen}
+                        onClose={() => setIsChoiceModalOpen(false)}
+                        onEmailClick={handleEmailAction}
+                        onFeedbackClick={handleFeedbackFormAction}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* === MODAL 2: Form Feedback === */}
+            <FeedbackModal
+                isOpen={isFeedbackModalOpen}
+                onClose={() => setIsFeedbackModalOpen(false)}
+            />
+
             {/* Header */}
-            <header className="bg-white p-4 pt-8 flex items-center sticky top-0 z-10 shadow-sm">
-                <button onClick={() => navigate('profile')} className="p-2 rounded-full hover:bg-gray-100">
+            <header className="bg-white p-4 pt-8 md:pt-4 flex items-center sticky top-0 z-10 shadow-sm flex-shrink-0">
+                <motion.button
+                    onClick={() => navigate('profile')}
+                    className="p-2 rounded-full hover:bg-gray-100"
+                    whileTap={{ scale: 0.9 }}
+                >
                     <FiArrowLeft size={24} className="text-gray-700" />
-                </button>
+                </motion.button>
                 <h1 className="text-xl font-bold text-center flex-grow text-sesm-deep flex items-center justify-center">
                     <FiHelpCircle className="mr-2" /> Pusat Bantuan
                 </h1>
                 <div className="w-10"></div> {/* Spacer */}
             </header>
 
-            {/* Main Content */}
-            <main className="flex-grow overflow-y-auto p-6">
+            {/* Konten utama (Scrollable) */}
+            <main className="flex-grow overflow-y-auto p-4 md:p-6">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="max-w-3xl mx-auto"
+                    className="w-full mx-auto"
                 >
                     <div className="text-center mb-8">
-                        <h2 className="text-3xl font-bold text-gray-800">Selamat Datang di SESM!</h2>
-                        <p className="text-gray-600 mt-2">Temukan panduan lengkap untuk menggunakan semua fitur belajar yang seru di sini.</p>
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Selamat Datang di SESM!</h2>
+                        <p className="text-gray-600 mt-2 max-w-2xl mx-auto">Temukan panduan lengkap untuk menggunakan semua fitur belajar yang seru di sini.</p>
                     </div>
 
                     {/* Accordion Bantuan */}
@@ -420,22 +469,22 @@ const BantuanPage = () => {
                     </div>
 
                     {/* Kontak Bantuan */}
-                     <motion.div
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: helpSections.length * 0.05 + 0.3 }}
-                        className="mt-10 text-center bg-sesm-teal/10 p-6 rounded-xl border border-sesm-teal/30"
+                        className="mt-10 mb-6 text-center bg-sesm-teal/10 p-6 rounded-xl border border-sesm-teal/30"
                     >
                         <h3 className="font-bold text-lg text-sesm-deep">Masih Butuh Bantuan?</h3>
-                        <p className="text-gray-600 mt-1 mb-4">Jika ada pertanyaan lebih lanjut atau kendala, jangan ragu hubungi tim support kami.</p>
-                        <motion.a
-                            href="mailto:dukungan@sesm.app" // Ganti dengan email support Anda
-                            className="inline-block bg-sesm-deep text-white font-semibold px-6 py-2 rounded-lg shadow hover:bg-opacity-90"
-                            whileHover={{ scale: 1.05 }}
+                        <p className="text-gray-600 mt-1 mb-4">Tim kami siap mendengarkan masukan Anda untuk menjadikan SESM lebih baik.</p>
+                        <motion.button
+                            onClick={handleContactClick}
+                            className="inline-flex items-center gap-2 bg-sesm-deep text-white font-semibold px-6 py-2 rounded-lg shadow hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sesm-deep"
+                            whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            Hubungi Support
-                        </motion.a>
+                            <FiMessageSquare /> Hubungi Support
+                        </motion.button>
                     </motion.div>
                 </motion.div>
             </main>
