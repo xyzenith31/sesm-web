@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
+// [PERBAIKAN] Impor API_BASE_URL
+import { API_BASE_URL } from '../../utils/apiClient';
 
 const StoryReaderModal = ({ storyData, onClose, onComplete }) => { 
   const [currentNodeKey, setCurrentNodeKey] = useState('start');
   const currentNode = storyData[currentNodeKey];
-  const API_URL = 'http://localhost:8080'; // Definisikan base URL API server Anda
+  // [PERBAIKAN] Hapus hardcode API_URL
+  // const API_URL = 'http://localhost:8080';
 
   const handleChoice = (nextNodeKey) => {
-    // Pastikan node tujuan ada sebelum pindah
     if (storyData[nextNodeKey]) {
       setCurrentNodeKey(nextNodeKey);
     } else {
@@ -25,8 +27,14 @@ const StoryReaderModal = ({ storyData, onClose, onComplete }) => {
     }
   };
 
-  // Buat URL gambar yang lengkap
-  const imageUrl = currentNode.image ? `${API_URL}/${currentNode.image}` : '';
+  // [PERBAIKAN] Buat URL gambar yang lengkap
+  const getImageUrl = (path) => {
+    if (!path || path.startsWith('blob:') || path.startsWith('http')) {
+        return path;
+    }
+    return `${API_BASE_URL}/${path}`;
+  };
+  const imageUrl = getImageUrl(currentNode.image);
 
   return createPortal(
     <motion.div
@@ -58,6 +66,7 @@ const StoryReaderModal = ({ storyData, onClose, onComplete }) => {
             className="flex flex-col h-full"
           >
             <div className="w-full h-56 md:h-64 bg-gray-200 overflow-hidden">
+              {/* [PERBAIKAN] Tampilkan gambar menggunakan imageUrl */}
               {imageUrl && <img src={imageUrl} alt="Ilustrasi cerita" className="w-full h-full object-cover"/>}
             </div>
 

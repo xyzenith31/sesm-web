@@ -4,7 +4,9 @@ import { FiBook, FiPlus, FiLoader, FiAlertCircle, FiEdit, FiTrash2, FiUsers } fr
 import InteractiveStoryService from '../../services/interactiveStoryService';
 import StoryEditorModal from '../../components/admin/StoryEditorModal';
 import Notification from '../../components/ui/Notification';
-import PengerjaanCeritaModal from '../../components/admin/PengerjaanCeritaModal'; // [TAMBAHAN] Impor modal baru
+import PengerjaanCeritaModal from '../../components/admin/PengerjaanCeritaModal';
+// [PERBAIKAN] Impor API_BASE_URL
+import { API_BASE_URL } from '../../utils/apiClient';
 
 const ManajemenCerita = () => {
     const [stories, setStories] = useState([]);
@@ -13,10 +15,10 @@ const ManajemenCerita = () => {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingStory, setEditingStory] = useState(null);
 
-    // [TAMBAHAN] State untuk modal pengerjaan
     const [viewingSubmissions, setViewingSubmissions] = useState(null);
 
-    const API_URL = 'http://localhost:8080';
+    // [PERBAIKAN] Gunakan API_BASE_URL, hapus hardcode
+    // const API_URL = 'http://localhost:8080';
 
     const fetchStories = useCallback(async () => {
         setLoading(true);
@@ -39,6 +41,7 @@ const ManajemenCerita = () => {
         setIsEditorOpen(true);
     };
 
+    // [PERBAIKAN] handleSave sekarang menerima 'data' (FormData dari modal)
     const handleSave = async (data, id) => {
         try {
             const message = id ? "Cerita berhasil diperbarui!" : "Cerita baru berhasil dibuat!";
@@ -52,36 +55,54 @@ const ManajemenCerita = () => {
             fetchStories();
         } catch (error) {
             setNotif({ isOpen: true, message: error.response?.data?.message || "Gagal menyimpan.", success: false, title: "Gagal" });
-            throw error;
+            throw error; // Lemparkan error agar modal tahu
         }
     };
     
     const handleDelete = async (id, title) => {
-        if (window.confirm(`Yakin ingin menghapus cerita "${title}"?`)) {
-            try {
-                await InteractiveStoryService.deleteStory(id);
-                setNotif({ isOpen: true, message: `Cerita "${title}" berhasil dihapus.`, success: true, title: "Sukses" });
-                fetchStories();
-            } catch (error) {
-                setNotif({ isOpen: true, message: "Gagal menghapus cerita.", success: false, title: "Error" });
-            }
+        // Logika konfirmasi notifikasi
+        setNotif({
+            isOpen: true,
+            title: "Konfirmasi Hapus",
+            message: `Yakin ingin menghapus cerita "${title}"?`,
+            isConfirmation: true,
+            success: false, // Warna merah
+            onConfirm: () => confirmDelete(id, title),
+            confirmText: "Ya, Hapus"
+        });
+    };
+    
+    const confirmDelete = async (id, title) => {
+         setNotif(prev => ({ ...prev, isOpen: false }));
+         await new Promise(resolve => setTimeout(resolve, 300));
+         
+        try {
+            await InteractiveStoryService.deleteStory(id);
+            setNotif({ isOpen: true, message: `Cerita "${title}" berhasil dihapus.`, success: true, title: "Sukses" });
+            fetchStories();
+        } catch (error) {
+            setNotif({ isOpen: true, message: "Gagal menghapus cerita.", success: false, title: "Error" });
         }
+    };
+    
+    // [PERBAIKAN] Menggunakan 'story' objek utuh
+    const handleViewSubmissions = (story) => {
+        setViewingSubmissions(story);
     };
 
     return (
         <>
             <AnimatePresence>
                 {isEditorOpen && <StoryEditorModal isOpen={isEditorOpen} onClose={() => setIsEditorOpen(false)} onSubmit={handleSave} initialData={editingStory} />}
-                {/* [TAMBAHAN] Render modal pengerjaan */}
                 {viewingSubmissions && (
                     <PengerjaanCeritaModal 
                         isOpen={!!viewingSubmissions}
-                        story={viewingSubmissions}
+                        story={viewingSubmissions} // Kirim objek story utuh
                         onClose={() => setViewingSubmissions(null)}
                     />
                 )}
             </AnimatePresence>
-            <Notification isOpen={notif.isOpen} onClose={() => setNotif({ ...notif, isOpen: false })} title={notif.title} message={notif.message} success={notif.success} />
+            <Notification isOpen={notif.isOpen} onClose={() => setNotif({ ...notif, isOpen: false })} title={notif.title} message={notif.message} success={notif.success} isConfirmation={notif.isConfirmation} onConfirm={notif.onConfirm} confirmText={notif.confirmText} />
             
             <div className="bg-white p-6 rounded-xl shadow-lg flex-grow flex flex-col h-full">
                 <div className="flex justify-between items-center mb-6 pb-6 border-b border-gray-200">
@@ -107,16 +128,17 @@ const ManajemenCerita = () => {
                                 {stories.map(story => (
                                     <tr key={story.id} className="hover:bg-gray-50 border-b">
                                         <td className="px-6 py-4 font-bold text-gray-800 flex items-center gap-4">
-                                            <img src={story.cover_image ? `${API_URL}/${story.cover_image}` : `https://api.dicebear.com/7.x/shapes/svg?seed=${story.title}`} alt={story.title} className="w-16 h-10 rounded-md object-cover"/>
+                                            {/* [PERBAIKAN] Gunakan API_BASE_URL untuk gambar */}
+                                            <img src={story.cover_image ? `${API_BASE_URL}/${story.cover_image}` : `https://api.dicebear.com/7.x/shapes/svg?seed=${story.title}`} alt={story.title} className="w-16 h-10 rounded-md object-cover bg-gray-200"/>
                                             <span>{story.title}</span>
                                         </td>
                                         <td className="px-6 py-4">{story.category}</td>
                                         <td className="px-6 py-4 text-center">{story.total_endings}</td>
                                         <td className="px-6 py-4 text-center">{story.creator_name}</td>
                                         <td className="px-6 py-4">
-                                            {/* [PERBAIKAN] Tambahkan tombol "Lihat Pengerjaan" */}
                                             <div className="flex justify-center items-center gap-4">
-                                                <button onClick={() => setViewingSubmissions(story)} className="font-medium text-green-600 hover:text-green-800" title="Lihat Pengerjaan"><FiUsers /></button>
+                                                {/* [PERBAIKAN] Kirim objek story utuh */}
+                                                <button onClick={() => handleViewSubmissions(story)} className="font-medium text-green-600 hover:text-green-800" title="Lihat Pengerjaan"><FiUsers /></button>
                                                 <button onClick={() => handleOpenEditor(story)} className="font-medium text-blue-600 hover:text-blue-800" title="Edit"><FiEdit/></button>
                                                 <button onClick={() => handleDelete(story.id, story.title)} className="font-medium text-red-600 hover:text-red-800" title="Hapus"><FiTrash2/></button>
                                             </div>

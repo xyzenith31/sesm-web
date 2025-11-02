@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// [PERBAIKAN] Ekspor URL dasar server
+export const API_BASE_URL = 'http://localhost:8080';
+
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: `${API_BASE_URL}/api`, // [PERBAIKAN] Gunakan konstanta
   headers: {
     'Content-Type': 'application/json',
   },
@@ -9,9 +12,13 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user && user.accessToken) {
-      config.headers['x-access-token'] = user.accessToken;
+    // Ambil user dari localStorage di dalam interceptor
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      const user = JSON.parse(userString);
+      if (user && user.accessToken) {
+        config.headers['x-access-token'] = user.accessToken;
+      }
     }
     return config;
   },
