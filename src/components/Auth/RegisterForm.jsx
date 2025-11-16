@@ -1,11 +1,9 @@
-// contoh-sesm-web/components/Auth/RegisterForm.jsx
-
 import React, { useState, useEffect } from 'react';
-import { FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
+import { FiAlertCircle } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigation } from '../../hooks/useNavigation';
-import Notification from '../ui/Notification'; // <-- 1. Impor komponen notifikasi
+import Notification from '../ui/Notification';
 
 const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -22,8 +20,6 @@ const RegisterForm = () => {
     password: '', konfirmasi_password: '',
   });
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [usernameError, setUsernameError] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -102,7 +98,6 @@ const RegisterForm = () => {
 
   return (
     <>
-      {/* --- 2. Render komponen Notifikasi --- */}
       <Notification
         isOpen={notif.isOpen}
         onClose={handleNotifClose}
@@ -124,13 +119,11 @@ const RegisterForm = () => {
         <input type="text" placeholder="Nama Lengkap" name="nama" value={formData.nama} onChange={handleInputChange} className={getInputStyle(false)} required />
         <input type="number" placeholder="Umur" name="umur" value={formData.umur} onChange={handleInputChange} className={getInputStyle(false)} required />
         
-        <div className="relative">
-          <input type={showPassword ? "text" : "password"} placeholder="Password" name="password" value={formData.password} onChange={handleInputChange} className={getInputStyle(false)} required />
-          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">{showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}</button>
+        <div>
+          <input type="password" placeholder="Password" name="password" value={formData.password} onChange={handleInputChange} className={getInputStyle(false)} required />
         </div>
-        <div className="relative">
-          <input type={showConfirmPassword ? "text" : "password"} placeholder="Konfirmasi Password" name="konfirmasi_password" value={formData.konfirmasi_password} onChange={handleInputChange} className={getInputStyle(false)} required />
-          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">{showConfirmPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}</button>
+        <div>
+          <input type="password" placeholder="Konfirmasi Password" name="konfirmasi_password" value={formData.konfirmasi_password} onChange={handleInputChange} className={getInputStyle(false)} required />
         </div>
         
         <div className="pt-2">
