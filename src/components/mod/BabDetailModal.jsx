@@ -3,8 +3,6 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiCheck, FiRefreshCw } from 'react-icons/fi';
 
-// --- Komponen untuk Kartu Soal ---
-// Komponen ini menerima 'onAnswerChange' sebagai prop
 const QuestionCard = ({ question, index, userAnswer, onAnswerChange, isSubmitted }) => {
   const isCorrect = isSubmitted && userAnswer && question.correctAnswer && userAnswer.toLowerCase() === question.correctAnswer.toLowerCase();
 
@@ -38,7 +36,6 @@ const QuestionCard = ({ question, index, userAnswer, onAnswerChange, isSubmitted
           {question.options.map((option) => (
             <button
               key={option}
-              // PERBAIKAN: Memanggil 'onAnswerChange' dari prop
               onClick={() => onAnswerChange(index, option)}
               disabled={isSubmitted}
               className={`w-full text-left p-3 rounded-lg font-semibold transition-all duration-200 ${getOptionClass(option)}`}
@@ -52,7 +49,6 @@ const QuestionCard = ({ question, index, userAnswer, onAnswerChange, isSubmitted
       {question.type === 'essay' && (
         <textarea
           value={userAnswer || ''}
-          // PERBAIKAN: Memanggil 'onAnswerChange' dari prop
           onChange={(e) => onAnswerChange(index, e.target.value)}
           disabled={isSubmitted}
           placeholder="Tulis jawabanmu di sini..."
@@ -63,7 +59,6 @@ const QuestionCard = ({ question, index, userAnswer, onAnswerChange, isSubmitted
   );
 };
 
-// --- Komponen Utama Modal ---
 const BabDetailModal = ({ materi, onClose }) => {
   const [answers, setAnswers] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -73,7 +68,6 @@ const BabDetailModal = ({ materi, onClose }) => {
     setIsSubmitted(false);
   }, [materi]);
   
-  // 1. Fungsi 'handleAnswerChange' didefinisikan di sini
   const handleAnswerChange = (questionIndex, answer) => {
     setAnswers(prev => ({ ...prev, [questionIndex]: answer }));
   };
@@ -137,7 +131,6 @@ const BabDetailModal = ({ materi, onClose }) => {
                     question={q}
                     index={index}
                     userAnswer={answers[index]}
-                    // 2. Fungsi 'handleAnswerChange' diteruskan sebagai prop bernama 'onAnswerChange'
                     onAnswerChange={handleAnswerChange}
                     isSubmitted={isSubmitted}
                 />

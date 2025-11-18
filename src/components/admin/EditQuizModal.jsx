@@ -1,21 +1,18 @@
-// contoh-sesm-web/components/admin/EditQuizModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiX, FiUpload, FiLoader, FiSave } from 'react-icons/fi'; // Tambahkan FiLoader & FiSave
-import CustomSelect from '../ui/CustomSelect'; // Pastikan path benar
+import { FiX, FiUpload, FiLoader, FiSave } from 'react-icons/fi';
+import CustomSelect from '../ui/CustomSelect';
 
 const EditQuizModal = ({ isOpen, onClose, onSubmit, initialData }) => {
-    // State untuk form
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [coverImage, setCoverImage] = useState(null); // File baru
-    const [preview, setPreview] = useState(''); // URL preview (bisa object URL atau URL dari server)
+    const [coverImage, setCoverImage] = useState(null);
+    const [preview, setPreview] = useState(''); 
     const [recommendedLevel, setRecommendedLevel] = useState('Semua');
-    const [isSaving, setIsSaving] = useState(false); // State loading
+    const [isSaving, setIsSaving] = useState(false); 
 
-    const API_URL = 'http://localhost:8080'; // Sesuaikan jika perlu
+    const API_URL = 'http://localhost:8080';
 
-    // Opsi level
     const levelOptions = [
         { value: 'Semua', label: 'Semua Jenjang' },
         { value: 'TK', label: 'TK' },
@@ -24,59 +21,43 @@ const EditQuizModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         { value: 'SD 5-6', label: 'SD Kelas 5-6' }
     ];
 
-    // Mengisi form saat modal dibuka dengan initialData
     useEffect(() => {
         if (isOpen && initialData) {
             setTitle(initialData.title || '');
             setDescription(initialData.description || '');
             setRecommendedLevel(initialData.recommended_level || 'Semua');
-            // Jika ada gambar sampul sebelumnya, tampilkan
             if (initialData.cover_image_url) {
                 setPreview(`${API_URL}/${initialData.cover_image_url}`);
             } else {
                 setPreview('');
             }
-            // Reset state file baru
             setCoverImage(null);
         }
     }, [isOpen, initialData, API_URL]);
 
-    // Handler ganti gambar
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setCoverImage(file); // Simpan file baru
-            setPreview(URL.createObjectURL(file)); // Tampilkan preview file baru
+            setCoverImage(file); 
+            setPreview(URL.createObjectURL(file)); 
         }
     };
 
-    // Handler submit
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!initialData?.id) return; // Pastikan ada ID untuk update
+        if (!initialData?.id) return; 
 
         setIsSaving(true);
         const formData = new FormData();
         formData.append('title', title);
         formData.append('description', description);
         formData.append('recommended_level', recommendedLevel);
-        // Hanya kirim coverImage jika ada file baru yang dipilih
         if (coverImage) {
             formData.append('coverImage', coverImage);
         }
-        // Jika tidak ada gambar baru DAN preview masih ada (artinya gambar lama tidak dihapus),
-        // backend harusnya tidak menghapus gambar lama.
-        // Jika preview KOSONG (user menghapus), backend harus tahu untuk menghapus gambar.
-        // Kita bisa tambahkan field flag jika perlu, misal:
-        // if (!coverImage && !preview) {
-        //     formData.append('removeCoverImage', 'true');
-        // }
-
         try {
-            await onSubmit(initialData.id, formData); // Panggil fungsi onSubmit dari parent
-            // Reset dan tutup modal ditangani oleh parent jika sukses
+            await onSubmit(initialData.id, formData);
         } catch (error) {
-            // Error handling (misalnya notifikasi) sudah ada di parent
             console.error("Error updating quiz from modal:", error);
         } finally {
             setIsSaving(false);
@@ -90,7 +71,7 @@ const EditQuizModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4" // z-index lebih tinggi dari modal utama
+            className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4" 
         >
             <motion.div
                 initial={{ scale: 0.9 }}
@@ -105,7 +86,7 @@ const EditQuizModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             <h3 className="text-xl font-bold text-sesm-deep">Edit Detail Kuis</h3>
                             <button type="button" onClick={onClose} disabled={isSaving} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
                         </div>
-                        <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-2"> {/* Tambah scroll */}
+                        <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-2"> 
                             <div>
                                 <label className="font-semibold text-sm">Judul Kuis</label>
                                 <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-2 border rounded-md mt-1" required />
@@ -116,7 +97,7 @@ const EditQuizModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                     <CustomSelect
                                         options={levelOptions}
                                         value={recommendedLevel}
-                                        onChange={setRecommendedLevel} // Langsung set value
+                                        onChange={setRecommendedLevel} 
                                     />
                                 </div>
                             </div>
@@ -129,20 +110,17 @@ const EditQuizModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                 <div className="mt-1 border-2 border-dashed rounded-lg p-4 text-center">
                                     <input type="file" id="cover-upload-edit" className="hidden" onChange={handleImageChange} accept="image/*" />
                                     <label htmlFor="cover-upload-edit" className="cursor-pointer text-sesm-teal font-semibold flex flex-col items-center justify-center">
-                                        {/* Tampilkan preview */}
                                         {preview ? (
                                             <img src={preview} alt="Preview" className="h-24 rounded-md mb-2 object-cover" />
                                         ) : (
                                             <FiUpload size={32} className="mb-2 text-gray-400" />
                                         )}
-                                        {/* Tampilkan nama file baru atau pesan default */}
                                         {coverImage ? coverImage.name : "Ganti gambar (jika perlu)"}
                                     </label>
-                                    {/* Tombol hapus preview (opsional) */}
-                                    {preview && !coverImage && ( // Tampil jika ada preview gambar lama tapi belum pilih baru
+                                    {preview && !coverImage && ( 
                                         <button
                                             type="button"
-                                            onClick={() => setPreview('')} // Hapus preview
+                                            onClick={() => setPreview('')}  
                                             className="mt-2 text-xs text-red-500 hover:underline"
                                         >
                                             Hapus Gambar Sampul

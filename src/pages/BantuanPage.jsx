@@ -1,4 +1,3 @@
-// contoh-sesm-web/pages/BantuanPage.jsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -6,7 +5,7 @@ import {
     FiUser, FiAward, FiZap, FiEdit, FiCamera, FiSettings, FiLogOut, FiTrendingUp,
     FiMessageSquare, FiStar, FiCalendar, FiClock, FiChevronDown, FiChevronUp,
     FiCheckSquare, FiBook as FiBookIcon, FiFlag, FiSave, FiFilter, FiList, FiFolder, FiCloud,
-    FiMail, FiUsers, FiCheckCircle // Added FiCheckCircle if needed, FiMail is already there
+    FiMail, FiUsers, FiCheckCircle
 } from 'react-icons/fi';
 import {
     FaPalette, FaTrophy, FaQuestionCircle, FaPenFancy,
@@ -14,9 +13,8 @@ import {
 } from 'react-icons/fa';
 import { useNavigation } from '../hooks/useNavigation';
 import FeedbackModal from '../components/mod/FeedbackModal';
-import SupportChoiceModal from '../components/mod/SupportChoiceModal'; // Import modal kustom
+import SupportChoiceModal from '../components/mod/SupportChoiceModal';
 
-// Data Bantuan (Bisa dipisah ke file lain jika terlalu besar)
 const helpSections = [
     {
         id: 'home',
@@ -95,7 +93,7 @@ const helpSections = [
             {
                 subTitle: 'Navigasi Soal',
                 description: 'Gunakan tombol panah atau daftar nomor soal (di sidebar/menu) untuk berpindah antar soal.',
-                icon: FiChevronDown, // Menggunakan ikon yang relevan
+                icon: FiChevronDown, 
             },
             {
                 subTitle: 'Media Pembelajaran',
@@ -147,7 +145,7 @@ const helpSections = [
             {
                 subTitle: 'Cerita Interaktif',
                 description: 'Baca cerita dan tentukan alurnya sendiri. Setiap pilihan membawa ke akhir yang berbeda!',
-                icon: FiBookIcon, // Menggunakan alias FiBookIcon
+                icon: FiBookIcon,
             },
             {
                 subTitle: 'Kuis Pengetahuan',
@@ -169,7 +167,7 @@ const helpSections = [
             {
                 subTitle: 'Menulis Kreatif',
                 description: 'Tulis cerpen, puisi, atau catatan lainnya di editor teks. Atur format tulisan (bold, italic, dll.), pilih font, dan simpan karyamu.',
-                icon: FaPenFancy, // Menggunakan FaPenFancy
+                icon: FaPenFancy,
             },
              {
                 subTitle: 'Manajemen Proyek',
@@ -318,7 +316,6 @@ const helpSections = [
     },
 ];
 
-// Komponen Accordion Item
 const AccordionItem = ({ section, isOpen, onClick }) => {
     const Icon = section.icon;
     return (
@@ -380,7 +377,6 @@ const AccordionItem = ({ section, isOpen, onClick }) => {
     );
 };
 
-// Komponen Utama BantuanPage
 const BantuanPage = () => {
     const { navigate } = useNavigation();
     const [openSection, setOpenSection] = useState(null);
@@ -397,20 +393,19 @@ const BantuanPage = () => {
 
     const handleEmailAction = () => {
         window.location.href = 'mailto:sesmweb@gmail.com?subject=Kritik%20dan%20Saran%20untuk%20SESM';
-        setIsChoiceModalOpen(false); // Close the choice modal
+        setIsChoiceModalOpen(false);
     };
 
     const handleFeedbackFormAction = () => {
-        setIsChoiceModalOpen(false); // Close the choice modal first
+        setIsChoiceModalOpen(false);
         setTimeout(() => {
-            setIsFeedbackModalOpen(true); // Open feedback modal after a short delay
-        }, 150); // Delay allows the choice modal to animate out
+            setIsFeedbackModalOpen(true);
+        }, 150);
     };
 
     return (
         <div className="h-screen bg-gray-100 flex flex-col overflow-hidden">
 
-            {/* === MODAL 1: Pilihan Kontak (Menggunakan SupportChoiceModal) === */}
             <AnimatePresence>
                 {isChoiceModalOpen && (
                     <SupportChoiceModal
@@ -422,13 +417,11 @@ const BantuanPage = () => {
                 )}
             </AnimatePresence>
 
-            {/* === MODAL 2: Form Feedback === */}
             <FeedbackModal
                 isOpen={isFeedbackModalOpen}
                 onClose={() => setIsFeedbackModalOpen(false)}
             />
 
-            {/* Header */}
             <header className="bg-white p-4 pt-8 md:pt-4 flex items-center sticky top-0 z-10 shadow-sm flex-shrink-0">
                 <motion.button
                     onClick={() => navigate('profile')}
@@ -440,10 +433,9 @@ const BantuanPage = () => {
                 <h1 className="text-xl font-bold text-center flex-grow text-sesm-deep flex items-center justify-center">
                     <FiHelpCircle className="mr-2" /> Pusat Bantuan
                 </h1>
-                <div className="w-10"></div> {/* Spacer */}
+                <div className="w-10"></div>
             </header>
 
-            {/* Konten utama (Scrollable) */}
             <main className="flex-grow overflow-y-auto p-4 md:p-6">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -456,7 +448,6 @@ const BantuanPage = () => {
                         <p className="text-gray-600 mt-2 max-w-2xl mx-auto">Temukan panduan lengkap untuk menggunakan semua fitur belajar yang seru di sini.</p>
                     </div>
 
-                    {/* Accordion Bantuan */}
                     <div className="w-full">
                         {helpSections.map((section) => (
                             <AccordionItem
@@ -468,7 +459,6 @@ const BantuanPage = () => {
                         ))}
                     </div>
 
-                    {/* Kontak Bantuan */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}

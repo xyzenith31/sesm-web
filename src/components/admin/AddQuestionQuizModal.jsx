@@ -11,7 +11,7 @@ const toAlpha = (num) => String.fromCharCode(65 + num);
 
 const MediaPreview = ({ item, onRemove }) => {
     const getIcon = (file) => {
-        if (!file || !file.type) return <FiFile className="text-gray-500" size={24} />; // Fallback
+        if (!file || !file.type) return <FiFile className="text-gray-500" size={24} />;
         if (file.type.startsWith('image/')) return <FiImage className="text-blue-500" size={24} />;
         if (file.type.startsWith('video/')) return <FiFilm className="text-purple-500" size={24} />;
         if (file.type.startsWith('audio/')) return <FiMusic className="text-pink-500" size={24} />;

@@ -1,12 +1,10 @@
-// contoh-sesm-web/pages/WorksheetPage.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiDownload, FiLink, FiAward, FiClock, FiAlertTriangle, FiLoader, FiEye, FiUser } from 'react-icons/fi';
+import { FiArrowLeft, FiFlag, FiCheckCircle, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiDownload, FiLink, FiAward, FiClock, FiAlertTriangle, FiLoader, FiEye } from 'react-icons/fi';
 import DataService from '../services/dataService';
 import ConfirmationModal from '../components/mod/ConfirmationModal';
 import PointsNotification from '../components/ui/PointsNotification';
 
-// --- Komponen Helper ---
 const ImageLightbox = ({ imageUrl, onClose }) => (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -19,76 +17,111 @@ const ImageLightbox = ({ imageUrl, onClose }) => (
         <FiX size={24} />
       </button>
     </motion.div>
-  );
+);
 
-// --- Komponen MediaViewer dengan Perbaikan Video ---
 const MediaViewer = ({ mediaUrls, onImageClick }) => {
-    const API_URL = 'http://localhost:8080'; // Pastikan ini sesuai
-    const getYouTubeEmbedUrl = (url) => { if (!url) return null; const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null; };
+    const API_URL = 'http://localhost:8080'; 
 
-    if (!mediaUrls || mediaUrls.length === 0) return null;
+    if (!mediaUrls || !Array.isArray(mediaUrls) || mediaUrls.length === 0) return null;
 
     return (
       <div className="mb-6 space-y-4 max-w-lg mx-auto">
         {mediaUrls.map((item, index) => {
-          const key = `media-${index}-${item.url || item.content}`;
+            const rawUrl = item.url || item.content || "";
+            const typeString = (item.type || "").toLowerCase();
+            const key = `media-${index}-${rawUrl}`;
 
-          if (item.type === 'file') {
-            // Pastikan item.url ada dan merupakan string sebelum membangun URL lengkap
-            const fullFileUrl = (item.url && typeof item.url === 'string')
-              ? (item.url.startsWith('/') ? `${API_URL}${item.url}` : `${API_URL}/${item.url}`) // Handle jika url sudah ada '/' di depan
-              : null;
+            if (!rawUrl) return null;
 
-            if (!fullFileUrl) {
-                console.error("URL file tidak valid:", item); // Log jika URL bermasalah
-                return <p key={key} className='text-red-500 text-xs'>Error: URL file tidak valid.</p>;
+            const isYouTube = typeString.includes('link') || 
+                              typeString.includes('video') || 
+                              rawUrl.includes('youtube.com') || 
+                              rawUrl.includes('youtu.be');
+
+            if (isYouTube) {
+                const cleanUrl = rawUrl.trim();
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+                const match = cleanUrl.match(regExp);
+                const videoId = (match && match[2].length === 11) ? match[2] : null;
+
+                if (videoId) {
+                    return (
+                        <div key={key} className="relative w-full pt-[56.25%] bg-black rounded-lg overflow-hidden shadow-md border border-gray-200">
+                            <iframe 
+                                src={`https://www.youtube.com/embed/${videoId}`} 
+                                title={`YouTube video ${index}`} 
+                                className="absolute top-0 left-0 w-full h-full" 
+                                frameBorder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowFullScreen
+                            ></iframe>
+                        </div>
+                    );
+                }
+                if (typeString === 'link' || rawUrl.startsWith('http')) {
+                     return (
+                        <a key={key} href={rawUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 font-semibold hover:bg-blue-100 transition-colors">
+                            <FiLink /><span>Buka Tautan Video</span>
+                        </a>
+                    );
+                }
             }
 
-            // Dapatkan ekstensi dari bagian terakhir URL setelah titik
-            const urlParts = item.url.split('.');
-            const fileExtension = urlParts.length > 1 ? urlParts[urlParts.length - 1].toLowerCase() : '';
+            let fileUrl = rawUrl;
+        
+            fileUrl = fileUrl.replace(/\\/g, '/'); 
+            fileUrl = fileUrl.replace(/^server\/|^\/server\//, ''); 
+            fileUrl = fileUrl.replace(/^public\/|^\/public\//, ''); 
 
-            // Render berdasarkan ekstensi
-            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
-                return <img key={key} src={fullFileUrl} alt={`Lampiran ${index + 1}`} className="max-w-full mx-auto rounded-lg shadow-md cursor-pointer" onClick={() => onImageClick(fullFileUrl)} />;
-            }
-            // --- ✅ PERBAIKAN VIDEO TAG DI SINI ---
-            if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+            if (fileUrl.startsWith('uploads')) fileUrl = '/' + fileUrl;
+            
+            const fullFileUrl = fileUrl.startsWith('http') ? fileUrl : `${API_URL}${fileUrl}`;
+            const extension = fullFileUrl.split('.').pop().toLowerCase().split('?')[0];
+
+            const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+            const videoExts = ['mp4', 'webm', 'ogg', 'mov'];
+
+            if (imageExts.includes(extension) || typeString === 'image') {
                 return (
-                    <video
-                        key={key}
-                        src={fullFileUrl} // URL Langsung ke file di server
-                        controls // Tampilkan kontrol video
-                        playsInline // Bantu pemutaran di browser mobile
-                        className="w-full rounded-lg shadow-md bg-black" // Tambah bg-black untuk letterboxing
-                        preload="metadata" // Bisa 'auto', 'metadata', atau 'none'
-                    >
-                        Browser Anda tidak mendukung tag video untuk format ini.
-                        <a href={fullFileUrl} download>Unduh video</a> {/* Fallback link unduh */}
+                    <div key={key} className="relative">
+                        <img 
+                            src={fullFileUrl} 
+                            alt={`Lampiran ${index + 1}`} 
+                            className="max-w-full mx-auto rounded-lg shadow-md cursor-pointer hover:opacity-95 transition-opacity border border-gray-200 bg-gray-100 min-h-[100px] object-cover" 
+                            onClick={() => onImageClick(fullFileUrl)} 
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                const errSpan = document.createElement('span');
+                                errSpan.className = 'text-xs text-red-500 block text-center p-2';
+                                errSpan.innerText = 'Gagal memuat gambar. File mungkin hilang.';
+                                e.target.parentNode.appendChild(errSpan);
+                            }}
+                        />
+                    </div>
+                );
+            }
+
+            if (videoExts.includes(extension)) {
+                return (
+                    <video key={key} src={fullFileUrl} controls playsInline className="w-full rounded-lg shadow-md bg-black border border-gray-300">
+                        Browser Anda tidak mendukung tag video.
                     </video>
                 );
             }
-            // Render audio dan link download file lainnya
-             if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
-                 return <audio key={key} src={fullFileUrl} controls className="w-full" />;
-             }
-             return <a key={key} href={fullFileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-sesm-deep font-semibold hover:bg-gray-200"><FiDownload /><span>Lihat/Unduh Lampiran ({fileExtension.toUpperCase()})</span></a>;
 
+            if (typeString === 'text') {
+                 return <div key={key} className="p-3 bg-yellow-50 border-l-4 border-yellow-400 text-gray-700 text-sm rounded-r-md whitespace-pre-wrap">{item.content}</div>
+            }
 
-          } else if (item.type === 'link') {
-            // Logika link YouTube/biasa tidak berubah
-            const embedUrl = getYouTubeEmbedUrl(item.url);
-            if (embedUrl) return (<div key={key} className="aspect-video bg-black rounded-lg overflow-hidden shadow-md"><iframe src={embedUrl} title={`YouTube video ${index}`} className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe></div>);
-            return <a key={key} href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-blue-600 font-semibold hover:bg-gray-200"><FiLink /><span>Buka Tautan: {item.url}</span></a>;
-          } else if (item.type === 'text') {
-             return <div key={key} className="p-3 bg-yellow-50 border-l-4 border-yellow-400 text-gray-700 text-sm rounded-r-md whitespace-pre-wrap">{item.content}</div>
-          }
-          return null;
+            return (
+                <a key={key} href={fullFileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-gray-700 font-semibold hover:bg-gray-200 transition-colors border border-gray-200">
+                    <FiDownload /><span>Lihat Lampiran</span>
+                </a>
+            );
         })}
       </div>
     );
 };
-// --- (Akhir Komponen MediaViewer) ---
 
 const EssayInput = ({ answer, onChange, isReviewing }) => (<textarea value={answer} onChange={onChange} disabled={isReviewing} placeholder="Tulis jawaban esaimu di sini..." className={`w-full h-40 p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal transition-colors ${isReviewing ? 'bg-gray-200' : ''}`}/>);
 const OptionButton = ({ option, userAnswer, correctAnswer, onClick, isReviewing }) => {
@@ -99,20 +132,16 @@ const OptionButton = ({ option, userAnswer, correctAnswer, onClick, isReviewing 
     return (<button onClick={onClick} disabled={isReviewing} className={`w-full text-left p-4 rounded-lg font-semibold transition-all duration-200 border-2 flex justify-between items-center ${buttonClass}`}><span>{option}</span>{isReviewing && option === correctAnswer && <FiCheckCircle className="text-green-600" />}</button>);
 };
 
-// --- Komponen Utama ---
 const WorksheetPage = ({ onNavigate, chapterInfo }) => {
-    const { materiKey, chapterTitle, subjectName, navigationKey } = chapterInfo || {};
+    const { materiKey, chapterTitle, navigationKey } = chapterInfo || {};
     const API_URL = 'http://localhost:8080';
 
-    // State Data
     const [questions, setQuestions] = useState([]);
     const [chapterSettings, setChapterSettings] = useState({});
     const [answers, setAnswers] = useState({});
     const [marked, setMarked] = useState({});
     const [creatorInfo, setCreatorInfo] = useState({ nama: null, avatar: null });
     const [initialCompletionStatus, setInitialCompletionStatus] = useState(false);
-
-    // State Alur & UI
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -122,11 +151,8 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
     const [lightboxImage, setLightboxImage] = useState(null);
     const [showPoints, setShowPoints] = useState(false);
     const [isReviewing, setIsReviewing] = useState(false);
-
-    // State Timer
     const [timeLeft, setTimeLeft] = useState(null);
 
-    // Fetch Data Materi
     useEffect(() => {
         if (materiKey) {
             setLoading(true);
@@ -159,7 +185,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
         }
     }, [materiKey, onNavigate]);
 
-    // Submit Jawaban
     const handleSubmit = useCallback(async () => {
         const answerPayload = Object.entries(answers).map(([questionId, answer]) => ({ questionId: parseInt(questionId), answer: answer || "" }));
         try {
@@ -177,7 +202,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
         }
     }, [answers, materiKey, initialCompletionStatus]);
 
-    // Timer Logic
     useEffect(() => {
         if (timeLeft === null || isSubmitted) return;
         if (timeLeft <= 0) { handleSubmit(); return; }
@@ -202,7 +226,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
     const isAllAnswered = useMemo(() => { if (!chapterSettings.setting_require_all_answers) return true; return questions.every(q => answers[q.id] && answers[q.id].trim() !== ''); }, [answers, questions, chapterSettings]);
     const correctAnswersCount = useMemo(() => { if (!isSubmitted) return 0; return questions.filter(q => isQuestionCorrect(q)).length; }, [isSubmitted, questions, answers]);
 
-    // Avatar URL Logic
     const creatorNameSeed = encodeURIComponent(creatorInfo.nama || 'Guru');
     const defaultAvatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${creatorNameSeed}&backgroundColor=cccccc&fontSize=36`;
     const creatorAvatarUrl = creatorInfo.avatar
@@ -212,7 +235,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
 
     if (loading) return <div className="min-h-screen bg-gray-100 flex justify-center items-center"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
 
-    // Tampilan Hasil (Submission Result View)
     if (isSubmitted && !isReviewing) {
         return (
             <>
@@ -237,14 +259,12 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
         )
      }
 
-    // Tampilan Pengerjaan Soal (Worksheet View)
     return (
         <>
             <AnimatePresence>{lightboxImage && <ImageLightbox imageUrl={lightboxImage} onClose={() => setLightboxImage(null)} />}</AnimatePresence>
             <ConfirmationModal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)} onConfirm={confirmExit} title="Yakin Ingin Keluar?" message="Proses pengerjaan soal Anda belum selesai dan tidak akan disimpan." confirmText="Ya, Keluar" />
 
-            <div className="flex flex-col h-screen overflow-hidden bg-gray-100"> {/* Container Utama */}
-                {/* Navigasi Sidebar (Hanya Desktop) */}
+            <div className="flex flex-col h-screen overflow-hidden bg-gray-100">
                 <aside className={`hidden md:flex fixed top-0 bottom-0 left-0 w-64 bg-white shadow-lg z-20 p-4 flex-col`} >
                     <div className="flex justify-between items-center mb-4 flex-shrink-0"><h3 className="font-bold text-sesm-deep">Navigasi Soal</h3></div>
                     <div className="grid grid-cols-5 gap-2 overflow-y-auto flex-grow pr-2">
@@ -257,7 +277,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                     </div>
                 </aside>
 
-                 {/* Konten Utama */}
                  <div className="flex flex-col flex-1 ml-0 md:ml-64 overflow-hidden">
                     <header className="bg-white p-4 flex items-center sticky top-0 z-10 shadow-sm flex-shrink-0">
                          <button onClick={() => setIsNavOpen(true)} className="p-2 rounded-full hover:bg-gray-100 md:hidden mr-2"> <FiMenu size={24} className="text-gray-700" /> </button>
@@ -275,23 +294,23 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                         {timeLeft !== null ? ( <div className={`w-24 text-right flex items-center justify-end font-bold ${timeLeft <= 30 ? 'text-red-500 animate-pulse' : 'text-sesm-deep'}`}><FiClock className="mr-2"/><span>{formatTime(timeLeft)}</span></div> ) : ( <div className="w-24"></div> )}
                     </header>
 
-                    {/* Progress Bar */}
                     <div className="w-full bg-gray-200 h-2 flex-shrink-0">
                         <motion.div className="bg-sesm-teal h-2" initial={{width: 0}} animate={{width: `${((currentQuestionIndex + 1) / questions.length) * 100}%`}} />
                     </div>
 
-                    {/* Main Content Area (Scrollable) */}
-                    <main className="flex-1 p-6 overflow-y-auto"> {/* flex-1 agar mengisi sisa ruang */}
+                    <main className="flex-1 p-6 overflow-y-auto">
                         {currentQuestion && (
                             <div className="w-full max-w-2xl mx-auto flex flex-col justify-center">
                                 <AnimatePresence mode="wait">
-                                    <motion.div key={currentQuestionIndex} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="bg-white p-6 rounded-2xl shadow-md mb-6"> {/* Tambah mb-6 */}
+                                    <motion.div key={currentQuestionIndex} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="bg-white p-6 rounded-2xl shadow-md mb-6">
                                         <div className="flex justify-between items-start mb-6">
                                             <p className="text-sm font-semibold text-gray-500">Pertanyaan {currentQuestionIndex + 1} dari {questions.length}</p>
                                             {!isReviewing ? ( <button onClick={() => toggleMark(currentQuestion.id)} className={`flex items-center gap-2 text-sm font-semibold p-2 rounded-lg ${marked[currentQuestion.id] ? 'bg-yellow-100 text-yellow-600' : 'text-gray-500 hover:bg-gray-100'}`}> <FiFlag/> <span>{marked[currentQuestion.id] ? 'Hilangkan Tanda' : 'Tandai Ragu'}</span> </button>
                                             ) : ( <button onClick={() => setIsReviewing(false)} className="flex items-center gap-2 text-sm font-semibold p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"> <FiArrowLeft/> Kembali ke Hasil </button> )}
                                         </div>
+                                        
                                         <MediaViewer mediaUrls={currentQuestion.media_urls} onImageClick={setLightboxImage} />
+                                        
                                         <h2 className="text-xl md:text-2xl font-bold text-sesm-deep mb-8 text-left">{currentQuestion.pertanyaan}</h2>
                                         <div className="grid grid-cols-1 gap-4 text-left">
                                             {currentQuestion.tipe_soal.includes('pilihan-ganda') && currentQuestion.options.map((option, index) => (
@@ -307,7 +326,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                         )}
                     </main>
 
-                     {/* Footer (Navigasi Soal) */}
                     <footer className="p-4 bg-white flex justify-between items-center border-t flex-shrink-0">
                         <motion.button onClick={() => goToQuestion(currentQuestionIndex - 1)} disabled={currentQuestionIndex === 0} className="flex items-center gap-2 font-semibold p-3 rounded-lg hover:bg-gray-100 disabled:opacity-50" whileTap={{ scale: 0.95 }}><FiChevronLeft/> Sebelumnya</motion.button>
                         {currentQuestionIndex === questions.length - 1 && !isReviewing ? (
@@ -323,7 +341,6 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                     </footer>
                 </div>
 
-                {/* Navigasi Sidebar Mobile (Overlay) */}
                 <AnimatePresence>
                     {isNavOpen && (
                         <>

@@ -1,14 +1,11 @@
-// contoh-sesm-web/pages/admin/TeacherProfilePage.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// --- Tambahkan FiCalendar ---
 import { FiUser, FiSave, FiLoader, FiCamera, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import Notification from '../../components/ui/Notification';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 
-// --- Komponen Modal Cropping (Tidak berubah) ---
 const CropModal = ({ upImg, onClose, onCropComplete }) => {
     const imgRef = useRef(null);
     const [crop, setCrop] = useState();
@@ -83,7 +80,7 @@ const TeacherProfilePage = () => {
     const avatarsPerPage = 6;
 
     const API_URL = 'http://localhost:8080';
-    const defaultAvatars = [ /* ... (Salin array defaultAvatars dari AccountSettingsPage.jsx) ... */
+    const defaultAvatars = [
         'https://api.dicebear.com/7.x/adventurer/svg?seed=Mimi', 'https://api.dicebear.com/7.x/bottts/svg?seed=Trouble', 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Peanut', 'https://api.dicebear.com/7.x/micah/svg?seed=Lucy', 'https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=Max', 'https://api.dicebear.com/7.x/miniavs/svg?seed=Leo', 'https://api.dicebear.com/7.x/lorelei/svg?seed=Zoe', 'https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Toby', 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Sam', 'https://api.dicebear.com/7.x/personas/svg?seed=Jack', 'https://api.dicebear.com/7.x/rings/svg?seed=Aneka', 'https://api.dicebear.com/7.x/shapes/svg?seed=Jesse', 'https://api.dicebear.com/7.x/thumbs/svg?seed=Abby', 'https://api.dicebear.com/7.x/big-ears-neutral/svg?seed=Luna', 'https://api.dicebear.com/7.x/adventurer/svg?seed=Simba', 'https://api.dicebear.com/7.x/bottts/svg?seed=Gizmo', 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Joy', 'https://api.dicebear.com/7.x/micah/svg?seed=Oliver', 'https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=Zelda', 'https://api.dicebear.com/7.x/miniavs/svg?seed=Felix', 'https://api.dicebear.com/7.x/lorelei/svg?seed=Cleo', 'https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Milo', 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Ruby', 'https://api.dicebear.com/7.x/personas/svg?seed=Oscar', 'https://api.dicebear.com/7.x/rings/svg?seed=Nala', 'https://api.dicebear.com/7.x/shapes/svg?seed=Charlie', 'https://api.dicebear.com/7.x/thumbs/svg?seed=Piper', 'https://api.dicebear.com/7.x/big-ears-neutral/svg?seed=Jasper', 'https://api.dicebear.com/7.x/adventurer/svg?seed=Coco', 'https://api.dicebear.com/7.x/bottts/svg?seed=Sparky', 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Sunny', 'https://api.dicebear.com/7.x/micah/svg?seed=Finn', 'https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=Penny', 'https://api.dicebear.com/7.x/miniavs/svg?seed=Gus', 'https://api.dicebear.com/7.x/lorelei/svg?seed=Hazel', 'https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Rocky', 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Stella', 'https://api.dicebear.com/7.x/personas/svg?seed=Bear', 'https://api.dicebear.com/7.x/rings/svg?seed=Willow', 'https://api.dicebear.com/7.x/shapes/svg?seed=Bubbles', 'https://api.dicebear.com/7.x/thumbs/svg?seed=Loki', 'https://api.dicebear.com/7.x/big-ears-neutral/svg?seed=Ivy', 'https://api.dicebear.com/7.x/adventurer/svg?seed=Shadow', 'https://api.dicebear.com/7.x/bottts/svg?seed=Whiskers', 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Waffles', 'https://api.dicebear.com/7.x/micah/svg?seed=Apollo', 'https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=Kiki', 'https://api.dicebear.com/7.x/miniavs/svg?seed=Peaches', 'https://api.dicebear.com/7.x/lorelei/svg?seed=Midnight', 'https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Smokey'
     ];
     const defaultInitialAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${user?.nama || user?.username || 'Guru'}`;
@@ -191,8 +188,6 @@ const TeacherProfilePage = () => {
     const inputStyle = "w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal text-sm";
     const labelStyle = "block text-sm font-bold text-gray-600 mb-1";
 
-    // --- Format Tanggal Akun Dibuat (Placeholder) ---
-    // Ganti ini dengan data asli dari `user` jika tersedia
     const accountCreatedDate = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Data tidak tersedia';
 
      if (!user || avatarPreview === null) {
@@ -211,11 +206,8 @@ const TeacherProfilePage = () => {
                     <FiUser /> Profil Saya
                 </h1>
 
-                {/* --- PERBAIKAN: Grid utama dengan 5 kolom untuk pembatas --- */}
                 <form onSubmit={handleSubmit} className="flex-grow grid grid-cols-1 md:grid-cols-5 gap-8">
-                    {/* Kolom Avatar & Info Tambahan */}
-                    <div className="md:col-span-2 flex flex-col items-center pt-4 border-r pr-8"> {/* Tambahkan border-r pr-8 */}
-                        {/* ... (bagian avatar preview & selection sama) ... */}
+                    <div className="md:col-span-2 flex flex-col items-center pt-4 border-r pr-8">
                         <div className="relative mb-4">
                             <img src={avatarPreview || defaultInitialAvatar} alt="Avatar Guru" className="w-40 h-40 rounded-full border-4 border-sesm-sky object-cover shadow-md bg-gray-200" onError={(e) => { e.target.onerror = null; e.target.src = defaultInitialAvatar; }} />
                             <button type="button" onClick={() => fileInputRef.current?.click()} className="absolute -right-2 bottom-2 bg-sesm-teal text-white p-3 rounded-full border-2 border-white shadow-md hover:bg-sesm-deep transition-colors" title="Ganti Avatar"> <FiCamera size={20} /> </button>
@@ -237,7 +229,6 @@ const TeacherProfilePage = () => {
                         </div>
                         <p className="text-xs text-gray-500 text-center mb-6">Klik ikon kamera untuk unggah foto (max. 2MB).</p>
 
-                         {/* --- PERBAIKAN: Info Tambahan di Bawah Avatar --- */}
                         <div className="w-full mt-auto space-y-3 bg-gray-50 p-4 rounded-lg border">
                             <h4 className="text-center font-bold text-gray-700 mb-2">Informasi Akun</h4>
                              <hr className="border-dashed"/>
@@ -253,9 +244,7 @@ const TeacherProfilePage = () => {
                         </div>
                     </div>
 
-                    {/* Kolom Form */}
-                    <div className="md:col-span-3 space-y-4"> {/* Ubah menjadi col-span-3 */}
-                        {/* ... (Isi form lainnya tetap sama) ... */}
+                    <div className="md:col-span-3 space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div> <label className={labelStyle}>Nama Lengkap</label> <input type="text" name="nama" value={formData.nama} onChange={handleInputChange} className={inputStyle} required /> </div>
                             <div> <label className={labelStyle}>Username</label> <input type="text" name="username" value={formData.username} onChange={handleInputChange} className={inputStyle} required /> </div>

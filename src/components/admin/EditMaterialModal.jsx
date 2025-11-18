@@ -1,4 +1,3 @@
-// contoh-sesm-web/components/admin/EditMaterialModal.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiPlus, FiSave, FiLoader, FiTrash2 } from 'react-icons/fi';
@@ -8,11 +7,8 @@ import useDebounce from '../../hooks/useDebounce';
 import SaveStatusIcon from '../ui/SaveStatusIcon';
 import Notification from '../ui/Notification';
 
-// Komponen QuestionItem dan StepIndicator (TIDAK BERUBAH, tetap sama seperti sebelumnya)
 const toAlpha = (num) => String.fromCharCode(65 + num);
-// ... (Kode QuestionItem tetap sama) ...
 const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
-    // ... (Kode lengkap QuestionItem) ...
     const handleInputChange = (field, value) => onUpdate(qIndex, { ...q, [field]: value });
     const handleOptionChange = (optIndex, value) => {
         const newOptions = [...q.options];
@@ -43,7 +39,7 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
     ];
 
     const answerOptions = q.options
-        .filter(opt => opt && opt.trim() !== '') // Pastikan opsi tidak kosong
+        .filter(opt => opt && opt.trim() !== '') 
         .map((opt, index) => ({ value: opt, label: `${toAlpha(index)}. ${opt}` }));
 
     return (
@@ -89,7 +85,7 @@ const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
         </div>
     );
 };
-// ... (Kode StepIndicator tetap sama) ...
+
 const StepIndicator = ({ stepNumber, label, isActive, onClick, isDisabled }) => (
     <button type="button" onClick={onClick} disabled={isDisabled} className="flex items-center gap-4 w-full text-left disabled:cursor-not-allowed group">
         <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold border-2 transition-all duration-300 ${isActive ? 'bg-sesm-deep text-white border-sesm-deep' : 'bg-gray-200 text-gray-500 border-gray-200 group-hover:border-sesm-teal disabled:group-hover:border-gray-200'}`}>
@@ -127,41 +123,31 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
     const gradingTypeOptions = [ { value: 'manual', label: 'Manual (Guru menilai)' }, { value: 'otomatis', label: 'Otomatis (hanya PG)' } ];
     const getNewQuestionObject = () => ({ id: Date.now() + Math.random(), type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '' });
 
-    // --- Fungsi Simpan Draf (Auto-Save saat Edit) ---
     const saveDraftToBackend = useCallback(async () => {
-        // Hanya simpan jika ada perubahan signifikan
         if (!formData.title.trim() && !formData.subject.trim() && tasks.length === 0 && !mainFile && !coverImage && mediaSourceType === 'file') {
-            setSaveStatus('Tersimpan'); // Anggap tersimpan jika masih kosong/default
+            setSaveStatus('Tersimpan'); 
             return;
         }
         setSaveStatus('Menyimpan...');
-        const draftData = { formData, tasks, mediaSourceType }; // File tidak disimpan di draf server
+        const draftData = { formData, tasks, mediaSourceType };
         try {
             await DataService.saveDraft(DRAFT_KEY, draftData);
             setSaveStatus('Tersimpan');
         } catch (error) {
             console.error("Gagal menyimpan draf (edit):", error);
             setSaveStatus('Gagal');
-            // Tampilkan notifikasi gagal simpan draf (opsional, bisa mengganggu)
-            // setNotif({ isOpen: true, title: "Gagal Simpan Draf", message: "Gagal menyimpan draf otomatis.", success: false });
         }
-    }, [formData, tasks, mediaSourceType, DRAFT_KEY, mainFile, coverImage]); // Tambahkan file state ke dependency jika perlu
+    }, [formData, tasks, mediaSourceType, DRAFT_KEY, mainFile, coverImage]); 
 
-    // --- useEffect untuk memicu simpan draf ---
     useEffect(() => {
-        // Hanya auto-save jika modal terbuka dan tidak sedang menyimpan
         if (isOpen && saveStatus !== 'Menyimpan...') {
             saveDraftToBackend();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedFormData, debouncedTasks, isOpen]); // Picu saat data debounced berubah
+    }, [debouncedFormData, debouncedTasks, isOpen]); 
 
-
-    // --- useEffect untuk Memuat Data Awal ---
     useEffect(() => {
         if (isOpen && initialData) {
-            // ✅ **PERUBAHAN UTAMA: Langsung muat dari initialData, hapus pemanggilan getDraft**
-            console.log("Loading initial data for edit:", initialData); // Log untuk debug
+            console.log("Loading initial data for edit:", initialData);
             setFormData({
                 title: initialData.title || '',
                 description: initialData.description || '',
@@ -170,25 +156,18 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
                 grading_type: initialData.grading_type || 'manual',
                 recommended_level: initialData.recommended_level || 'Semua'
             });
-            // Pastikan tasks selalu array, bahkan jika null/undefined dari DB
-            setTasks((initialData.tasks || []).map(t => ({...getNewQuestionObject(), ...t}))); // Gunakan map untuk memastikan struktur default
+            setTasks((initialData.tasks || []).map(t => ({...getNewQuestionObject(), ...t}))); 
             const sourceType = initialData.type === 'video_link' ? 'link' : 'file';
             setMediaSourceType(sourceType);
-            // Set preview berdasarkan initialData
             setMainFilePreview(sourceType === 'file' && initialData.url ? initialData.url.split('/').pop() : '');
             setCoverImagePreview(initialData.cover_image_url ? `${API_URL}/${initialData.cover_image_url}` : '');
-            // Reset file input states
             setMainFile(null);
             setCoverImage(null);
-            setSaveStatus('Tersimpan'); // Set status awal ke 'Tersimpan'
-            setStep(1); // Mulai dari step 1
-            setNotif(prev => ({...prev, isOpen: false})); // Pastikan notif tertutup
-
-            // Hapus kode fetch draft:
-            // DataService.getDraft(DRAFT_KEY).then(...) dihapus
+            setSaveStatus('Tersimpan');
+            setStep(1);
+            setNotif(prev => ({...prev, isOpen: false}));
 
         } else if (!isOpen) {
-             // Reset state saat modal ditutup (opsional, tergantung behavior yang diinginkan)
              setFormData({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
              setTasks([]);
              setMediaSourceType('file');
@@ -199,7 +178,6 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
              setSaveStatus('Tersimpan');
              setStep(1);
         }
-    // Hanya bergantung pada isOpen dan initialData
     }, [isOpen, initialData, API_URL]);
 
 
@@ -233,27 +211,20 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
         data.append('tasks', JSON.stringify(tasks));
         if (mainFile) data.append('mainFile', mainFile);
         if (coverImage) data.append('coverImage', coverImage);
-        // Tentukan tipe berdasarkan state mediaSourceType saat submit
-        data.append('type', mediaSourceType === 'link' ? 'video_link' : determineType(mainFile, null)); // Tentukan type saat submit
-        // Hapus url_link jika tipe adalah file, atau hapus mainFile jika tipe adalah link
+        data.append('type', mediaSourceType === 'link' ? 'video_link' : determineType(mainFile, null)); 
         if (mediaSourceType === 'file') {
             data.delete('url_link');
         } else {
-            // Jika tipe link, URL sudah ada di formData.url_link
         }
 
         try {
-            await onSave(data, initialData.id); // Kirim ID untuk mode edit
-             // Hapus draf setelah berhasil publish (tetap lakukan ini)
+            await onSave(data, initialData.id); 
             DataService.deleteDraft(DRAFT_KEY).catch(err => console.warn("Gagal menghapus draf edit setelah publish:", err));
         } catch (error) {
-            // Error handling sudah ada di parent
-            // setNotif({isOpen: true, title: "Gagal Simpan", message: error.message || "Gagal menyimpan perubahan.", success: false});
         } finally {
             setIsSaving(false);
         }
     };
-    // Helper determineType (jika belum ada)
     const determineType = (file, link) => {
         if (link) return 'video_link';
         if (file) {
@@ -262,9 +233,9 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
             if (mime.startsWith('video/')) return 'video';
             if (mime === 'application/pdf') return 'pdf';
             if (mime.includes('word')) return 'document';
-            return 'file'; // Default
+            return 'file';
         }
-        return 'unknown'; // Fallback
+        return 'unknown';
     };
 
 
@@ -284,7 +255,7 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
         }
     }
 
-    if (!isOpen || !initialData) return null; // Pastikan initialData ada
+    if (!isOpen || !initialData) return null; 
 
     return (
         <>
@@ -299,8 +270,8 @@ const EditMaterialModal = ({ isOpen, onClose, onSave, initialData }) => {
                                 <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>
                             </div>
                         </header>
-                        <main className="p-6 flex gap-8 max-h-[70vh] overflow-y-auto"> {/* Tambah max-h dan overflow */}
-                            <div className="w-1/3 border-r pr-6 space-y-6 pt-2 sticky top-0"> {/* Buat sidebar sticky */}
+                        <main className="p-6 flex gap-8 max-h-[70vh] overflow-y-auto">
+                            <div className="w-1/3 border-r pr-6 space-y-6 pt-2 sticky top-0"> 
                                 <StepIndicator stepNumber={1} label="Informasi Dasar" isActive={step === 1} onClick={() => navigateToStep(1)} />
                                 <StepIndicator stepNumber={2} label="Media & Materi" isActive={step === 2} onClick={() => navigateToStep(2)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />
                                 <StepIndicator stepNumber={3} label="Soal & Tugas" isActive={step === 3} onClick={() => navigateToStep(3)} isDisabled={!formData.title.trim() || !formData.subject.trim()} />

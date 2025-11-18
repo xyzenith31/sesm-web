@@ -36,7 +36,7 @@ const features = [
     points: 100,
   },
   {
-    id: 'quiz', // ID ini akan kita gunakan
+    id: 'quiz',
     icon: FiHelpCircle,
     title: "Kuis Pengetahuan",
     description: "Uji wawasanmu dengan berbagai kuis menarik.",
@@ -83,7 +83,6 @@ const ExplorePage = ({ onNavigate }) => {
   const totalPoints = 2500;
 
   const handleCardClick = (featureId) => {
-    // Navigasi berdasarkan ID fitur
     if (featureId === 'dailyChallenge') {
       onNavigate('dailyChallenge');
     } else if (featureId === 'creativeZone') {
@@ -99,7 +98,6 @@ const ExplorePage = ({ onNavigate }) => {
 
   return (
     <>
-      {/* Tampilan Mobile & Tablet */}
       <div className="md:hidden">
         <div className="min-h-screen bg-gray-50 pb-28">
           <header className="px-6 pt-10 pb-8 bg-gradient-to-b from-sesm-teal to-sesm-deep rounded-b-[3rem] shadow-lg relative overflow-hidden">
@@ -155,7 +153,6 @@ const ExplorePage = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Tampilan Desktop (Struktur Diperbarui) */}
       <div className="hidden md:flex flex-col w-full min-h-screen bg-gray-100 p-8">
         <div className="w-full max-w-7xl mx-auto flex-grow flex flex-col">
           <motion.div 

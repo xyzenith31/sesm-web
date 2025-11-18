@@ -4,9 +4,8 @@ import { FiArrowLeft, FiCamera, FiTrash2, FiLoader, FiChevronLeft, FiChevronRigh
 import { useAuth } from '../hooks/useAuth';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import Notification from '../components/ui/Notification'; // Pastikan komponen Notifikasi ada
+import Notification from '../components/ui/Notification';
 
-// --- Komponen Modal Cropping (Tidak berubah) ---
 const CropModal = ({ upImg, onClose, onCropComplete }) => {
     const imgRef = useRef(null);
     const [crop, setCrop] = useState();
@@ -62,11 +61,9 @@ const CropModal = ({ upImg, onClose, onCropComplete }) => {
     );
 };
 
-// --- Komponen Utama Halaman ---
 const AccountSettingsPage = ({ onNavigate }) => {
     const { user, updateProfile } = useAuth();
-    
-    // Daftar 50 avatar bawaan
+
     const defaultAvatars = [ 'https://api.dicebear.com/7.x/adventurer/svg?seed=Mimi', 'https://api.dicebear.com/7.x/bottts/svg?seed=Trouble', 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Peanut', 'https://api.dicebear.com/7.x/micah/svg?seed=Lucy', 'https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=Max', 'https://api.dicebear.com/7.x/miniavs/svg?seed=Leo', 'https://api.dicebear.com/7.x/lorelei/svg?seed=Zoe', 'https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Toby', 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Sam', 'https://api.dicebear.com/7.x/personas/svg?seed=Jack', 'https://api.dicebear.com/7.x/rings/svg?seed=Aneka', 'https://api.dicebear.com/7.x/shapes/svg?seed=Jesse', 'https://api.dicebear.com/7.x/thumbs/svg?seed=Abby', 'https://api.dicebear.com/7.x/big-ears-neutral/svg?seed=Luna', 'https://api.dicebear.com/7.x/adventurer/svg?seed=Simba', 'https://api.dicebear.com/7.x/bottts/svg?seed=Gizmo', 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Joy', 'https://api.dicebear.com/7.x/micah/svg?seed=Oliver', 'https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=Zelda', 'https://api.dicebear.com/7.x/miniavs/svg?seed=Felix', 'https://api.dicebear.com/7.x/lorelei/svg?seed=Cleo', 'https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Milo', 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Ruby', 'https://api.dicebear.com/7.x/personas/svg?seed=Oscar', 'https://api.dicebear.com/7.x/rings/svg?seed=Nala', 'https://api.dicebear.com/7.x/shapes/svg?seed=Charlie', 'https://api.dicebear.com/7.x/thumbs/svg?seed=Piper', 'https://api.dicebear.com/7.x/big-ears-neutral/svg?seed=Jasper', 'https://api.dicebear.com/7.x/adventurer/svg?seed=Coco', 'https://api.dicebear.com/7.x/bottts/svg?seed=Sparky', 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Sunny', 'https://api.dicebear.com/7.x/micah/svg?seed=Finn', 'https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=Penny', 'https://api.dicebear.com/7.x/miniavs/svg?seed=Gus', 'https://api.dicebear.com/7.x/lorelei/svg?seed=Hazel', 'https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Rocky', 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Stella', 'https://api.dicebear.com/7.x/personas/svg?seed=Bear', 'https://api.dicebear.com/7.x/rings/svg?seed=Willow', 'https://api.dicebear.com/7.x/shapes/svg?seed=Bubbles', 'https://api.dicebear.com/7.x/thumbs/svg?seed=Loki', 'https://api.dicebear.com/7.x/big-ears-neutral/svg?seed=Ivy', 'https://api.dicebear.com/7.x/adventurer/svg?seed=Shadow', 'https://api.dicebear.com/7.x/bottts/svg?seed=Whiskers', 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Waffles', 'https://api.dicebear.com/7.x/micah/svg?seed=Apollo', 'https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=Kiki', 'https://api.dicebear.com/7.x/miniavs/svg?seed=Peaches', 'https://api.dicebear.com/7.x/lorelei/svg?seed=Midnight', 'https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Smokey' ];
 
     const [formData, setFormData] = useState({ username: '', email: '', nama: '', umur: '' });
@@ -90,7 +87,7 @@ const AccountSettingsPage = ({ onNavigate }) => {
                 username: user.username || '',
                 email: user.email || '',
                 nama: user.nama || '',
-                umur: user.umur ?? '', // Gunakan '' jika null atau undefined
+                umur: user.umur ?? '',
             });
             const currentAvatar = user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${API_URL}/${user.avatar}`) : defaultAvatars[0];
             setAvatarPreview(currentAvatar);
@@ -119,7 +116,6 @@ const AccountSettingsPage = ({ onNavigate }) => {
         setNotif({ isOpen: true, message: result.message, success: result.success });
     };
 
-    // --- PERBAIKAN: Fungsi notifikasi tidak lagi mengarahkan halaman ---
     const handleNotifClose = () => {
         setNotif({ ...notif, isOpen: false });
     };

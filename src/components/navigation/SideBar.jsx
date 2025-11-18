@@ -1,17 +1,14 @@
-// contoh-sesm-web/components/navigation/SideBar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import {
     FiHome, FiSearch, FiBookmark, FiUser, FiLogOut, FiSettings,
     FiChevronDown, FiAlertTriangle, FiClock, FiCalendar
 } from 'react-icons/fi';
-import Logo from '../../assets/logo.png'; // Pastikan path logo benar
+import Logo from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
-import CalenderModal from '../mod/CalenderModal'; // Impor CalenderModal
+import CalenderModal from '../mod/CalenderModal';
 
-// --- Komponen Modal Konfirmasi Logout ---
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
-    // (Kode ConfirmationModal tetap sama seperti di SidebarGuru.jsx)
     if (!isOpen) return null;
     return (
         <AnimatePresence>
@@ -34,27 +31,24 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     );
 };
 
-
-// --- NavLink dengan Animasi ---
 const NavLink = ({ icon, label, isActive, onClick }) => (
     <motion.button
         onClick={onClick}
         className={`
           flex items-center space-x-4 px-4 py-3 rounded-lg transition-colors duration-200 w-full text-left
           ${isActive
-            ? 'bg-gradient-to-r from-sesm-teal to-sesm-deep text-white shadow-lg scale-105' // Gradient & scale saat aktif
+            ? 'bg-gradient-to-r from-sesm-teal to-sesm-deep text-white shadow-lg scale-105'
             : 'text-gray-600 hover:bg-sesm-sky/20 hover:text-sesm-deep'
           }
         `}
-        whileHover={{ x: isActive ? 0 : 5, transition: { type: 'spring', stiffness: 400, damping: 10 } }} // Efek hover
-        whileTap={{ scale: isActive ? 1.05 : 0.98 }} // Efek klik
+        whileHover={{ x: isActive ? 0 : 5, transition: { type: 'spring', stiffness: 400, damping: 10 } }}
+        whileTap={{ scale: isActive ? 1.05 : 0.98 }} 
     >
         {icon}
         <span className="font-semibold">{label}</span>
     </motion.button>
 );
 
-// --- Profile Dropdown untuk Siswa ---
 const ProfileDropdown = ({ user, onNavigate, onLogoutClick }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -70,7 +64,6 @@ const ProfileDropdown = ({ user, onNavigate, onLogoutClick }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Logika Avatar (sesuaikan jika perlu, ini mengambil dari AccountSettingsPage)
     const defaultInitialAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${user?.nama || user?.username || 'Siswa'}`;
     const userAvatar = user?.avatar
         ? (user.avatar.startsWith('http') ? user.avatar : `${API_URL}/${user.avatar}`)
@@ -97,12 +90,10 @@ const ProfileDropdown = ({ user, onNavigate, onLogoutClick }) => {
                         exit={{ opacity: 0, y: -10 }}
                         className="absolute bottom-full left-0 right-0 mb-2 w-full bg-white rounded-lg shadow-xl border p-2 z-10"
                     >
-                        {/* Navigasi ke Halaman Profil Siswa */}
                         <button onClick={() => { onNavigate('profile'); setIsOpen(false); }} className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
                             <FiUser size={16} />
                             <span>Profil Saya</span>
                         </button>
-                        {/* Navigasi ke Pengaturan Akun Siswa */}
                         <button onClick={() => { onNavigate('accountSettings'); setIsOpen(false); }} className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
                             <FiSettings size={16} />
                             <span>Pengaturan Akun</span>
@@ -118,7 +109,6 @@ const ProfileDropdown = ({ user, onNavigate, onLogoutClick }) => {
     );
 }
 
-// --- Komponen Sidebar Utama ---
 const SideBar = ({ activePage, onNavigate }) => {
     const { user, logout } = useAuth();
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -133,7 +123,6 @@ const SideBar = ({ activePage, onNavigate }) => {
     const handleLogoutConfirm = () => {
         setIsLogoutModalOpen(false);
         logout();
-        // Navigasi ke halaman login biasanya ditangani oleh AuthContext/NavigationContext
     };
 
     return (
@@ -145,26 +134,23 @@ const SideBar = ({ activePage, onNavigate }) => {
                 title="Konfirmasi Logout"
                 message="Apakah Anda yakin ingin keluar dari akun Anda?"
             />
-            {/* Modal Kalender */}
             <CalenderModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
 
             <motion.aside
-                initial={{ x: -256 }} // Mulai dari luar layar kiri
-                animate={{ x: 0 }}    // Bergerak ke posisi 0
-                transition={{ type: 'spring', stiffness: 100, damping: 20 }} // Efek pegas
+                initial={{ x: -256 }} 
+                animate={{ x: 0 }}   
+                transition={{ type: 'spring', stiffness: 100, damping: 20 }}
                 className="hidden md:flex flex-col w-64 h-screen bg-white shadow-xl fixed"
             >
-                {/* Bagian Logo */}
                 <div className="flex items-center justify-center p-6 border-b border-gray-200">
                     <motion.img
                         src={Logo}
                         alt="SESM Logo"
                         className="w-32"
-                        whileHover={{ scale: 1.1, rotate: 5 }} // Animasi saat hover logo
+                        whileHover={{ scale: 1.1, rotate: 5 }}
                     />
                 </div>
 
-                {/* Bagian Navigasi Utama */}
                 <nav className="flex-1 p-4 space-y-2">
                     <NavLink
                         icon={<FiHome size={20} />}
@@ -184,18 +170,14 @@ const SideBar = ({ activePage, onNavigate }) => {
                         isActive={activePage === 'bookmark'}
                         onClick={() => onNavigate('bookmark')}
                     />
-                    {/* Link Profile sekarang ada di dropdown */}
                 </nav>
 
-                {/* Bagian Bawah: Jam, Kalender, Profil */}
                 <div className="p-4 border-t border-gray-200 space-y-3">
-                    {/* Jam & Tanggal */}
                     <div
                         onClick={() => setIsCalendarOpen(true)}
                         className="p-3 rounded-lg cursor-pointer bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors relative overflow-hidden group"
                         title="Buka Agenda"
                     >
-                         {/* Efek kilau saat hover */}
                         <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
                              animate={{ x: ['-100%', '100%'] }}
                              transition={{ duration: 1, repeat: Infinity, ease: "linear", repeatDelay: 0.5 }}
@@ -216,7 +198,6 @@ const SideBar = ({ activePage, onNavigate }) => {
                         </div>
                     </div>
 
-                    {/* Profile Dropdown */}
                     {user && (
                         <ProfileDropdown
                             user={user}

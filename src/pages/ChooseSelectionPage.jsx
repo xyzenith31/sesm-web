@@ -3,12 +3,12 @@ import { motion } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
 import UserLayout from '../layouts/UserLayout';
 import ConfirmationModal from '../components/mod/ConfirmationModal';
-import { useData } from '../hooks/useData'; // <-- GANTI DENGAN INI
+import { useData } from '../hooks/useData';
 
 const ChooseSelectionPage = ({ onExit, onSelectClass1, onSelectClass2, onSelectClass3_4, onSelectClass5, onSelectClass6 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { updateLevelAndClass } = useData(); // <-- GUNAKAN HOOK
+  const { updateLevelAndClass } = useData();
 
   const classes = [
     { label: 'KELAS 1', handler: onSelectClass1, value: 1 },
@@ -23,7 +23,6 @@ const ChooseSelectionPage = ({ onExit, onSelectClass1, onSelectClass2, onSelectC
     if (loading) return;
     setLoading(true);
 
-    // Panggil fungsi dari hook
     updateLevelAndClass({ jenjang: 'SD', kelas: classItem.value })
       .then(() => {
         if (classItem.handler) {
@@ -44,7 +43,6 @@ const ChooseSelectionPage = ({ onExit, onSelectClass1, onSelectClass2, onSelectC
     <>
       <ConfirmationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={confirmExit} title="Keluar dari Pemilihan Kelas?" message="Anda akan kembali ke halaman login. Apakah Anda yakin?" confirmText="Ya, Keluar" />
       <UserLayout>
-        {/* Mobile View */}
         <div className="md:hidden">
           <div className="relative min-h-screen bg-white overflow-hidden">
             <header className="absolute top-0 left-0 right-0 h-[38%] bg-gradient-to-b from-sesm-teal to-sesm-deep rounded-b-[4rem] text-white p-6 z-10 flex flex-col justify-between">
@@ -62,7 +60,6 @@ const ChooseSelectionPage = ({ onExit, onSelectClass1, onSelectClass2, onSelectC
             </main>
           </div>
         </div>
-        {/* Desktop View */}
         <div className="hidden md:flex flex-col items-center justify-center p-8 h-screen">
           <div className="text-center mb-12"><p className="text-2xl font-light text-gray-500 tracking-wider">Let's</p><h1 className="text-5xl font-bold text-sesm-deep tracking-wider">PILIH KELAS</h1></div>
           <div className="grid grid-cols-2 gap-6 w-full max-w-md">

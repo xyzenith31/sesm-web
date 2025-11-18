@@ -5,7 +5,6 @@ import Card from '../components/ui/Card';
 import { FiArrowLeft } from 'react-icons/fi';
 import AuthService from '../services/authService';
 
-// --- Komponen Form Internal ---
 const ForgotPasswordForm = ({ onCodeSent }) => {
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);

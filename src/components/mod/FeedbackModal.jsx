@@ -1,17 +1,14 @@
-// contoh-sesm-web/components/mod/FeedbackModal.jsx
-
 import React, { useState, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiX, FiGift, FiFileText, FiUpload, FiLoader,
     FiCheckCircle, FiAlertCircle, FiTag, FiPaperclip, FiChevronDown,
-    FiTool // <-- Tambahkan FiTool
+    FiTool 
 } from 'react-icons/fi';
-import { FaBug, FaCommentDots, FaLightbulb } from 'react-icons/fa'; // <-- Tambahkan Ikon
+import { FaBug, FaCommentDots, FaLightbulb } from 'react-icons/fa';
 import { Listbox, Transition } from '@headlessui/react';
-import FeedbackService from '../../services/feedbackService'; // <-- Gunakan service asli
+import FeedbackService from '../../services/feedbackService';
 
-// Opsi halaman terkait
 const pages = [
     { id: 'home', name: 'Halaman Utama (Home)' },
     { id: 'mapel', name: 'Halaman Mata Pelajaran' },
@@ -25,7 +22,6 @@ const pages = [
     { id: 'lainnya', name: 'Lainnya / Tidak Spesifik' },
 ];
 
-// === PERUBAHAN DI SINI: Helper untuk detail tipe ===
 const feedbackTypeDetails = {
     bug: {
         name: 'Lapor Bug',
@@ -36,7 +32,7 @@ const feedbackTypeDetails = {
     },
     fitur: {
         name: 'Usul Fitur',
-        icon: FaLightbulb, // Ganti ikon agar konsisten
+        icon: FaLightbulb, 
         color: 'sesm-teal',
         placeholderTitle: 'cth: Tambah fitur dark mode',
         placeholderDesc: 'Jelaskan bagaimana fitur ini akan bekerja...'
@@ -56,26 +52,22 @@ const feedbackTypeDetails = {
         placeholderDesc: 'Jelaskan kendala yang Anda alami...'
     }
 };
-// === AKHIR PERUBAHAN ===
-
-
-// HAPUS FUNGSI SIMULASI (submitFeedback)
 
 const FeedbackModal = ({ isOpen, onClose }) => {
-    const [feedbackType, setFeedbackType] = useState('bug'); // 'bug', 'fitur', 'saran', 'kendala'
+    const [feedbackType, setFeedbackType] = useState('bug');
     const [title, setTitle] = useState('');
-    const [selectedPage, setSelectedPage] = useState(pages[pages.length - 1]); // Default 'Lainnya'
+    const [selectedPage, setSelectedPage] = useState(pages[pages.length - 1]);
     const [description, setDescription] = useState('');
     const [attachment, setAttachment] = useState(null);
     const [attachmentName, setAttachmentName] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
-    const [submitStatus, setSubmitStatus] = useState(null); // { success: true/false, message: '...' }
+    const [submitStatus, setSubmitStatus] = useState(null); 
 
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            if (file.size > 5 * 1024 * 1024) { 
                  setSubmitStatus({ success: false, message: "Ukuran file maksimal 5MB." });
                  return;
             }
@@ -98,12 +90,10 @@ const FeedbackModal = ({ isOpen, onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Validasi: Deskripsi selalu wajib
         if (!description.trim()) {
             setSubmitStatus({ success: false, message: "Deskripsi wajib diisi." });
             return;
         }
-        // Validasi: Judul wajib untuk bug/fitur
         if ((feedbackType === 'bug' || feedbackType === 'fitur') && !title.trim()) {
              setSubmitStatus({ success: false, message: "Judul wajib diisi untuk Bug/Fitur." });
             return;
@@ -115,41 +105,37 @@ const FeedbackModal = ({ isOpen, onClose }) => {
         const formData = new FormData();
         formData.append('type', feedbackType);
         formData.append('title', title.trim());
-        formData.append('page_context', selectedPage.name); // <-- PERBAIKAN: Ganti 'page' jadi 'page_context'
+        formData.append('page_context', selectedPage.name);
         formData.append('description', description);
         if (attachment) {
             formData.append('attachment', attachment);
         }
 
-        // === PERUBAHAN DI SINI: Panggil Service Asli ===
         try {
             const response = await FeedbackService.submitFeedback(formData);
 
             setIsLoading(false);
             setSubmitStatus({ success: true, message: response.data.message || "Laporan berhasil dikirim!" });
 
-            // Jika successful, close modal after a delay and reset
             setTimeout(() => {
-                onClose(); // Close the modal
-                setTimeout(resetForm, 300); // Reset form setelah modal tertutup
-            }, 2000); // Tampilkan pesan sukses 2 detik
+                onClose(); 
+                setTimeout(resetForm, 300);
+            }, 2000);
 
         } catch (error) {
             setIsLoading(false);
             const message = error.response?.data?.message || error.message || "Gagal mengirim laporan.";
             setSubmitStatus({ success: false, message: message });
         }
-        // === AKHIR PERUBAHAN ===
     };
 
-    // Animation variants for the modal
     const modalVariants = {
         hidden: { opacity: 0, scale: 0.9, y: 50 },
         visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
         exit: { opacity: 0, scale: 0.9, y: 50, transition: { duration: 0.2 } }
     };
 
-    const CurrentIcon = feedbackTypeDetails[feedbackType].icon; // Helper ikon dinamis
+    const CurrentIcon = feedbackTypeDetails[feedbackType].icon;
 
     return (
         <AnimatePresence>
@@ -164,14 +150,11 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                         role="dialog"
                         aria-modal="true"
                     >
-                        {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b">
-                            {/* === PERUBAHAN DI SINI: Judul & Ikon Dinamis === */}
                             <h3 className={`text-lg font-bold text-${feedbackTypeDetails[feedbackType].color} flex items-center gap-2`}>
                                 <CurrentIcon />
                                 {feedbackTypeDetails[feedbackType].name}
                             </h3>
-                            {/* === AKHIR PERUBAHAN === */}
                             <motion.button
                                 onClick={onClose}
                                 disabled={isLoading}
@@ -182,13 +165,10 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                             </motion.button>
                         </div>
 
-                        {/* Form Body */}
                         <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-6 space-y-5">
                             <fieldset disabled={isLoading}>
-                                {/* Report Type Selection */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipe Masukan</label>
-                                    {/* === PERUBAHAN DI SINI: 4 Tombol Tipe === */}
                                     <div className="grid grid-cols-2 gap-2">
                                         {Object.entries(feedbackTypeDetails).map(([key, { name, icon: Icon, color }]) => (
                                             <button
@@ -205,10 +185,8 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                             </button>
                                         ))}
                                     </div>
-                                    {/* === AKHIR PERUBAHAN === */}
                                 </div>
 
-                                {/* Title */}
                                 <div>
                                     <label htmlFor="title" className="block text-sm font-medium text-gray-700">
                                         Judul Singkat {feedbackType === 'saran' || feedbackType === 'kendala' ? '(Opsional)' : ''}
@@ -219,14 +197,13 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                             id="title"
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
-                                            placeholder={feedbackTypeDetails[feedbackType].placeholderTitle} // <-- Placeholder dinamis
+                                            placeholder={feedbackTypeDetails[feedbackType].placeholderTitle}
                                             className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-sesm-deep focus:border-sesm-deep"
-                                            required={feedbackType === 'bug' || feedbackType === 'fitur'} // <-- Required dinamis
+                                            required={feedbackType === 'bug' || feedbackType === 'fitur'}
                                         />
                                     </div>
                                 </div>
 
-                                {/* Related Page (Dropdown using Headless UI Listbox) */}
                                 <div>
                                     <Listbox value={selectedPage} onChange={setSelectedPage}>
                                         <Listbox.Label className="block text-sm font-medium text-gray-700">Halaman Terkait (Opsional)</Listbox.Label>
@@ -272,7 +249,6 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                     </Listbox>
                                 </div>
 
-                                {/* Description */}
                                 <div>
                                     <label htmlFor="description" className="block text-sm font-medium text-gray-700">Deskripsi Detail</label>
                                     <textarea
@@ -280,13 +256,12 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                         rows="4"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
-                                        placeholder={feedbackTypeDetails[feedbackType].placeholderDesc} // <-- Placeholder dinamis
+                                        placeholder={feedbackTypeDetails[feedbackType].placeholderDesc} 
                                         className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-sesm-deep focus:border-sesm-deep"
                                         required
                                     ></textarea>
                                 </div>
 
-                                {/* Attachment Upload */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Lampiran (Screenshot/Video Pendek)</label>
                                     <label htmlFor="file-upload-modal" className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
@@ -308,9 +283,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                             </fieldset>
                         </form>
 
-                        {/* Footer (Actions & Status) */}
                         <div className="p-4 bg-gray-50 border-t space-y-3">
-                            {/* Status Message */}
                             <AnimatePresence>
                                 {submitStatus && (
                                     <motion.div
@@ -329,7 +302,6 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                 )}
                             </AnimatePresence>
 
-                            {/* Action Buttons */}
                             <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3">
                                 <motion.button
                                     type="button"
@@ -342,7 +314,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                                 </motion.button>
                                 <motion.button
                                     type="submit"
-                                    onClick={handleSubmit} // Trigger form submission
+                                    onClick={handleSubmit} 
                                     disabled={isLoading || (submitStatus && submitStatus.success)}
                                     className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-sesm-deep text-base font-medium text-white hover:bg-opacity-90 focus:outline-none sm:w-auto sm:text-sm disabled:opacity-50 disabled:bg-sesm-deep/60"
                                     whileTap={{ scale: 0.98 }}

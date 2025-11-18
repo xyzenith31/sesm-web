@@ -1,4 +1,3 @@
-// contoh-sesm-web/hooks/useData.js
 import DataService from '../services/dataService';
 import { useAuth } from './useAuth';
 

@@ -1,5 +1,3 @@
-// contoh-sesm-web/pages/RegisterPage.jsx
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
@@ -53,7 +51,6 @@ const RegisterPage = ({ onSwitchToLogin }) => {
             className="mt-6 text-sm text-center text-white/80"
           >
             Already have an account?{' '}
-            {/* --- PERBAIKAN DESAIN, EFEK & ANIMASI LINK DI SINI --- */}
             <motion.button
               onClick={onSwitchToLogin}
               className="font-bold text-white py-1 px-3 rounded-full"

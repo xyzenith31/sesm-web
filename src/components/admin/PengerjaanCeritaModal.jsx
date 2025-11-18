@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiLoader, FiInbox } from 'react-icons/fi';
 import InteractiveStoryService from '../../services/interactiveStoryService';
-// [PERBAIKAN] Impor API_BASE_URL
 import { API_BASE_URL } from '../../utils/apiClient';
 
 const PengerjaanCeritaModal = ({ isOpen, story, onClose }) => {

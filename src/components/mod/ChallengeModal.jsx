@@ -27,7 +27,6 @@ const ChallengeModal = ({ challenge, onClose, onAnswerSubmit }) => {
 
   return createPortal(
     <>
-      {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -36,9 +35,7 @@ const ChallengeModal = ({ challenge, onClose, onAnswerSubmit }) => {
         onClick={onClose}
       />
 
-      {/* Konten Modal */}
       <motion.div
-        // INI BAGIAN YANG DIPERBAIKI: Mengontrol posisi sepenuhnya dengan Framer Motion
         initial={{ x: "-50%", y: "-45%", opacity: 0, scale: 0.95 }}
         animate={{ x: "-50%", y: "-50%", opacity: 1, scale: 1 }}
         exit={{ x: "-50%", y: "-45%", opacity: 0, scale: 0.95 }}

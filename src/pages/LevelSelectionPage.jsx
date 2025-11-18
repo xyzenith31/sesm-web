@@ -8,7 +8,7 @@ import { useData } from '../hooks/useData';
 const LevelSelectionPage = ({ onSelectSD, onSelectTK, onExit }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { updateLevelAndClass } = useData(); // <-- GUNAKAN HOOK
+  const { updateLevelAndClass } = useData();
 
   const handleSDClick = () => {
     if (onSelectSD) {
@@ -18,7 +18,6 @@ const LevelSelectionPage = ({ onSelectSD, onSelectTK, onExit }) => {
 
   const handleTKClick = () => {
     setLoading(true);
-    // Panggil fungsi dari hook
     updateLevelAndClass({ jenjang: 'TK', kelas: null })
       .then(() => {
         if (onSelectTK) {
@@ -39,7 +38,6 @@ const LevelSelectionPage = ({ onSelectSD, onSelectTK, onExit }) => {
     <>
       <ConfirmationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={confirmExit} title="Keluar dari Pemilihan Jenjang?" message="Anda akan kembali ke halaman login. Apakah Anda yakin?" confirmText="Ya, Keluar" />
       <UserLayout>
-        {/* Mobile View */}
         <div className="md:hidden">
           <div className="relative min-h-screen bg-white overflow-hidden">
             <header className="absolute top-0 left-0 right-0 h-[38%] bg-gradient-to-b from-sesm-teal to-sesm-deep rounded-b-[4rem] text-white p-6 z-10 flex flex-col justify-between">
@@ -54,7 +52,6 @@ const LevelSelectionPage = ({ onSelectSD, onSelectTK, onExit }) => {
             </main>
           </div>
         </div>
-        {/* Desktop View */}
         <div className="hidden md:flex flex-col items-center justify-center p-8 h-screen">
             <div className="text-center mb-12"><p className="text-2xl font-light text-gray-500 tracking-wider">Let's</p><h1 className="text-5xl font-bold text-sesm-deep tracking-wider">PILIH JENJANG</h1></div>
             <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-xs">

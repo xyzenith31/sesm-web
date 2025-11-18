@@ -1,4 +1,3 @@
-// contoh-sesm-web/components/admin/QuizSubmissionDetailModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiCheckCircle, FiXCircle, FiLoader } from 'react-icons/fi';

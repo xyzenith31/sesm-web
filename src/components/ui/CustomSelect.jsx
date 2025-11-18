@@ -52,7 +52,6 @@ const CustomSelect = ({ options, value, onChange, placeholder = "Pilih salah sat
                         initial="hidden"
                         animate="visible"
                         exit="exit"
-                        // --- PERBAIKAN DI SINI: Tambahkan z-index ---
                         className="absolute z-20 w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto"
                     >
                         {options.map((option) => (

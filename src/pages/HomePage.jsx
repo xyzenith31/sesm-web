@@ -6,8 +6,6 @@ import logoSesm from '../assets/logo.png';
 import { useAuth } from '../hooks/useAuth';
 import { useData } from '../hooks/useData';
 
-// --- KUMPULAN HELPER COMPONENT ---
-
 const iconMap = {
   FaFlask, FaGlobeAmericas, FaCalculator, FaBook, FaBalanceScale,
   FaLanguage, FaMosque, FaBookReader, FaPencilAlt, FaBullseye, FaQuestionCircle
@@ -288,7 +286,6 @@ const HomePage = ({ onNavigate }) => {
 
   return (
     <>
-      {/* ========== MOBILE & TABLET ========== */}
       <div className="md:hidden">
         <div className="min-h-screen bg-gray-50 pb-28">
           <header className="px-6 pt-8 pb-4">
@@ -421,7 +418,6 @@ const HomePage = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* ========== DESKTOP ========== */}
       <div className="hidden md:flex flex-col items-center w-full min-h-screen bg-gray-100 p-8">
         <div className="w-full max-w-6xl mx-auto">
           <motion.div 
@@ -547,7 +543,6 @@ const HomePage = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* --- Modal Berikan Saran --- */}
       <AnimatePresence>
         {showSuggestionModal && (
           <motion.div

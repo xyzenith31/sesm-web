@@ -1,4 +1,3 @@
-// contoh-sesm-web/src/components/ChapterDetailModal.jsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,7 +52,7 @@ const ChapterDetailModal = ({ materiKey, onClose }) => {
   useEffect(() => {
     if (materiKey) {
       setLoading(true);
-      DataService.getDetailMateriForAdmin(materiKey) // Kita pakai endpoint admin agar dapat kunci jawaban
+      DataService.getDetailMateriForAdmin(materiKey) 
         .then(response => {
           setMateri(response.data);
         })

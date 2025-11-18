@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiTrendingUp, FiCheckCircle, FiClock, FiLoader } from 'react-icons/fi';
 import { FaBook, FaCalculator, FaFlask, FaPalette, FaEdit, FaQuestionCircle } from 'react-icons/fa';
-import DataService from '../services/dataService'; // Impor DataService
+import DataService from '../services/dataService';
 
 const iconMap = {
     'Cerita Interaktif': FaBook,
     'Tantangan Harian': FaCalculator,
     'Menulis Kreatif': FaEdit,
     'Menggambar': FaPalette,
-    'QUIZ_COMPLETION': FaQuestionCircle, // Ikon untuk kuis
+    'QUIZ_COMPLETION': FaQuestionCircle,
     'default': FiCheckCircle
 };
 
@@ -26,7 +26,6 @@ const StatCard = ({ label, value, icon: Icon }) => (
 );
 
 const ReportItem = ({ item, index }) => {
-    // Tentukan ikon berdasarkan activity_type atau category
     const Icon = iconMap[item.activity_type] || iconMap[item.category] || iconMap.default;
     const activity = item.activity_details || item.activity;
     const points = item.points_earned || item.points;
@@ -64,7 +63,6 @@ const StudyReportPage = ({ onNavigate }) => {
         })
         .catch(err => {
             console.error("Gagal memuat riwayat poin:", err);
-            // Anda bisa menampilkan pesan error di sini
         })
         .finally(() => {
             setLoading(false);

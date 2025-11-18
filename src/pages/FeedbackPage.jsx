@@ -1,11 +1,10 @@
-// contoh-sesm-web/pages/FeedbackPage.jsx
 import React, { useState, Fragment, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiArrowLeft, FiSend, FiUpload, FiLoader,
     FiCheckCircle, FiAlertCircle, FiPaperclip, FiX, FiChevronDown,
     FiMessageSquare, FiInfo, FiTool, FiClock, FiCheck, FiXCircle,
-    FiList, FiEdit, FiCornerDownRight // ✅ Tambah FiEdit
+    FiList, FiEdit, FiCornerDownRight
 } from 'react-icons/fi';
 import { FaBug, FaLightbulb, FaCommentDots } from 'react-icons/fa';
 import { Listbox, Transition } from '@headlessui/react';
@@ -13,7 +12,6 @@ import Notification from '../components/ui/Notification';
 import FeedbackService from '../services/feedbackService'; 
 import { useNavigation } from '../hooks/useNavigation';
 
-// --- (Opsi Tipe & Halaman tetap sama) ---
 const feedbackTypes = [
     { id: 'bug', name: 'Laporkan Bug', icon: FaBug, color: 'text-red-500', bgColor: 'bg-red-100' },
     { id: 'fitur', name: 'Usulkan Fitur', icon: FaLightbulb, color: 'text-blue-500', bgColor: 'bg-blue-100' },
@@ -28,7 +26,6 @@ const pages = [
     { id: 'login', name: 'Halaman Login/Register' }, { id: 'lainnya', name: 'Lainnya / Tidak Spesifik' },
 ];
 
-// --- (Helper Status tetap sama) ---
 const mapUserStatus = (status) => {
     switch (status) {
         case 'baru':
@@ -44,7 +41,6 @@ const mapUserStatus = (status) => {
     }
 };
 
-// --- (Varian Animasi tetap sama) ---
 const containerVariants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.08 } },
@@ -55,7 +51,6 @@ const itemVariants = {
     exit: { opacity: 0, y: -10 }
 };
 
-// --- (Komponen Input & Textarea tetap sama) ---
 const AnimatedInput = ({ id, label, required, ...props }) => (
     <motion.div variants={itemVariants}>
         <label htmlFor={id} className="block text-sm font-bold text-gray-800 mb-2">
@@ -76,9 +71,7 @@ const AnimatedTextarea = ({ id, label, required, ...props }) => (
 
 const FeedbackPage = () => {
     const { navigate } = useNavigation();
-    const [currentView, setCurrentView] = useState('form'); // 'form' | 'history'
-
-    // --- (Semua state & fungsi helper lainnya tetap sama) ---
+    const [currentView, setCurrentView] = useState('form');
     const [selectedType, setSelectedType] = useState(feedbackTypes[0]);
     const [title, setTitle] = useState('');
     const [selectedPage, setSelectedPage] = useState(pages[pages.length - 1]);
@@ -155,8 +148,6 @@ const FeedbackPage = () => {
     };
 
     const handleCloseNotif = () => setNotif({ ...notif, isOpen: false });
-
-    // ✅ Tombol kembali sekarang SELALU ke profil
     const handleBackClick = () => {
         navigate('profile');
     };
@@ -179,8 +170,6 @@ const FeedbackPage = () => {
                 animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
                 transition={{ duration: 20, ease: 'linear', repeat: Infinity }}
             >
-
-                {/* --- ✅ HEADER YANG DISERDERHANAKAN --- */}
                 <motion.header 
                     className="bg-white/80 backdrop-blur-sm p-4 pt-8 md:pt-4 flex items-center justify-between sticky top-0 z-10 shadow-sm flex-shrink-0"
                     initial={{ opacity: 0, y: -20 }}
@@ -188,7 +177,7 @@ const FeedbackPage = () => {
                     transition={{ duration: 0.5, ease: 'easeOut' }}
                 >
                     <motion.button
-                        onClick={handleBackClick} // <-- Fungsi kembali yang simpel
+                        onClick={handleBackClick}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -197,19 +186,16 @@ const FeedbackPage = () => {
                         Kembali
                     </motion.button>
                     
-                    {/* Judul Statis */}
                     <h1 className="text-lg font-bold text-center text-sesm-deep flex items-center justify-center gap-2">
                         <FiMessageSquare className="text-sesm-teal" /> Saran & Masukan
                     </h1>
 
-                    {/* Hapus tombol ikon di kanan */}
                     <div className="w-20"></div>
                 </motion.header>
 
                 <main className="flex-grow overflow-y-auto p-4 md:p-8">
                     <div className="w-full">
                         
-                        {/* --- ✅ TOMBOL TAB PENGGANTI --- */}
                         <motion.div 
                             className="flex p-1 bg-gray-200/80 rounded-xl mb-6"
                             initial={{ opacity: 0, y: -10 }}
@@ -233,7 +219,6 @@ const FeedbackPage = () => {
 
                         <AnimatePresence mode="wait">
                             
-                            {/* --- VIEW 1: FORM PENGISIAN --- */}
                             {currentView === 'form' && (
                                 <motion.div
                                     key="form-view"
@@ -250,7 +235,6 @@ const FeedbackPage = () => {
                                     >
                                         <motion.form onSubmit={handleSubmit} variants={containerVariants} initial="hidden" animate="show">
                                             <div className="p-6 md:p-8 space-y-6">
-                                                {/* (Semua item form Anda: Tipe, Judul, Halaman, Deskripsi, Lampiran) */}
                                                 <motion.div variants={itemVariants}>
                                                     <label className="block text-sm font-bold text-gray-800 mb-2">Jenis Masukan *</label>
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -322,7 +306,6 @@ const FeedbackPage = () => {
                                 </motion.div>
                             )}
                             
-                            {/* --- VIEW 2: RIWAYAT LAPORAN (Desain Kartu) --- */}
                             {currentView === 'history' && (
                                 <motion.div
                                     key="history-view"
@@ -418,7 +401,6 @@ const FeedbackPage = () => {
     );
 };
 
-// --- ✅ KOMPONEN BARU UNTUK TAB ---
 const TabButton = ({ text, icon, active, onClick }) => {
     return (
         <button

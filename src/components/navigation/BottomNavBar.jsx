@@ -1,16 +1,13 @@
-// contoh-sesm-web/components/navigation/BottomNavBar.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import {
     FiHome, FiSearch, FiBookmark, FiUser, FiLogOut, FiSettings,
     FiAlertTriangle, FiClock, FiCalendar
-} from 'react-icons/fi'; // Hapus FiChevronUp jika tidak digunakan di tempat lain
+} from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../hooks/useAuth'; // Impor useAuth
-import CalenderModal from '../mod/CalenderModal'; // Impor CalenderModal
+import { useAuth } from '../../hooks/useAuth';
+import CalenderModal from '../mod/CalenderModal';
 
-// --- Komponen Modal Konfirmasi Logout ---
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
-    // ... (Kode ConfirmationModal tetap sama)
     if (!isOpen) return null;
     return (
         <AnimatePresence>
@@ -33,11 +30,8 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     );
 };
 
-
-// --- NavItem Biasa ---
 const NavItem = ({ icon: Icon, label, isActive, onClick }) => (
     <button onClick={onClick} className={`flex flex-col items-center justify-center space-y-1 w-1/4 h-full ${isActive ? 'text-white scale-110' : 'text-sesm-sky'} hover:text-white transition-all duration-200`}>
-        {/* PERBAIKAN: Beri container dengan tinggi tetap untuk ikon */}
         <div className="h-6 w-6 flex items-center justify-center">
              <Icon size={24} />
         </div>
@@ -45,7 +39,6 @@ const NavItem = ({ icon: Icon, label, isActive, onClick }) => (
     </button>
 );
 
-// --- Komponen Dropdown Menu ---
 const ProfileDropdownMenu = ({
     user,
     onNavigate,
@@ -53,7 +46,6 @@ const ProfileDropdownMenu = ({
     onCalendarClick,
     currentTime
 }) => {
-    // ... (Kode ProfileDropdownMenu tetap sama)
     const dropdownVariants = {
         hidden: { opacity: 0, y: 10, scaleY: 0.95 },
         visible: { opacity: 1, y: 0, scaleY: 1, transition: { duration: 0.2, ease: 'easeOut' } },
@@ -68,7 +60,6 @@ const ProfileDropdownMenu = ({
             exit="exit"
             className="fixed bottom-[calc(4rem+1.5rem)] inset-x-4 mx-auto w-[calc(100%-2rem)] max-w-sm bg-white rounded-xl shadow-lg border p-2 z-30 origin-bottom" // Posisi di atas navbar
         >
-            {/* Jam & Kalender */}
             <div
                 onClick={onCalendarClick}
                 className="p-3 mb-2 rounded-lg cursor-pointer bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors relative overflow-hidden group"
@@ -94,18 +85,15 @@ const ProfileDropdownMenu = ({
                 </div>
             </div>
 
-            {/* Tombol Profil Saya */}
             <button onClick={() => onNavigate('profile')} className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
                 <FiUser size={16} />
                 <span>Profil Saya</span>
             </button>
 
-            {/* Tombol Pengaturan Akun */}
             <button onClick={() => onNavigate('accountSettings')} className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
                 <FiSettings size={16} />
                 <span>Pengaturan Akun</span>
             </button>
-            {/* Tombol Logout */}
             <button onClick={onLogoutClick} className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">
                 <FiLogOut size={16} />
                 <span>Logout</span>
@@ -114,24 +102,20 @@ const ProfileDropdownMenu = ({
     );
 };
 
-
-// --- Komponen Utama BottomNavBar ---
 const BottomNavBar = ({ activePage, onNavigate }) => {
-    const { user, logout } = useAuth(); // Ambil user dan logout
+    const { user, logout } = useAuth(); 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-    const [isCalendarOpen, setIsCalendarOpen] = useState(false); // State untuk modal kalender
-    const [currentTime, setCurrentTime] = useState(new Date()); // State untuk jam
-    const profileRef = useRef(null); // Ref untuk tombol profile/dropdown
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const profileRef = useRef(null); 
     const API_URL = 'http://localhost:8080';
 
-    // Timer untuk jam
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
 
-    // Menutup dropdown saat klik di luar
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -148,7 +132,7 @@ const BottomNavBar = ({ activePage, onNavigate }) => {
 
     const handleNavigation = (view) => {
         if (typeof onNavigate === 'function') {
-            setIsDropdownOpen(false); // Tutup dropdown saat navigasi
+            setIsDropdownOpen(false);
             onNavigate(view);
         }
     };
@@ -158,7 +142,6 @@ const BottomNavBar = ({ activePage, onNavigate }) => {
         logout();
     };
 
-    // Logika Avatar
     const defaultInitialAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${user?.nama || user?.username || 'Siswa'}`;
     const userAvatar = user?.avatar
         ? (user.avatar.startsWith('http') ? user.avatar : `${API_URL}/${user.avatar}`)
@@ -173,10 +156,8 @@ const BottomNavBar = ({ activePage, onNavigate }) => {
                 title="Konfirmasi Logout"
                 message="Apakah Anda yakin ingin keluar?"
             />
-            {/* Modal Kalender */}
             <CalenderModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
 
-            {/* Dropdown Menu (muncul di atas navbar) */}
             <AnimatePresence>
                 {isDropdownOpen && user && (
                     <ProfileDropdownMenu
@@ -189,29 +170,27 @@ const BottomNavBar = ({ activePage, onNavigate }) => {
                 )}
             </AnimatePresence>
 
-            {/* Navbar Utama */}
             <div className="fixed md:hidden inset-x-0 bottom-4 mx-auto w-[calc(100%-2rem)] max-w-sm h-16 bg-gradient-to-t from-sesm-deep to-sesm-teal rounded-full shadow-lg z-20 overflow-hidden">
                 <div className="flex justify-around items-center h-full">
                     <NavItem
-                        icon={FiHome} // Pass component reference
+                        icon={FiHome}
                         label="Home"
                         isActive={activePage === 'home'}
                         onClick={() => handleNavigation('home')}
                     />
                     <NavItem
-                        icon={FiSearch} // Pass component reference
+                        icon={FiSearch} 
                         label="Explore"
                         isActive={activePage === 'explore'}
                         onClick={() => handleNavigation('explore')}
                     />
                     <NavItem
-                        icon={FiBookmark} // Pass component reference
+                        icon={FiBookmark}
                         label="Bookmark"
                         isActive={activePage === 'bookmark'}
                         onClick={() => handleNavigation('bookmark')}
                     />
 
-                    {/* Profile Button / Dropdown Trigger */}
                     <div ref={profileRef} className="relative w-1/4 h-full flex items-center justify-center">
                         <button
                             onClick={() => {
@@ -222,21 +201,19 @@ const BottomNavBar = ({ activePage, onNavigate }) => {
                                 (activePage === 'profile' || activePage === 'accountSettings' || isDropdownOpen) ? 'text-white scale-110' : 'text-sesm-sky'
                             } hover:text-white`}
                         >
-                            {/* PERBAIKAN: Container untuk Avatar/Ikon dengan tinggi tetap */}
                             <div className="relative h-6 w-6 flex items-center justify-center">
                                 {user ? (
                                     <img
                                         src={userAvatar}
                                         alt="Profil"
-                                        // PERBAIKAN: Ukuran disesuaikan agar pas di container h-6 w-6
                                         className="w-full h-full rounded-full object-cover border border-white/40 shadow-sm"
                                         onError={(e) => e.target.src = defaultInitialAvatar}
                                     />
                                 ) : (
-                                    <FiUser size={24} /> // Ukuran ikon tetap 24px
+                                    <FiUser size={24} /> 
                                 )}
                             </div>
-                            <span className="text-xs font-medium pt-0.5"> {/* Sedikit padding top untuk teks */}
+                            <span className="text-xs font-medium pt-0.5">
                                 Profile
                             </span>
                         </button>

@@ -6,10 +6,7 @@ import thankYouMeme from '../../assets/meme/terima-kasih.jpeg';
 import salahMeme from '../../assets/meme/meme-salah/9.jpeg';
 import DataService from '../../services/dataService';
 
-// Helper
 const toAlpha = (num) => String.fromCharCode(65 + num);
-
-// --- Komponen-Komponen Baru & Modifikasi ---
 
 const AnimatedNumber = ({ value }) => {
     const ref = useRef(null);
@@ -222,7 +219,6 @@ const MediaViewer = ({ attachments, onImageClick }) => {
 
 const EssayInput = ({ answer, onChange, disabled }) => (<textarea value={answer} onChange={onChange} disabled={disabled} placeholder="Tulis jawaban esaimu di sini..." className="w-full h-40 p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal transition"/>);
 
-// --- KOMPONEN UTAMA ---
 const QuizForm = ({ quizData: initialQuizData, onCompleteQuiz }) => {
     const [fullQuizData, setFullQuizData] = useState(null);
     const [loading, setLoading] = useState(true);

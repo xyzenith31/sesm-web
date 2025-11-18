@@ -1,18 +1,14 @@
-// contoh-sesm-web/src/components/ChapterDetailModal.jsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiCheck, FiRefreshCw, FiLoader } from 'react-icons/fi';
-import DataService from '../services/dataService'; // Pastikan diimpor
-
-// ... (Komponen QuestionCard tidak berubah)
+import DataService from '../services/dataService';
 
 const ChapterDetailModal = ({ materiKey, onClose }) => {
   const [materi, setMateri] = useState(null);
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
-  // --- STATE BARU ---
   const [submissionStatus, setSubmissionStatus] = useState({
     score: null,
     message: '',
@@ -21,11 +17,9 @@ const ChapterDetailModal = ({ materiKey, onClose }) => {
   useEffect(() => {
     if (materiKey) {
       setLoading(true);
-      // Endpoint siswa tidak mengembalikan jawaban, jadi kita pakai yg sudah ada
       DataService.getDetailMateriForAdmin(materiKey)
         .then(response => {
           setMateri(response.data);
-          // Inisialisasi state jawaban
           const initialAnswers = {};
           response.data.questions.forEach(q => {
               initialAnswers[q.id] = '';
@@ -41,7 +35,6 @@ const ChapterDetailModal = ({ materiKey, onClose }) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
   
-  // --- FUNGSI PENGUMPULAN JAWABAN (DIPERBARUI TOTAL) ---
   const handleSubmit = async () => {
     const answerPayload = Object.entries(answers).map(([questionId, answer]) => ({
         questionId: parseInt(questionId),
@@ -63,7 +56,6 @@ const ChapterDetailModal = ({ materiKey, onClose }) => {
   };
 
   const handleReset = () => {
-    // Reset semua state ke awal
     const initialAnswers = {};
     materi.questions.forEach(q => {
         initialAnswers[q.id] = '';
@@ -74,7 +66,6 @@ const ChapterDetailModal = ({ materiKey, onClose }) => {
   };
   
   return createPortal(
-    // ... (kode JSX modal bagian atas tidak berubah)
     <main className="flex-1 overflow-y-auto p-6 space-y-4">
         {loading ? (
             <div className="flex justify-center items-center h-48"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>
@@ -85,7 +76,6 @@ const ChapterDetailModal = ({ materiKey, onClose }) => {
                     question={q} 
                     index={index} 
                     userAnswer={answers[q.id]} 
-                    // Mengirim question ID agar mudah dilacak
                     onAnswerChange={(id, val) => handleAnswerChange(q.id, val)} 
                     isSubmitted={isSubmitted} 
                 />
@@ -118,7 +108,6 @@ const ChapterDetailModal = ({ materiKey, onClose }) => {
             </motion.button>
         )}
     </footer>
-    // ... (sisa kode JSX tidak berubah)
   );
 };
 

@@ -1,11 +1,10 @@
-// contoh-sesm-web/components/admin/BankSoalBookmarkModal.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiSearch, FiLoader, FiInbox, FiCheckSquare, FiArrowRight, FiArrowLeft } from 'react-icons/fi';
 import DataService from '../../services/dataService';
-import BookmarkService from '../../services/bookmarkService'; // Pastikan ini diimpor
-import CustomSelect from '../ui/CustomSelect'; // 1. Impor CustomSelect
-import Notification from '../ui/Notification'; // 2. Impor Notification
+import BookmarkService from '../../services/bookmarkService';
+import CustomSelect from '../ui/CustomSelect';
+import Notification from '../ui/Notification';
 
 const jenjangOptions = {
     'TK': { jenjang: 'TK', kelas: null },
@@ -17,7 +16,6 @@ const jenjangOptions = {
     'SD Kelas 6': { jenjang: 'SD', kelas: 6 },
 };
 
-// 3. Siapkan options untuk CustomSelect jenjang
 const jenjangSelectOptions = Object.keys(jenjangOptions).map(key => ({
     value: key,
     label: key,
@@ -28,19 +26,14 @@ const BankSoalBookmarkModal = ({ isOpen, onClose, onQuestionsAdded }) => {
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
-    // State error tidak lagi digunakan langsung untuk UI, diganti notifikasi
-    // const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedSubject, setSelectedSubject] = useState('Semua');
     const [selectedQuestionIds, setSelectedQuestionIds] = useState(new Set());
     const [selectedFilterKey, setSelectedFilterKey] = useState('TK');
-
-    // State untuk Step 2
     const [allBookmarks, setAllBookmarks] = useState([]);
     const [targetBookmarkLoading, setTargetBookmarkLoading] = useState(false);
     const [targetBookmarkId, setTargetBookmarkId] = useState('');
 
-    // 4. State untuk Notifikasi
     const [notif, setNotif] = useState({
         isOpen: false,
         message: '',
@@ -48,16 +41,13 @@ const BankSoalBookmarkModal = ({ isOpen, onClose, onQuestionsAdded }) => {
         title: '',
     });
 
-    // Effect untuk Step 1 (Mengambil daftar soal dari bank)
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
-            // setError(null); // Tidak perlu lagi
             const { jenjang, kelas } = jenjangOptions[selectedFilterKey];
             DataService.getAllQuestionsForBank(jenjang, kelas)
                 .then(response => setQuestions(response.data))
                 .catch(err => {
-                    // 5. Ganti alert dengan Notifikasi error
                     setNotif({
                         isOpen: true,
                         title: "Error",
@@ -68,26 +58,22 @@ const BankSoalBookmarkModal = ({ isOpen, onClose, onQuestionsAdded }) => {
                 })
                 .finally(() => setLoading(false));
         } else {
-            // Reset state saat modal ditutup
             setStep(1);
             setQuestions([]);
             setSelectedQuestionIds(new Set());
             setSearchTerm('');
             setSelectedSubject('Semua');
-            setTargetBookmarkId(''); // Reset pilihan target
-            // setError(null); // Tidak perlu lagi
+            setTargetBookmarkId('');
         }
     }, [isOpen, selectedFilterKey]);
 
-    // Fungsi untuk mengambil daftar bookmark tujuan
     const fetchTargetBookmarks = useCallback(() => {
         setTargetBookmarkLoading(true);
-        BookmarkService.getAllBookmarks() // Gunakan BookmarkService
+        BookmarkService.getAllBookmarks()
             .then(response => {
                 setAllBookmarks(response.data);
             })
             .catch(err => {
-                // 6. Ganti alert dengan Notifikasi error
                 setNotif({
                     isOpen: true,
                     title: "Error",
@@ -102,14 +88,12 @@ const BankSoalBookmarkModal = ({ isOpen, onClose, onQuestionsAdded }) => {
             });
     }, []);
 
-    // Effect untuk Step 2 (Mengambil daftar bookmark tujuan)
     useEffect(() => {
         if (isOpen && step === 2) {
             fetchTargetBookmarks();
         }
     }, [isOpen, step, fetchTargetBookmarks]);
 
-    // 7. Siapkan options untuk CustomSelect Subject
     const subjectOptions = useMemo(() => [
         { value: 'Semua', label: 'Semua Mapel' },
         ...Array.from(new Set(questions.map(q => q.nama_mapel)))
@@ -135,12 +119,11 @@ const BankSoalBookmarkModal = ({ isOpen, onClose, onQuestionsAdded }) => {
 
     const handleNextStep = () => {
         if (selectedQuestionIds.size === 0) {
-            // 8. Ganti alert dengan Notifikasi info
             setNotif({
                 isOpen: true,
                 title: "Info",
                 message: "Pilih setidaknya satu soal untuk melanjutkan.",
-                success: true, // atau false jika dianggap warning
+                success: true,
             });
             return;
         }
@@ -149,23 +132,19 @@ const BankSoalBookmarkModal = ({ isOpen, onClose, onQuestionsAdded }) => {
 
     const handleAddQuestionsToBookmark = async () => {
         if (!targetBookmarkId) {
-             // 9. Ganti alert dengan Notifikasi info
             setNotif({
                 isOpen: true,
                 title: "Info",
                 message: "Pilih materi bookmark tujuan terlebih dahulu.",
-                success: true, // atau false jika dianggap warning
+                success: true, 
             });
             return;
         }
         setIsAdding(true);
         try {
-            // Gunakan addQuestionsFromBankToBookmark dari DataService
             await DataService.addQuestionsFromBankToBookmark(targetBookmarkId, Array.from(selectedQuestionIds));
-            onQuestionsAdded(targetBookmarkId); // Kirim ID bookmark yang diperbarui
-            // Tidak perlu notifikasi sukses di sini karena parent (ManajemenBookmark) akan menampilkannya
+            onQuestionsAdded(targetBookmarkId);
         } catch (error) {
-             // 10. Ganti alert dengan Notifikasi error
             setNotif({
                 isOpen: true,
                 title: "Gagal",
@@ -178,7 +157,6 @@ const BankSoalBookmarkModal = ({ isOpen, onClose, onQuestionsAdded }) => {
         }
     };
 
-    // 11. Siapkan options untuk CustomSelect Target Bookmark
     const targetBookmarkOptions = useMemo(() =>
         allBookmarks.map(b => ({
             value: b.id,
@@ -186,7 +164,6 @@ const BankSoalBookmarkModal = ({ isOpen, onClose, onQuestionsAdded }) => {
         })),
     [allBookmarks]);
 
-    // 12. Handler untuk menutup notifikasi
     const handleCloseNotif = () => setNotif({ ...notif, isOpen: false });
 
 
@@ -194,7 +171,6 @@ const BankSoalBookmarkModal = ({ isOpen, onClose, onQuestionsAdded }) => {
 
     return (
         <>
-            {/* 13. Render komponen Notifikasi */}
             <Notification
                 isOpen={notif.isOpen}
                 onClose={handleCloseNotif}

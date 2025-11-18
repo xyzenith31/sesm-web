@@ -1,11 +1,9 @@
-// contoh frontend/components/admin/StoryEditorModal.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiUpload, FiLoader, FiSave, FiPlus, FiTrash2, FiLink } from 'react-icons/fi';
 import CustomSelect from '../ui/CustomSelect';
 import { API_BASE_URL } from '../../utils/apiClient';
 
-// [PERBAIKAN] Nama komponen diubah agar konsisten dengan file
 const StoryNodeEditor = ({ node, index, allNodeIds, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => onUpdate(index, { ...node, [field]: value });
     const handleChoiceTextChange = (choiceIndex, text) => {
@@ -21,23 +19,19 @@ const StoryNodeEditor = ({ node, index, allNodeIds, onUpdate, onRemove }) => {
     const addChoice = () => onUpdate(index, { ...node, choices: [...node.choices, { text: '', leadsTo: '' }] });
     const removeChoice = (choiceIndex) => onUpdate(index, { ...node, choices: node.choices.filter((_, i) => i !== choiceIndex) });
     
-    // [PERBAIKAN] handleImageChange untuk node
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // 'imageFile' akan dikumpulkan oleh handleSubmit
-            // 'image' adalah untuk preview (blob URL)
             onUpdate(index, { ...node, imageFile: file, image: URL.createObjectURL(file) });
         }
     };
 
     const nodeIdOptions = allNodeIds.map(id => ({ value: id, label: `Ke node: ${id}` }));
     
-    // Helper untuk menampilkan gambar (bisa blob, bisa url server)
     const getImageUrl = (imagePath) => {
         if (!imagePath) return null;
-        if (imagePath.startsWith('blob:')) return imagePath; // File baru
-        return `${API_BASE_URL}/${imagePath}`; // File lama
+        if (imagePath.startsWith('blob:')) return imagePath; 
+        return `${API_BASE_URL}/${imagePath}`;
     };
     const imagePreviewUrl = getImageUrl(node.image);
 
@@ -45,7 +39,6 @@ const StoryNodeEditor = ({ node, index, allNodeIds, onUpdate, onRemove }) => {
         <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-sesm-teal space-y-3">
             <div className="flex justify-between items-center">
                 <input type="text" value={node.id} onChange={(e) => handleInputChange('id', e.target.value.replace(/\s+/g, '_'))} className="font-bold text-lg text-sesm-deep bg-transparent focus:outline-none focus:ring-1 focus:ring-sesm-teal rounded px-2 py-1" placeholder="Nama_Node_Unik" />
-                {/* [PERBAIKAN] Jangan biarkan hapus node 'start' */}
                 {index > 0 && node.id !== 'start' && (
                      <button type="button" onClick={() => onRemove(index)} className="p-2 text-red-500 hover:bg-red-100 rounded-full"><FiTrash2 size={16}/></button>
                 )}
@@ -88,17 +81,16 @@ const StoryEditorModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     const isEditMode = Boolean(initialData);
     
     const [formData, setFormData] = useState({ title: '', synopsis: '', category: '', read_time: '', total_endings: '' });
-    // [PERBAIKAN] Pisahkan file dari preview
-    const [coverImageFile, setCoverImageFile] = useState(null); // Ini untuk File
-    const [coverPreview, setCoverPreview] = useState(''); // Ini untuk URL (blob atau http)
+    const [coverImageFile, setCoverImageFile] = useState(null);
+    const [coverPreview, setCoverPreview] = useState('');
     
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [nodes, setNodes] = useState([]);
 
     const getNewNode = (idSuffix) => ({ 
         id: `node_${idSuffix}`, 
-        image: '',       // Path/URL (dari server atau blob)
-        imageFile: null, // File object (jika baru)
+        image: '',    
+        imageFile: null, 
         text: '', 
         choices: [], 
         isEnding: false 
@@ -107,25 +99,21 @@ const StoryEditorModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     useEffect(() => {
         if (isOpen) {
             if (isEditMode && initialData) {
-                // 1. Set data teks
                 setFormData({
                     title: initialData.title || '', synopsis: initialData.synopsis || '', category: initialData.category || '',
                     read_time: initialData.read_time || '', total_endings: initialData.total_endings || '',
                 });
                 
-                // 2. Set preview cover (dari server)
                 if (initialData.cover_image) {
                     setCoverPreview(`${API_BASE_URL}/${initialData.cover_image}`);
                 } else {
                     setCoverPreview('');
                 }
-                setCoverImageFile(null); // Reset file baru
+                setCoverImageFile(null); 
 
-                // 3. Set nodes
                 let storyDataObj = null;
                 if (initialData.story_data) {
                     try {
-                        // story_data bisa jadi string (dari create) atau objek (dari get)
                         storyDataObj = typeof initialData.story_data === 'string' 
                             ? JSON.parse(initialData.story_data) 
                             : initialData.story_data;
@@ -135,24 +123,20 @@ const StoryEditorModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                     }
                 }
                 
-                // [PERBAIKAN] Logika load node
                 if (storyDataObj && typeof storyDataObj === 'object' && Object.keys(storyDataObj).length > 0) {
                      const nodesArray = Object.keys(storyDataObj).map(key => ({
                         id: key,
-                        image: storyDataObj[key].image || '', // Ini adalah PATH dari server
-                        imageFile: null, // Tidak ada file baru saat load
+                        image: storyDataObj[key].image || '',
+                        imageFile: null,
                         text: storyDataObj[key].text || '',
                         choices: storyDataObj[key].choices || [],
-                        // [PERBAIKAN] Gunakan 'ending' (dari backend) bukan 'isEnding' (dari frontend)
                         isEnding: storyDataObj[key].ending || false, 
                     }));
                     setNodes(nodesArray);
                 } else {
-                    // Fallback jika data rusak atau kosong
                     setNodes([ { id: 'start', image: '', imageFile: null, text: '', choices: [], isEnding: false } ]);
                 }
             } else {
-                // Reset form untuk "Buat Baru"
                 setFormData({ title: '', synopsis: '', category: '', read_time: '', total_endings: '' });
                 setNodes([ { id: 'start', image: '', imageFile: null, text: '', choices: [], isEnding: false } ]);
                 setCoverPreview('');
@@ -167,76 +151,61 @@ const StoryEditorModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     const handleAddNode = () => setNodes(prev => [...prev, getNewNode(Date.now())]);
     const handleRemoveNode = (index) => setNodes(prev => prev.filter((_, i) => i !== index));
 
-    // [PERBAIKAN] handleImageChange untuk Cover
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setCoverImageFile(file); // Simpan File object
-            setCoverPreview(URL.createObjectURL(file)); // Buat blob URL untuk preview
+            setCoverImageFile(file);
+            setCoverPreview(URL.createObjectURL(file)); 
         }
     };
 
-    // [PERBAIKAN BESAR] handleSubmit
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // 1. Siapkan story_data (objek JSON)
         const storyDataObject = {};
-        // 2. Siapkan node_images (File objects)
         const nodeImageFiles = {}; 
 
         nodes.forEach(node => {
-            // Cek jika node ID valid
             if (!node.id || node.id.trim() === '') {
                 alert('Setiap node harus memiliki ID unik.');
                 setIsSubmitting(false);
                 throw new Error('Node ID kosong');
             }
 
-            let imagePath = node.image; // Path lama (atau blob url)
+            let imagePath = node.image;
             
-            // Jika ada file baru (imageFile), siapkan untuk FormData
             if (node.imageFile) {
-                // 'image' akan berisi path baru (setelah di-build di backend)
-                // 'nodeImageFiles' akan berisi file-nya
                 nodeImageFiles[node.id] = node.imageFile;
                 
-                // Jika ini mode edit dan ada gambar lama, kita tidak set path
-                // Biarkan backend yg urus
                 if(isEditMode && node.image && !node.image.startsWith('blob:')) {
-                   imagePath = node.image; // Pertahankan path lama
+                   imagePath = node.image; 
                 } else {
-                   imagePath = null; // Ini file baru, path akan dibuat backend
+                   imagePath = null;
                 }
                 
             } else if (node.image && !node.image.startsWith('blob:')) {
-                // Ini file lama (path server), pertahankan
                 imagePath = node.image;
             } else {
-                // Tidak ada gambar
                 imagePath = null;
             }
 
             storyDataObject[node.id] = {
-                // 'image' adalah path (jika ada), atau null
                 image: imagePath, 
                 text: node.text,
                 choices: node.isEnding ? [] : node.choices,
-                ending: node.isEnding // Kirim 'ending'
+                ending: node.isEnding 
             };
         });
 
-        // 3. Buat payload (objek JS biasa) untuk dikirim ke service
         const payload = {
             ...formData,
-            story_data: storyDataObject, // Objek JSON
-            cover_image: coverImageFile,  // File object (atau null)
-            node_images: nodeImageFiles,  // Objek { [nodeId]: File }
+            story_data: storyDataObject, 
+            cover_image: coverImageFile, 
+            node_images: nodeImageFiles,
         };
         
         try {
-            // 4. Panggil onSubmit (yang memanggil service)
             await onSubmit(payload, initialData?.id);
         } catch(err) {
             console.error("Gagal submit dari modal:", err);
@@ -255,7 +224,6 @@ const StoryEditorModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                     <header className="p-6 border-b flex justify-between items-center"><h3 className="text-xl font-bold text-sesm-deep">{isEditMode ? 'Edit Cerita' : 'Buat Cerita Baru'}</h3><button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-gray-100"><FiX/></button></header>
                     
                     <main className="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden">
-                        {/* Kolom Kiri (Detail Cerita) */}
                         <div className="p-6 border-r border-gray-200 overflow-y-auto">
                             <div className="space-y-4">
                                 <div><label className="font-semibold text-sm">Judul Cerita</label><input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className={inputStyle} required /></div>
@@ -269,7 +237,6 @@ const StoryEditorModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             </div>
                         </div>
 
-                        {/* Kolom Kanan (Editor Node) dengan Scroll */}
                         <div className="p-6 overflow-y-auto">
                             <div className="space-y-4">
                                 {nodes.map((node, index) => (

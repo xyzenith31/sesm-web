@@ -3,14 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiCloud, FiCloudOff, FiAlertTriangle } from 'react-icons/fi';
 
 const SaveStatusIcon = ({ status }) => {
-    // Definisi path untuk SVG
     const cloudPath = "M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z";
     const checkPath = "M22 11.08V12a10 10 0 1 1-5.93-9.14";
     const polylinePath = "M22 4L12 14.01l-3-3";
     const arrowUpPath = "M12 17V11";
     const arrowHeadPath = "M9 14l3-3 3 3";
 
-    // Varian animasi untuk Framer Motion
     const cloudVariants = {
         initial: { pathLength: 0, opacity: 0 },
         animate: { pathLength: 1, opacity: 1, transition: { duration: 0.8, ease: "easeInOut" } },
@@ -27,7 +25,6 @@ const SaveStatusIcon = ({ status }) => {
 
     let icon;
     let text;
-    // Ganti warna utama menjadi biru (#3B82F6)
     const activeColor = "#3B82F6"; 
 
     switch (status) {

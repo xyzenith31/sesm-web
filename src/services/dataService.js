@@ -1,10 +1,7 @@
-// contoh-sesm-web/services/dataService.js
 import apiClient from '../utils/apiClient';
 
-// --- FUNGSI SISWA ---
 const getSubjects = (jenjang, kelas) => {
   let url = `/subjects/${jenjang}`;
-  // Hanya tambahkan kelas jika jenjang SD dan kelas ada
   if (jenjang && jenjang.toLowerCase() === 'sd' && kelas) {
     url += `/${kelas}`;
   }
@@ -30,7 +27,6 @@ const updateUserProfile = (profileData, avatarFile) => {
 const getDetailMateriForSiswa = (materiKey) => { return apiClient.get(`/materi/${materiKey}`); };
 const submitAnswers = (materiKey, answers) => { return apiClient.post(`/materi/${materiKey}/submit`, { answers }); };
 
-// --- FUNGSI GURU / ADMIN ---
 const getAllUsers = () => {
   return apiClient.get('/admin/users');
 };
@@ -50,10 +46,9 @@ const addChapter = (chapterData) => { return apiClient.post('/admin/materi/chapt
 const addQuestion = (materiKey, questionData) => {
   const formData = new FormData();
    Object.keys(questionData).forEach(key => {
-      if (key === 'options' || key === 'media_urls' || key === 'links' || key === 'texts' || key === 'media') { // Tambahkan 'media' di sini
-          // Handle array/object types
+      if (key === 'options' || key === 'media_urls' || key === 'links' || key === 'texts' || key === 'media') { 
           if(key === 'media' && Array.isArray(questionData.media)) {
-             questionData.media.forEach(file => formData.append('media', file)); // Append each file individually
+             questionData.media.forEach(file => formData.append('media', file));
           } else {
              formData.append(key, JSON.stringify(questionData[key]));
           }
@@ -65,21 +60,18 @@ const addQuestion = (materiKey, questionData) => {
 };
 const updateQuestion = (questionId, questionData) => {
     const formData = new FormData();
-     // Append existing attachments (non-file)
     if (questionData.attachments) {
         formData.append('attachments', JSON.stringify(questionData.attachments));
     }
-    // Append new files
     if (questionData.newMedia && questionData.newMedia.length > 0) {
         questionData.newMedia.forEach(file => { formData.append('media', file); });
     }
-    // Append other fields
     formData.append('type', questionData.type);
     formData.append('question', questionData.question);
     formData.append('essayAnswer', questionData.essayAnswer || '');
     if (questionData.options) {
         formData.append('options', JSON.stringify(questionData.options));
-        formData.append('correctAnswer', questionData.correctAnswer || ''); // Pastikan correctAnswer dikirim
+        formData.append('correctAnswer', questionData.correctAnswer || '');
     }
 
     return apiClient.put(`/admin/materi/questions/${questionId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }, });
@@ -107,7 +99,6 @@ const updateQuiz = (quizId, formData) => {
 
 };
 
-// --- ✅ FUNGSI BARU UNTUK KONEKSI KE BACKEND ---
 const updateChapterSettings = (chapterId, settings) => {
     return apiClient.put(`/admin/materi/chapters/${chapterId}/settings`, settings);
 };
@@ -133,29 +124,25 @@ const updateQuestionInQuiz = (questionId, questionData) => {
     formData.append('question_text', questionData.question);
     formData.append('question_type', questionData.type);
 
-    // Bagian ini sudah benar: membuat array { text: string, isCorrect: boolean }
     if (questionData.options && questionData.type.includes('pilihan-ganda')) {
         const formattedOptions = questionData.options.map(opt => ({
-            text: opt, // Ambil teks opsi
-            isCorrect: opt === questionData.correctAnswer // Tentukan boolean isCorrect
+            text: opt,
+            isCorrect: opt === questionData.correctAnswer 
         }));
-        formData.append('options', JSON.stringify(formattedOptions)); // Kirim sebagai JSON string
+        formData.append('options', JSON.stringify(formattedOptions));
     }
 
-    // Handle existing media (assuming structure { type: 'file'/'link', url: '...' })
-    const existingMediaUrls = (questionData.media || []) // Pastikan media ada
+    const existingMediaUrls = (questionData.media || []) 
                           .filter(m => m.type !== 'new-file' && m.url)
-                          .map(({file, ...keepAttrs}) => keepAttrs); // Hapus property 'file' jika ada
+                          .map(({file, ...keepAttrs}) => keepAttrs);
     formData.append('existingMedia', JSON.stringify(existingMediaUrls));
 
-
-    // Handle new files to upload
-    const newFiles = (questionData.media || []) // Pastikan media ada
+    const newFiles = (questionData.media || []) 
                       .filter(m => m.type === 'new-file')
                       .map(m => m.file);
-    newFiles.forEach(file => formData.append('mediaFiles', file)); // Use 'mediaFiles'
+    newFiles.forEach(file => formData.append('mediaFiles', file)); 
 
-    formData.append('essayAnswer', questionData.essayAnswer || ''); // Include essay answer
+    formData.append('essayAnswer', questionData.essayAnswer || ''); 
 
     return apiClient.put(`/admin/quizzes/questions/${questionId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -166,10 +153,7 @@ const deleteQuestionFromQuiz = (questionId) => { return apiClient.delete(`/admin
 const getAllQuestionsForBank = (jenjang, kelas) => { return apiClient.get('/admin/all-questions', { params: { jenjang, kelas } }); };
 const addQuestionsFromBank = (quizId, questionIds) => { return apiClient.post(`/admin/quizzes/${quizId}/add-from-bank`, { questionIds }); };
 const getQuizForStudent = (quizId) => { return apiClient.get(`/quizzes/${quizId}`); };
-
-// Fungsi submitQuizAnswers sudah diperbaiki di sini
 const submitQuizAnswers = (quizId, answers) => {
-    // Pastikan mengirim objek dengan key 'answers' yang berisi array
     return apiClient.post(`/quizzes/${quizId}/submit`, { answers });
 };
 
@@ -218,12 +202,10 @@ const deleteDraft = (draftKey) => {
 const getStudentSubmissionDetails = (submissionId) => {
     return apiClient.get(`/materi/submission/${submissionId}`);
 };
-const getStudentBookmarkSubmissionDetails = (submissionId) => { // Fungsi baru untuk detail bookmark siswa
+const getStudentBookmarkSubmissionDetails = (submissionId) => {
     return apiClient.get(`/bookmarks/submissions/${submissionId}`);
 };
 
-
-// --- FUNGSI BARU UNTUK AGENDA ---
 const getAgendas = (startDate, endDate) => {
     return apiClient.get('/agendas', { params: { startDate, endDate } });
 };
@@ -246,7 +228,7 @@ const DataService = {
   getDetailMateriForAdmin,
   addChapter,
   getStudentSubmissionDetails,
-  getStudentBookmarkSubmissionDetails, // Ekspor fungsi baru
+  getStudentBookmarkSubmissionDetails,
   addQuestion,
   updateQuestion,
   deleteChapter,

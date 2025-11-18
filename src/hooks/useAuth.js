@@ -37,18 +37,16 @@ export const useAuth = () => {
       const response = await DataService.updateUserProfile(profileData, avatarFile);
       const currentUser = AuthService.getCurrentUser();
       
-      // Hapus field password dari data yang akan disimpan di local
       const { password, ...dataToSaveLocally } = profileData;
       
       const updatedUser = { ...currentUser, ...dataToSaveLocally };
 
-      // Jika backend mengembalikan path avatar baru, update di local user
       if (response.data.avatar !== undefined) {
           updatedUser.avatar = response.data.avatar;
       }
       
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      refreshUser(); // Panggil refreshUser untuk memperbarui state di AuthContext
+      refreshUser(); 
 
       return { success: true, message: 'Profil berhasil diperbarui!' };
     } catch (error) {

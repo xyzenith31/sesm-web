@@ -50,7 +50,7 @@ const InteractiveStoryPage = ({ onNavigate }) => {
   const [activeStory, setActiveStory] = useState(null);
   const [completedEndings, setCompletedEndings] = useState({});
   const [showPoints, setShowPoints] = useState(false);
-  const [pointsAwarded, setPointsAwarded] = useState(0); // State untuk menyimpan poin yang didapat
+  const [pointsAwarded, setPointsAwarded] = useState(0);
   const [totalPoints, setTotalPoints] = useState(2500);
 
   useEffect(() => {
@@ -67,7 +67,6 @@ const InteractiveStoryPage = ({ onNavigate }) => {
         .finally(() => {
             setLoading(false);
         });
-        // Di sini Anda juga bisa memuat data `completedEndings` dari server jika disimpan
   }, []);
 
   const handleStorySelect = async (story) => {
@@ -83,7 +82,6 @@ const InteractiveStoryPage = ({ onNavigate }) => {
     }
   };
 
-  // [PERBAIKAN] Fungsi ini diubah untuk memanggil API
   const handleStoryComplete = (endingKey) => {
     InteractiveStoryService.completeStory(activeStory.id, endingKey)
         .then(response => {
@@ -91,9 +89,8 @@ const InteractiveStoryPage = ({ onNavigate }) => {
             if (awarded > 0) {
                 setPointsAwarded(awarded);
                 setTotalPoints(currentPoints => currentPoints + awarded);
-                setShowPoints(true); // Tampilkan notifikasi poin
+                setShowPoints(true);
 
-                // Update state lokal untuk UI
                 setCompletedEndings(prev => {
                     const currentEndings = prev[activeStory.id] || [];
                     if (!currentEndings.includes(endingKey)) {
@@ -107,7 +104,7 @@ const InteractiveStoryPage = ({ onNavigate }) => {
             console.error("Gagal mencatat penyelesaian:", error);
         });
     
-    setActiveStory(null); // Tutup modal terlepas dari hasil API
+    setActiveStory(null);
   };
   
   const handleCloseModal = () => setActiveStory(null);

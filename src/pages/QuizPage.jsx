@@ -1,4 +1,3 @@
-// contoh-sesm-web/pages/QuizPage.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,9 +6,8 @@ import {
 } from 'react-icons/fi';
 import { FaFlask, FaGlobe, FaCalculator, FaTrophy, FaCrown, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import DataService from '../services/dataService';
-import { useData } from '../hooks/useData'; // Impor useData hook
+import { useData } from '../hooks/useData';
 
-// --- Helper Components ---
 const iconMap = { Umum: FaGlobe, Sains: FaFlask, Matematika: FaCalculator };
 
 const StatCard = ({ icon: Icon, value, label, color, delay }) => (
@@ -185,8 +183,6 @@ const HistoryCard = ({ item }) => (
     </motion.div>
 );
 
-
-// --- Komponen Utama ---
 const QuizPage = ({ onNavigate, onSelectQuiz }) => {
     const [quizzes, setQuizzes] = useState([]);
     const [history, setHistory] = useState([]);
@@ -266,7 +262,6 @@ const QuizPage = ({ onNavigate, onSelectQuiz }) => {
                                 <div className="p-4 bg-sesm-teal/10 rounded-xl text-sesm-teal"><FaTrophy size={28} /></div>
                             </div>
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                {/* Featured Quiz */}
                                 <div className="lg:col-span-2">
                                     {loading ? <div className="h-64 bg-gray-200 rounded-2xl animate-pulse"></div> : featuredQuiz && (
                                         <motion.div className="bg-gradient-to-br from-sesm-teal to-sesm-deep rounded-2xl p-6 text-white h-full flex flex-col justify-between shadow-lg" initial={{opacity: 0}} animate={{opacity: 1}}>
@@ -279,7 +274,6 @@ const QuizPage = ({ onNavigate, onSelectQuiz }) => {
                                         </motion.div>
                                     )}
                                 </div>
-                                {/* Leaderboard */}
                                 <div className="space-y-4 bg-gray-50 p-4 rounded-2xl border">
                                     <h3 className="font-bold text-lg flex items-center gap-2"><FaCrown className="text-yellow-500"/> Peringkat Teratas</h3>
                                     {loading ? Array.from({length:3}).map((_,i) => <div key={i} className="h-10 bg-gray-200 rounded-lg animate-pulse"></div>)

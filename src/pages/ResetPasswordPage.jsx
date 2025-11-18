@@ -29,7 +29,6 @@ const SkipConfirmationModal = ({ isOpen, onClose, onConfirm, loading }) => {
     );
 };
 
-// --- Komponen Form Internal ---
 const ResetPasswordForm = ({ code, identifier, onPasswordReset }) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -108,10 +107,9 @@ const ResetPasswordForm = ({ code, identifier, onPasswordReset }) => {
     );
 };
 
-// --- Komponen Halaman Utama ---
 const ResetPasswordPage = ({ code, identifier, onPasswordReset }) => {
     const [loading, setLoading] = useState(false);
-    const [view, setView] = useState('choice'); // 'choice' | 'form'
+    const [view, setView] = useState('choice');
     const [isSkipModalOpen, setSkipModalOpen] = useState(false);
     const { handleAuthentication } = useAuth();
 

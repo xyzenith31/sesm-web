@@ -1,5 +1,3 @@
-// contoh-sesm-web/components/mod/StudentSubmissionDetailModal.jsx
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiCheckCircle, FiXCircle, FiLoader } from 'react-icons/fi';
@@ -12,9 +10,8 @@ const StudentSubmissionDetailModal = ({ submission, onClose }) => {
     useEffect(() => {
         if (submission) {
             setLoading(true);
-            // Untuk materi biasa, endpoint ini yang digunakan
             const fetchDetails = submission.bookmark_id 
-                ? DataService.getStudentBookmarkSubmissionDetails(submission.id) // Asumsi ada fungsi ini untuk bookmark
+                ? DataService.getStudentBookmarkSubmissionDetails(submission.id)
                 : DataService.getStudentSubmissionDetails(submission.id);
 
             fetchDetails
@@ -51,7 +48,6 @@ const StudentSubmissionDetailModal = ({ submission, onClose }) => {
                             {details.map((item, index) => {
                                 const correctAnswer = item.correct_mcq || item.correct_essay;
                                 const typeInfo = getTypeLabel(item.tipe_soal);
-                                // Untuk bookmark, question_text ada di level atas, untuk materi biasa ada di dalam
                                 const questionText = item.question_text || item.pertanyaan; 
                                 const questionIndex = item.question_index ?? index;
 
@@ -69,14 +65,12 @@ const StudentSubmissionDetailModal = ({ submission, onClose }) => {
                                             <p className="text-xs font-semibold text-blue-800">Jawaban Kamu:</p>
                                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.answer_text || "(Tidak dijawab)"}</p>
                                         </div>
-                                        {/* Tampilkan kunci jawaban hanya jika penilaian otomatis & jawaban salah */}
                                         {correctAnswer && item.is_correct === false && (
                                             <div className="mt-2 bg-green-50 border-l-4 border-green-400 p-3 rounded-r-lg">
                                                 <p className="text-xs font-semibold text-green-800">Kunci Jawaban:</p>
                                                 <p className="text-sm text-green-900">{correctAnswer}</p>
                                             </div>
                                         )}
-                                        {/* ✅ BAGIAN YANG DITAMBAHKAN */}
                                         {item.correction_text && (
                                             <div className="mt-2 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
                                                 <p className="text-xs font-semibold text-yellow-800">Umpan Balik dari Guru:</p>

@@ -1,4 +1,3 @@
-// contoh-sesm-web/pages/admin/LaporanKendala.jsx
 import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -12,7 +11,6 @@ import CustomSelect from '../../components/ui/CustomSelect';
 import Notification from '../../components/ui/Notification';
 import { Menu, Transition } from '@headlessui/react'; 
 
-// --- Komponen Modal (Tidak ada perubahan) ---
 const NotesModal = ({ isOpen, onClose, initialNotes, onSave, isSaving }) => {
     const [notes, setNotes] = useState(initialNotes || '');
     useEffect(() => { if (isOpen) setNotes(initialNotes || ''); }, [isOpen, initialNotes]);
@@ -33,7 +31,6 @@ const NotesModal = ({ isOpen, onClose, initialNotes, onSave, isSaving }) => {
     );
 };
 
-// --- Komponen Utama Halaman ---
 const LaporanKendala = () => {
     const API_URL = 'http://localhost:8080'; 
     const [reports, setReports] = useState([]);
@@ -42,16 +39,13 @@ const LaporanKendala = () => {
     const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalItems: 0 });
     const [filters, setFilters] = useState({ status: 'semua', type: 'semua', page: 1, limit: 10 });
     const [sort, setSort] = useState({ sortBy: 'created_at', sortDir: 'DESC' }); 
-
     const [notif, setNotif] = useState({ isOpen: false, title: '', message: '', success: true, isConfirmation: false, onConfirm: () => {} });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingNotesReport, setEditingNotesReport] = useState(null);
-
     const statusOptions = [ { value: 'semua', label: 'Semua Status' }, { value: 'baru', label: 'Baru' }, { value: 'dilihat', label: 'Dilihat' }, { value: 'diproses', label: 'Diproses' }, { value: 'selesai', label: 'Selesai' }, { value: 'ditolak', label: 'Ditolak' }];
     const typeOptions = [ { value: 'semua', label: 'Semua Tipe' }, { value: 'bug', label: 'Bug' }, { value: 'fitur', label: 'Usul Fitur' }, { value: 'saran', label: 'Saran' }, { value: 'kendala', label: 'Kendala' }];
     const sortOptions = [ { value: 'created_at-DESC', label: 'Terbaru Dibuat' }, { value: 'created_at-ASC', label: 'Terlama Dibuat' }, { value: 'type-ASC', label: 'Tipe (A-Z)' }, { value: 'status-ASC', label: 'Status (A-Z)' }];
 
-    // --- (Fungsi Fetch Data, Handlers, dll tetap sama) ---
     const fetchReports = useCallback(async () => {
         setLoading(true); setError(null);
         const params = { page: filters.page, limit: filters.limit, sortBy: sort.sortBy, sortDir: sort.sortDir };
@@ -106,7 +100,6 @@ const LaporanKendala = () => {
         finally { setIsSubmitting(false); }
     };
 
-    // --- (Helper UI tetap sama) ---
     const getStatusBadge = (status) => { 
         switch (status) { 
             case 'baru': return <span className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full"><FiInbox size={12}/>Baru</span>; 
@@ -201,15 +194,14 @@ const LaporanKendala = () => {
                                                             <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
                                                                 <Menu.Items className="absolute right-0 mt-2 w-40 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none z-20">
                                                                     
-                                                                    {/* --- ✅ PERBAIKAN ERROR DI SINI --- */}
                                                                     <div className="px-1 py-1"> 
                                                                         {statusOptions.filter(s => s.value !== 'semua').map(s => ( 
                                                                             <Menu.Item
                                                                                 key={s.value}
-                                                                                as="button" // Gunakan 'as="button"'
+                                                                                as="button"
                                                                                 onClick={() => handleUpdateStatus(report.id, s.value)}
                                                                                 disabled={isSubmitting}
-                                                                                className={({ active }) => // Pindahkan className ke sini
+                                                                                className={({ active }) =>
                                                                                     `${ active ? 'bg-sesm-teal text-white' : 'text-gray-900'} group flex w-full items-center rounded-md px-2 py-2 text-sm disabled:text-gray-400`
                                                                                 }
                                                                             >
@@ -217,8 +209,6 @@ const LaporanKendala = () => {
                                                                             </Menu.Item>
                                                                         ))} 
                                                                     </div>
-                                                                    {/* --- AKHIR PERBAIKAN --- */}
-
                                                                 </Menu.Items>
                                                             </Transition>
                                                         </Menu>

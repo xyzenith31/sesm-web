@@ -1,4 +1,3 @@
-// contoh-sesm-web/components/mod/SubmissionDetailModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiCheckCircle, FiXCircle, FiLoader, FiSave, FiThumbsUp, FiThumbsDown } from 'react-icons/fi';
@@ -20,7 +19,6 @@ const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {
                     setDetails(response.data);
                     const initialCorrections = {};
                     response.data.forEach(item => {
-                        // Isi state dengan umpan balik yang sudah ada dari database
                         initialCorrections[item.answerId] = item.correction_text || '';
                     });
                     setCorrectionText(initialCorrections);
@@ -63,7 +61,7 @@ const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {
     };
 
     const handleClose = () => {
-        onGradeSubmitted(); // Selalu refresh data saat ditutup
+        onGradeSubmitted();
     };
 
     const handleSubmitGrade = async () => {
@@ -72,16 +70,14 @@ const SubmissionDetailModal = ({ submission, onClose, onGradeSubmitted }) => {
         }
         setIsSaving(true);
         try {
-            // Siapkan payload umpan balik dari state
             const answersPayload = Object.entries(correctionText).map(([answerId, text]) => ({
                 answerId: parseInt(answerId),
                 correction_text: text,
             }));
 
-            // Kirim skor dan payload umpan balik
             await DataService.gradeSubmission(submission.id, parseInt(score), answersPayload);
             alert("Nilai dan umpan balik berhasil disimpan!");
-            onGradeSubmitted(); // Tutup modal dan refresh data
+            onGradeSubmitted();
         } catch (error) {
             alert("Gagal menyimpan nilai.");
         } finally {

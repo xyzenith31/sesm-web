@@ -1,4 +1,3 @@
-// contoh-sesm-web/pages/BookmarkPage.jsx
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,22 +6,20 @@ import {
   FiExternalLink, FiFilter, FiList, FiGrid, FiArrowUp, FiArrowDown, FiCalendar,
   FiBookmark, FiCheckSquare, FiXCircle
 } from 'react-icons/fi';
-import MaterialDetailModal from '../components/mod/MaterialDetailModal'; // Modal untuk detail/mengerjakan materi
+import MaterialDetailModal from '../components/mod/MaterialDetailModal';
 import BookmarkService from '../services/bookmarkService';
-import Notification from '../components/ui/Notification'; // Pastikan path benar
-import CustomSelect from '../components/ui/CustomSelect'; // Pastikan path benar
+import Notification from '../components/ui/Notification';
+import CustomSelect from '../components/ui/CustomSelect';
 
-// --- KOMPONEN SubmissionResultModal DIDEFINISIKAN DI SINI ---
 const SubmissionResultModal = ({ submission, onClose }) => {
     const [details, setDetails] = useState([]);
     const [loading, setLoading] = useState(true);
-    const API_URL = 'http://localhost:8080'; // Pastikan base URL API benar
+    const API_URL = 'http://localhost:8080'; 
 
     useEffect(() => {
         if (submission) {
             setLoading(true);
-            // ✅ **PERBAIKAN ERROR NAMA FUNGSI DI SINI**
-            BookmarkService.getStudentSubmissionDetails(submission.id) // Menggunakan nama fungsi yang benar
+            BookmarkService.getStudentSubmissionDetails(submission.id)
                 .then(res => setDetails(res.data))
                 .catch(err => console.error("Gagal memuat detail nilai:", err))
                 .finally(() => setLoading(false));
@@ -90,9 +87,7 @@ const SubmissionResultModal = ({ submission, onClose }) => {
         </motion.div>
     );
 };
-// --- AKHIR DEFINISI SubmissionResultModal ---
 
-// --- Komponen Kartu Materi (Diperbarui) ---
 const MaterialCard = ({ material, onSelect, isCompleted }) => {
     const API_URL = 'http://localhost:8080';
     const typeInfo = {
@@ -108,7 +103,7 @@ const MaterialCard = ({ material, onSelect, isCompleted }) => {
     const creatorAvatar = material.creator_avatar ? (material.creator_avatar.startsWith('http') ? material.creator_avatar : `${API_URL}/${material.creator_avatar}`) : `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(material.creator_name || 'G')}`;
 
     const handleOpenLink = (e) => {
-        e.stopPropagation(); // Mencegah modal terbuka saat klik tombol link
+        e.stopPropagation();
         window.open(material.url, '_blank', 'noopener,noreferrer');
     };
 
@@ -117,13 +112,12 @@ const MaterialCard = ({ material, onSelect, isCompleted }) => {
             onClick={() => onSelect(material)}
             className="bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer group border flex flex-col h-full relative" // Added relative for checkmark
             whileHover={{ y: -8, boxShadow: "0px 20px 30px -10px rgba(0,0,0,0.1)" }}
-            layout // Enable layout animation
+            layout
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
-            {/* Indikator Selesai */}
             {isCompleted && (
                  <motion.div
                     initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -145,7 +139,6 @@ const MaterialCard = ({ material, onSelect, isCompleted }) => {
                 </div>
                 <h3 className="font-bold text-md text-sesm-deep leading-tight group-hover:text-sesm-teal transition-colors flex-grow">{material.title}</h3>
                 <p className="text-xs text-gray-600 mt-1 line-clamp-2">{material.description || "Tidak ada deskripsi."}</p>
-                {/* Info tambahan: Jumlah soal & Tombol Link */}
                 <div className="flex justify-between items-center mt-3 pt-3 border-t">
                     <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
                         <FiCheckSquare size={14} /> {material.tasks?.length || 0} Soal
@@ -165,12 +158,11 @@ const MaterialCard = ({ material, onSelect, isCompleted }) => {
     );
 };
 
-// --- Komponen Kartu Riwayat (Diperbarui) ---
 const HistoryCard = ({ item, onClick }) => {
     const API_URL = 'http://localhost:8080';
     const graderAvatar = item.grader_avatar ? (item.grader_avatar.startsWith('http') ? item.grader_avatar : `${API_URL}/${item.grader_avatar}`) : (item.grader_name ? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(item.grader_name)}` : null);
     const isCompleted = item.status === 'dinilai';
-    const StatusIcon = isCompleted ? FiCheckCircle : FiClock; // Nama variabel Icon diperbaiki
+    const StatusIcon = isCompleted ? FiCheckCircle : FiClock;
     const statusColor = isCompleted ? 'text-green-700 bg-green-100' : 'text-yellow-700 bg-yellow-100 animate-pulse';
 
     return (
@@ -191,7 +183,7 @@ const HistoryCard = ({ item, onClick }) => {
             </div>
             <div className="flex items-center gap-6">
                  <span className={`text-xs font-semibold capitalize rounded-full px-2.5 py-1 flex items-center gap-1.5 ${statusColor}`}>
-                    <StatusIcon size={14} className="flex-shrink-0"/> {/* Gunakan StatusIcon */}
+                    <StatusIcon size={14} className="flex-shrink-0"/>
                     {item.status}
                  </span>
                  <div className="text-right">
@@ -203,13 +195,10 @@ const HistoryCard = ({ item, onClick }) => {
     );
 };
 
-// --- Komponen Lainnya ---
 const EmptyState = ({message}) => ( <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center col-span-full py-16"><FiSearch size={48} className="mx-auto text-gray-300" /><h3 className="mt-4 text-lg font-semibold text-gray-700">{message}</h3><p className="text-sm text-gray-500 mt-1">Coba ubah filter atau kata kunci pencarianmu.</p></motion.div> );
 const SectionHeader = ({ title, count }) => ( <div className="flex items-center space-x-2 mb-4 px-2"><h2 className="text-xl font-bold text-gray-800">{title}</h2><span className="bg-sesm-sky/20 text-sesm-deep text-xs font-bold px-2 py-0.5 rounded-full">{count}</span></div> );
 
-// --- Halaman Utama BookmarkPage ---
 const BookmarkPage = () => {
-    // ... (state dan fungsi lainnya tetap sama) ...
     const [activeTab, setActiveTab] = useState('materi');
     const [materials, setMaterials] = useState([]);
     const [history, setHistory] = useState([]);
@@ -303,7 +292,6 @@ const BookmarkPage = () => {
     return (
         <>
             <AnimatePresence>
-                 {/* Notifikasi Umum */}
                 {notif.isOpen && (
                     <Notification
                         isOpen={notif.isOpen}
@@ -317,7 +305,6 @@ const BookmarkPage = () => {
                 {selectedSubmission && <SubmissionResultModal submission={selectedSubmission} onClose={() => setSelectedSubmission(null)} />}
             </AnimatePresence>
 
-            {/* Layout Desktop */}
             <div className="hidden md:flex flex-col h-screen bg-gray-100 p-8">
                 <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow bg-white p-8 rounded-2xl shadow-xl overflow-hidden">
                     <header className="w-full flex-shrink-0 flex justify-between items-center mb-8">
@@ -352,7 +339,6 @@ const BookmarkPage = () => {
                 </div>
             </div>
 
-            {/* Layout Mobile */}
             <div className="md:hidden">
               <div className="min-h-screen bg-gray-100 flex flex-col">
                 <header className="bg-gradient-to-br from-sesm-teal to-sesm-deep text-white p-4 pt-8 sticky top-0 z-10 shadow-lg rounded-b-2xl space-y-4">

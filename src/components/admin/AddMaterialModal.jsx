@@ -1,15 +1,12 @@
-// contoh-sesm-web/components/admin/AddMaterialModal.jsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react'; // Tambahkan useCallback
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiPlus, FiSave, FiLoader, FiTrash2 } from 'react-icons/fi';
-import DataService from '../../services/dataService'; // Impor DataService
+import DataService from '../../services/dataService';
 import CustomSelect from '../ui/CustomSelect';
-import useDebounce from '../../hooks/useDebounce'; // Impor useDebounce
-import SaveStatusIcon from '../ui/SaveStatusIcon'; // Impor SaveStatusIcon
-import Notification from '../ui/Notification'; // Impor Notification
+import useDebounce from '../../hooks/useDebounce';
+import SaveStatusIcon from '../ui/SaveStatusIcon'; 
+import Notification from '../ui/Notification';
 
-// Komponen QuestionItem dan StepIndicator tetap sama ...
-// Helper untuk mengubah indeks menjadi huruf
 const toAlpha = (num) => String.fromCharCode(65 + num);
 
 const QuestionItem = ({ q, qIndex, onUpdate, onRemove }) => {
@@ -101,13 +98,9 @@ const StepIndicator = ({ stepNumber, label, isActive, onClick, isDisabled }) => 
 
 
 const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
-    // --- Auto-Save States ---
-    const DRAFT_KEY = useMemo(() => `bookmark_draft_${initialDraft?.draft_key || Date.now()}`, [initialDraft]); // Key unik
+    const DRAFT_KEY = useMemo(() => `bookmark_draft_${initialDraft?.draft_key || Date.now()}`, [initialDraft]);
     const [saveStatus, setSaveStatus] = useState('Tersimpan');
-    // State untuk notifikasi (sukses/gagal simpan draf)
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
-
-    // --- Original States ---
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
     const [tasks, setTasks] = useState([]);
@@ -117,9 +110,7 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
     const [mainFilePreview, setMainFilePreview] = useState('');
     const [coverImagePreview, setCoverImagePreview] = useState('');
     const [mediaSourceType, setMediaSourceType] = useState('file');
-
-    // --- Debounce untuk Auto-Save ---
-    const debouncedFormData = useDebounce(formData, 1500); // Tunda 1.5 detik
+    const debouncedFormData = useDebounce(formData, 1500); 
     const debouncedTasks = useDebounce(tasks, 1500);
 
     const levelOptions = [
@@ -137,33 +128,28 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
 
     const getNewQuestionObject = () => ({ id: Date.now() + Math.random(), type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '' });
 
-    // --- Fungsi Simpan Draf ke Backend (useCallback) ---
     const saveDraftToBackend = useCallback(async () => {
-        // Jangan simpan jika data masih kosong
         if (!formData.title.trim() && !formData.subject.trim() && tasks.length === 0) {
-            setSaveStatus('Tersimpan'); // Anggap tersimpan jika memang kosong
+            setSaveStatus('Tersimpan');
             return;
         }
         setSaveStatus('Menyimpan...');
-        const draftData = { formData, tasks, mediaSourceType }; // Data yang akan disimpan
+        const draftData = { formData, tasks, mediaSourceType };
         try {
             await DataService.saveDraft(DRAFT_KEY, draftData);
             setSaveStatus('Tersimpan');
         } catch (error) {
             console.error("Gagal menyimpan draf:", error);
             setSaveStatus('Gagal');
-            // Tampilkan notifikasi gagal
             setNotif({ isOpen: true, title: "Gagal Simpan Draf", message: "Gagal menyimpan draf otomatis.", success: false });
         }
-    }, [formData, tasks, mediaSourceType, DRAFT_KEY]); // Dependency array
+    }, [formData, tasks, mediaSourceType, DRAFT_KEY]);
 
-    // --- useEffect untuk memicu simpan draf ---
     useEffect(() => {
-        if (isOpen && saveStatus !== 'Menyimpan...') { // Hanya simpan jika modal terbuka dan tidak sedang menyimpan
+        if (isOpen && saveStatus !== 'Menyimpan...') { 
             saveDraftToBackend();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedFormData, debouncedTasks, isOpen]); // Picu saat data debounced berubah
+    }, [debouncedFormData, debouncedTasks, isOpen]);
 
     useEffect(() => {
         if (isOpen) {
@@ -172,13 +158,11 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
                 setFormData(draftContent.formData || { title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
                 setTasks(draftContent.tasks || []);
                 setMediaSourceType(draftContent.mediaSourceType || 'file');
-                // Reset file states karena file tidak disimpan di draf
                 setMainFile(null);
                 setCoverImage(null);
                 setMainFilePreview('');
                 setCoverImagePreview('');
             } else {
-                // Reset state jika membuat baru
                 setFormData({ title: '', description: '', subject: '', url_link: '', grading_type: 'manual', recommended_level: 'Semua' });
                 setTasks([]);
                 setMediaSourceType('file');
@@ -187,7 +171,7 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
                 setMainFilePreview('');
                 setCoverImagePreview('');
             }
-             setSaveStatus('Tersimpan'); // Set status awal saat modal dibuka
+             setSaveStatus('Tersimpan');
         }
     }, [isOpen, initialDraft]);
 
@@ -224,12 +208,10 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
 
         try {
             await onSave(data);
-            // Hapus draf setelah berhasil publish
             DataService.deleteDraft(DRAFT_KEY)
-                .then(() => localStorage.removeItem(DRAFT_KEY)) // Juga hapus dari local storage jika ada
+                .then(() => localStorage.removeItem(DRAFT_KEY)) 
                 .catch(err => console.warn("Gagal menghapus draf setelah publish:", err));
         } catch (error) {
-            // Error handling is in parent
         } finally {
             setIsSaving(false);
         }
@@ -255,7 +237,6 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
 
     return (
         <>
-            {/* Render Notifikasi */}
             <Notification
                 isOpen={notif.isOpen}
                 onClose={() => setNotif({ ...notif, isOpen: false })}
@@ -268,7 +249,6 @@ const AddMaterialModal = ({ isOpen, onClose, onSave, initialDraft }) => {
                     <form onSubmit={handleSubmit}>
                         <header className="p-6 border-b flex justify-between items-center">
                             <h3 className="text-xl font-bold text-sesm-deep">Tambah Materi Baru</h3>
-                            {/* Tambahkan SaveStatusIcon di header */}
                             <div className="flex items-center gap-4">
                                 <SaveStatusIcon status={saveStatus} />
                                 <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><FiX size={20}/></button>

@@ -7,7 +7,7 @@ const PointsNotification = ({ points, message, onDone }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onDone();
-    }, 2500); // Notifikasi akan hilang setelah 2.5 detik
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [onDone]);

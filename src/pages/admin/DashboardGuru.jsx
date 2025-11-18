@@ -8,7 +8,6 @@ const DashboardGuru = () => {
         <p className="text-gray-600">
           Selamat datang di dasbor guru. Ringkasan aktivitas dan statistik akan ditampilkan di sini.
         </p>
-        {/* Komponen-komponen lain untuk dasbor bisa ditambahkan di sini */}
       </div>
     </div>
   );

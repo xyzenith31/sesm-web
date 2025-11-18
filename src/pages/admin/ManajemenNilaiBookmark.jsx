@@ -1,10 +1,9 @@
-// contoh-sesm-web/pages/admin/ManajemenNilaiBookmark.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiSearch, FiLoader, FiInbox, FiBarChart2, FiCheckCircle, FiStar, FiEdit } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
 import SubmissionDetailBookmarkModal from '../../components/admin/SubmissionDetailBookmarkModal';
-import CustomSelect from '../../components/ui/CustomSelect'; // 1. Impor CustomSelect
+import CustomSelect from '../../components/ui/CustomSelect';
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
     <div className="bg-gray-50 p-4 rounded-lg flex-1 border">
@@ -55,7 +54,6 @@ const ManajemenNilaiBookmark = ({ onNavigate }) => {
         fetchSubmissions();
     }, [selectedBookmarkId, fetchSubmissions]);
 
-    // 2. Format data bookmark untuk CustomSelect
     const bookmarkOptions = useMemo(() => 
         bookmarks.map(bm => ({
             value: bm.id,
@@ -83,7 +81,7 @@ const ManajemenNilaiBookmark = ({ onNavigate }) => {
 
     const handleGradeSubmitted = () => {
         setSelectedSubmission(null);
-        fetchSubmissions(); // Refresh data
+        fetchSubmissions();
     };
 
     return (
@@ -115,7 +113,6 @@ const ManajemenNilaiBookmark = ({ onNavigate }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
                         <div>
                             <label className="block text-sm font-bold text-gray-600 mb-1">Pilih Materi Bookmark</label>
-                            {/* 3. Ganti <select> dengan <CustomSelect> */}
                             <CustomSelect
                                 options={bookmarkOptions}
                                 value={selectedBookmarkId}

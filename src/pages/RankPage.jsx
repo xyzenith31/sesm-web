@@ -1,11 +1,9 @@
-// contoh-sesm-web/pages/RankPage.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiStar, FiZap, FiLoader } from 'react-icons/fi';
 import { FaTrophy } from 'react-icons/fa';
 import { useData } from '../hooks/useData';
 
-// --- DATA PERINGKAT (tetap) ---
 const ranks = [
   { name: 'Murid Baru', points: 0, color: '#CD7F32', icon: 'bronze' },
   { name: 'Siswa Rajin', points: 5000, color: '#C0C0C0', icon: 'silver' },
@@ -15,7 +13,6 @@ const ranks = [
   { name: 'Legenda Sekolah', points: 100000, color: '#FF4500', icon: 'master' },
 ];
 
-// --- Komponen Ikon Peringkat Kustom (SVG) ---
 const RankIcon = ({ rank, size = "w-24 h-24" }) => {
   const iconStyle = `drop-shadow-lg ${size}`;
   switch (rank) {
@@ -43,7 +40,7 @@ const RankPage = ({ onNavigate }) => {
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   
   const { getPointsSummary, getLeaderboard } = useData();
-  const API_URL = 'http://localhost:8080'; // Definisikan base URL API
+  const API_URL = 'http://localhost:8080';
 
   useEffect(() => {
     setLoading(true);
@@ -114,7 +111,6 @@ const RankPage = ({ onNavigate }) => {
                         if (position === 2) positionColor = 'bg-slate-300';
                         if (position === 3) positionColor = 'bg-yellow-600';
                         
-                        // --- PERBAIKAN LOGIKA AVATAR DI SINI ---
                         let userAvatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.username}`;
                         if (user.avatar) {
                             if (user.avatar.startsWith('http')) {

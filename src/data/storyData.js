@@ -1,6 +1,4 @@
-// Data untuk cerita Kancil dan Buaya
 export const kancilStory = {
-  // Titik awal cerita
   start: {
     image: 'https://img.freepik.com/free-vector/flat-illustration-kancil-eat-cucumber_1308-117215.jpg?w=740',
     text: "Si Kancil sangat lapar dan melihat banyak buah rambutan di seberang sungai. Tapi, sungai itu dijaga oleh sekawanan buaya ganas. Apa yang harus Kancil lakukan?",
@@ -9,7 +7,6 @@ export const kancilStory = {
       { text: "Mencari jalan lain", leadsTo: 'jalan_lain' }
     ]
   },
-  // Alur 1: Menipu buaya
   tipu_buaya: {
     image: 'https://img.freepik.com/free-vector/collection-crocodiles-alligators_53876-85150.jpg?w=996',
     text: "Kancil berteriak, 'Hai para buaya! Raja hutan memintaku menghitung kalian semua untuk diberi hadiah daging!' Para buaya pun tertarik dan berkumpul.",
@@ -18,7 +15,6 @@ export const kancilStory = {
       { text: "Langsung melompati mereka", leadsTo: 'ending_gagal' }
     ]
   },
-  // Alur 2: Mencari jalan lain
   jalan_lain: {
     image: 'https://img.freepik.com/free-vector/hand-drawn-forest-landscape_52683-82173.jpg?w=1380',
     text: "Kancil memutuskan untuk tidak mengambil risiko. Ia berjalan menyusuri sungai dan menemukan sebuah jembatan goyang yang sudah tua. Sangat berbahaya untuk dilewati.",
@@ -27,7 +23,6 @@ export const kancilStory = {
       { text: "Kembali dan memikirkan cara lain", leadsTo: 'start' }
     ]
   },
-  // Akhir Cerita
   ending_berhasil: {
     image: 'https://img.freepik.com/free-vector/deer-character-collection_23-2147743920.jpg?w=740',
     text: "Cerdik! Kancil meminta buaya berbaris rapi hingga ke seberang. Ia melompati punggung mereka satu per satu sambil pura-pura menghitung. Kancil berhasil sampai di seberang dan menikmati buah rambutan. (AKHIR CERITA 1/4)",

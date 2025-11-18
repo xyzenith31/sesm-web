@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useNavigation } from './hooks/useNavigation';
 
+import { useNavigation } from './hooks/useNavigation';
 import WelcomePage from './pages/WelcomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -49,14 +49,8 @@ import ManajemenCerita from './pages/admin/ManajemenCerita';
 import BantuanPage from './pages/BantuanPage';
 import FeedbackPage from './pages/FeedbackPage.jsx';
 import EditQuizModal from './components/admin/EditQuizModal.jsx';
-
-// --- TAMBAHKAN IMPORT PROFIL GURU DISINI ---
 import TeacherProfilePage from './pages/admin/TeacherProfilePage';
-
-// === PERUBAHAN DI SINI: Impor LaporanKendala ===
 import LaporanKendala from './pages/admin/LaporanKendala'; 
-// === AKHIR PERUBAHAN ===
-
 
 const pageVariants = {
   initial: { opacity: 0, scale: 0.98 },
@@ -110,9 +104,8 @@ function App() {
     const viewsInAdminLayout = [
         'dashboardGuru', 'manajemenMateri', 'manajemenNilai', 'manajemenKuis', 
         'evaluasiKuis', 'manajemenPengguna', 'manajemenBookmark', 'manajemenCerita',
-        // --- TAMBAHKAN 'teacherProfile' DISINI ---
         'teacherProfile',
-        'laporanKendala' // <-- === PERUBAHAN DI SINI ===
+        'laporanKendala'
     ];
 
     if (viewsInMainLayout.includes(currentView)) {
@@ -140,7 +133,7 @@ function App() {
         diary: <DiaryPage onNavigate={navigate} />,
         studyReport: <StudyReportPage onNavigate={navigate} />,
         bantuan: <BantuanPage onNavigate={navigate} />, 
-        feedback: <FeedbackPage onNavigate={navigate} />, // Ini halaman feedback siswa/user
+        feedback: <FeedbackPage onNavigate={navigate} />, 
       };
       const pageComponent = pageMap[currentView] || <HomePage onNavigate={navigate} />;
 
@@ -161,12 +154,8 @@ function App() {
           manajemenPengguna: <ManajemenPengguna onNavigate={navigate} />,
           manajemenBookmark: <ManajemenBookmark onNavigate={navigate} />,
           manajemenCerita: <ManajemenCerita onNavigate={navigate} />,
-          // --- TAMBAHKAN MAPPING PROFIL DISINI ---
           teacherProfile: <TeacherProfilePage onNavigate={navigate} />,
-
-          // === PERUBAHAN DI SINI: Mapping LaporanKendala ===
           laporanKendala: <LaporanKendala onNavigate={navigate} />
-          // === AKHIR PERUBAHAN ===
       };
       const pageComponent = pageMap[currentView];
 
@@ -208,7 +197,7 @@ function App() {
           onPasswordReset={() => {
             setResetIdentifier('');
             setResetCode(null);
-            navigate('login'); // Arahkan ke login setelah reset sukses
+            navigate('login'); 
           }} 
         />;
       

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiSave, FiEdit2, FiTrash2, FiInfo, FiAlertTriangle, FiLoader } from 'react-icons/fi';
 import DataService from '../services/dataService';
 
-// --- Komponen Modal (Tidak diubah) ---
 const NotificationModal = ({ isOpen, onClose, title, message }) => { if (!isOpen) return null; return ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}><div className="p-6 text-center"><div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4"><FiInfo className="h-6 w-6 text-blue-600" /></div><h3 className="text-lg font-bold text-gray-900">{title}</h3><p className="text-sm text-gray-500 mt-2">{message}</p></div><div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-2xl"><button onClick={onClose} type="button" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sesm-teal text-base font-medium text-white hover:bg-sesm-deep focus:outline-none sm:w-auto sm:text-sm">Oke</button></div></motion.div></motion.div> );};
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => { if (!isOpen) return null; return ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}><div className="p-6 text-center"><div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4"><FiAlertTriangle className="h-6 w-6 text-yellow-600" /></div><h3 className="text-lg font-bold text-gray-900">{title}</h3><p className="text-sm text-gray-500 mt-2">{message}</p></div><div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-2xl"><button onClick={onConfirm} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Lanjutkan</button><button onClick={onClose} type="button" className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Batal</button></div></motion.div></motion.div> );};
 const EditEntryModal = ({ isOpen, onClose, onSave, entryContent, setEntryContent }) => { if (!isOpen) return null; return ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-2xl w-full max-w-md flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}><div className="p-6"><h3 className="text-lg font-bold text-gray-900 mb-4">Edit Catatan</h3><textarea value={entryContent} onChange={(e) => setEntryContent(e.target.value)} className="w-full h-40 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal" placeholder="Tulis catatanmu..."></textarea></div><div className="bg-gray-50 px-6 py-3 flex flex-row-reverse rounded-b-2xl"><button onClick={onSave} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sesm-deep text-base font-medium text-white hover:bg-opacity-90 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Selesai</button><button onClick={onClose} type="button" className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Batal</button></div></motion.div></motion.div> );};
@@ -19,7 +18,6 @@ const DiaryEntry = ({ entry, onEdit, onDelete }) => (
     >
         <div className="flex justify-between items-start">
             <div className='flex-grow pr-4'>
-                {/* --- PERBAIKAN FORMAT TANGGAL --- */}
                 <p className="text-xs font-bold text-sesm-deep mb-1">{new Date(entry.entry_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">{entry.content}</p>
             </div>
@@ -36,14 +34,11 @@ const DiaryPage = ({ onNavigate }) => {
   const [entries, setEntries] = useState([]);
   const [newEntry, setNewEntry] = useState('');
   const [loading, setLoading] = useState(true);
-  
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [editText, setEditText] = useState('');
-
   const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const fetchEntries = useCallback(async () => {
@@ -158,7 +153,6 @@ const DiaryPage = ({ onNavigate }) => {
                     {entries.length > 0 ? (
                         entries.map((entry) => (
                             <DiaryEntry 
-                                // --- PERBAIKAN KEY UNIK ---
                                 key={entry.id} 
                                 entry={entry}
                                 onEdit={handleOpenEditModal}

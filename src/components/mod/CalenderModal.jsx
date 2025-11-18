@@ -1,9 +1,8 @@
-// contoh-sesm-web/components/mod/CalenderModal.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiChevronLeft, FiChevronRight, FiPlus, FiTrash2, FiLoader } from 'react-icons/fi';
-import DataService from '../../services/dataService'; // Impor DataService
+import DataService from '../../services/dataService'; 
 
 const CalenderModal = ({ isOpen, onClose }) => {
     const [viewDate, setViewDate] = useState(new Date());

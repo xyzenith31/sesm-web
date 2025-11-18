@@ -1,17 +1,13 @@
-// contoh-sesm-web/pages/ProfilePage.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, animate } from 'framer-motion';
 import {
   FiChevronRight, FiUser, FiHelpCircle, FiLogOut, FiTrendingUp,
   FiFeather, FiCheckSquare, FiClock, FiZap, FiAlertTriangle, FiLoader, FiSettings,
-  FiMessageSquare // <-- 1. PASTIKAN IKON INI DITAMBAHKAN
+  FiMessageSquare
 } from 'react-icons/fi'; 
 import { useAuth } from '../hooks/useAuth';
 import { useData } from '../hooks/useData';
 
-// --- Komponen-komponen kecil (Helper Components) ---
-
-// Komponen Modal Konfirmasi (diambil dari SidebarGuru/SideBar)
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     if (!isOpen) return null;
     return (
@@ -19,7 +15,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
             {isOpen && (
                 <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/60 z-[110] flex items-center justify-center p-4" // z-index lebih tinggi
+                    className="fixed inset-0 bg-black/60 z-[110] flex items-center justify-center p-4"
                     onClick={onClose}
                 >
                     <motion.div
@@ -49,8 +45,6 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     );
 };
 
-
-// Data peringkat (tidak berubah)
 const ranks = [
   { name: 'Murid Baru', points: 0, color: '#CD7F32', icon: 'bronze' },
   { name: 'Siswa Rajin', points: 5000, color: '#C0C0C0', icon: 'silver' },
@@ -60,7 +54,6 @@ const ranks = [
   { name: 'Legenda Sekolah', points: 100000, color: '#FF4500', icon: 'master' },
 ];
 
-// Komponen Ikon Peringkat (tidak berubah)
 const RankIcon = ({ rank, size = "w-16 h-16" }) => {
   const iconStyle = `drop-shadow-lg ${size}`;
   switch (rank) {
@@ -74,7 +67,6 @@ const RankIcon = ({ rank, size = "w-16 h-16" }) => {
   }
 };
 
-// Kartu Peringkat (tidak berubah)
 const RankCard = ({ currentRankInfo, onNavigate }) => {
     if (!currentRankInfo) {
         return <div className="w-full h-24 bg-gray-200 rounded-2xl animate-pulse"></div>;
@@ -102,7 +94,6 @@ const RankCard = ({ currentRankInfo, onNavigate }) => {
     );
 };
 
-// AnimatedNumber (tidak berubah)
 const AnimatedNumber = ({ value = 0 }) => {
     const [displayValue, setDisplayValue] = useState(0);
     useEffect(() => {
@@ -116,7 +107,6 @@ const AnimatedNumber = ({ value = 0 }) => {
     return <>{displayValue.toLocaleString()}</>;
 };
 
-// --- ProfileMenuItem (tidak berubah) ---
 const ProfileMenuItem = ({ icon: Icon, label, hasChevron = true, onClick }) => (
     <motion.button
         onClick={onClick}
@@ -131,7 +121,6 @@ const ProfileMenuItem = ({ icon: Icon, label, hasChevron = true, onClick }) => (
     </motion.button>
 );
 
-// StatItem (tidak berubah)
 const StatItem = ({ icon: Icon, value, label, color }) => (
     <div className="flex items-center space-x-4 p-3">
         <Icon className={`${color} text-3xl`} />
@@ -142,11 +131,10 @@ const StatItem = ({ icon: Icon, value, label, color }) => (
     </div>
 );
 
-// --- Komponen Utama Halaman Profil (Struktur Diperbarui) ---
 const ProfilePage = ({ onNavigate }) => {
-    const { user, logout } = useAuth(); // Ambil logout dari useAuth
+    const { user, logout } = useAuth(); 
     const { getPointsSummary } = useData();
-    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false); // Tetap gunakan ini untuk modal
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false); 
     const [pointsData, setPointsData] = useState({ totalPoints: user?.points || 0, currentRank: null });
     const [loadingPoints, setLoadingPoints] = useState(true);
     const API_URL = 'http://localhost:8080';
@@ -164,7 +152,7 @@ const ProfilePage = ({ onNavigate }) => {
 
     const handleLogout = () => {
         setIsLogoutModalOpen(false);
-        logout(); // Panggil fungsi logout dari useAuth
+        logout();
     };
 
     if (!user) {
@@ -172,8 +160,6 @@ const ProfilePage = ({ onNavigate }) => {
     }
 
     const userLevel = user.jenjang && user.kelas ? `${user.jenjang} - Kelas ${user.kelas}` : (user.jenjang || 'Belum diatur');
-
-    // Logika Avatar (ambil dari AccountSettingsPage)
     const defaultInitialAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${user?.nama || user?.username || 'Siswa'}`;
     const userAvatar = user.avatar
         ? (user.avatar.startsWith('http') ? user.avatar : `${API_URL}/${user.avatar}`)
@@ -195,10 +181,8 @@ const ProfilePage = ({ onNavigate }) => {
                 message="Apakah Anda yakin ingin keluar dari akun Anda?"
             />
 
-            {/* --- Tampilan Mobile --- */}
             <div className="md:hidden">
                 <div className="bg-gray-100 min-h-screen pb-28">
-                    {/* ... (Header Mobile tidak berubah) ... */}
                     <div className="bg-gradient-to-br from-sesm-teal to-sesm-deep text-white p-6 pb-8 rounded-b-3xl shadow-lg">
                         <h1 className="text-xl font-bold text-center mt-4 mb-6">Profil Saya</h1>
                         <div className="flex items-center space-x-4 mb-6">
@@ -229,27 +213,21 @@ const ProfilePage = ({ onNavigate }) => {
                                 </div>
                             </div>
                             <div>
-                                {/* --- 2. JUDUL BAGIAN DIPERBARUI --- */}
                                 <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-2">Pengaturan & Bantuan</h3>
                                 <div className="space-y-3">
-                                    {/* --- Gunakan FiSettings & Tambahkan Item Baru --- */}
                                     <ProfileMenuItem icon={FiSettings} label="Pengaturan Akun" onClick={() => onNavigate('accountSettings')} />
                                     <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" onClick={() => onNavigate('bantuan')} />
-                                    {/* --- 3. INI ITEM MENU BARU UNTUK FEEDBACK (MOBILE) --- */}
                                     <ProfileMenuItem icon={FiMessageSquare} label="Saran & Masukan" onClick={() => onNavigate('feedback')} />
                                 </div>
                             </div>
-                             {/* --- Tombol Logout di Mobile Dihapus --- */}
                         </div>
                     </main>
                 </div>
             </div>
 
-            {/* --- Tampilan Desktop (Struktur Baru) --- */}
             <div className="hidden md:block min-h-screen bg-gray-100 p-8">
                 <div className="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-8 flex flex-col flex-grow">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start flex-grow"> 
-                        {/* Kolom Kiri */}
                         <div className="lg:col-span-1 space-y-8 flex flex-col h-full">
                             <div className="bg-gradient-to-br from-sesm-teal to-sesm-deep text-white p-8 rounded-2xl shadow-lg">
                                 <div className="flex flex-col items-center text-center">
@@ -263,7 +241,6 @@ const ProfilePage = ({ onNavigate }) => {
                                 {userStats.map(stat => <StatItem key={stat.label} {...stat} />)}
                             </div>
                         </div>
-                        {/* Kolom Kanan */}
                         <div className="lg:col-span-2 space-y-8 flex flex-col h-full">
                             <RankCard currentRankInfo={pointsData.currentRank} onNavigate={onNavigate} />
                             <div className="space-y-6 flex flex-col flex-grow">
@@ -275,16 +252,13 @@ const ProfilePage = ({ onNavigate }) => {
                                     </div>
                                 </div>
                                 <div>
-                                    {/* --- 4. JUDUL BAGIAN DIPERBARUI --- */}
                                     <h3 className="text-sm font-bold text-gray-500 uppercase px-2 mb-3">PENGATURAN & BANTUAN</h3>
                                     <div className="space-y-3">
                                         <ProfileMenuItem icon={FiSettings} label="Pengaturan Akun" onClick={() => onNavigate('accountSettings')} />
                                         <ProfileMenuItem icon={FiHelpCircle} label="Pusat Bantuan" onClick={() => onNavigate('bantuan')} />
-                                        {/* --- 5. INI ITEM MENU BARU UNTUK FEEDBACK (DESKTOP) --- */}
                                         <ProfileMenuItem icon={FiMessageSquare} label="Saran & Masukan" onClick={() => onNavigate('feedback')} />
                                     </div>
                                 </div>
-                                {/* --- Tombol Logout di Desktop Dihapus --- */}
                             </div>
                         </div>
                     </div>

@@ -51,7 +51,6 @@ const QuizSettingsModal = ({ isOpen, onClose, onSave, quizData }) => {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // Siapkan data yang akan disimpan, termasuk state isTimerEnabled
             const settingsToSave = {
                 ...settings,
                 setting_is_timer_enabled: isTimerEnabled,

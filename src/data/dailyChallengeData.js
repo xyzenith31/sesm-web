@@ -1,22 +1,19 @@
-// src/data/dailyChallengeData.js
 import {
-    FaCalculator, // Berhitung, Matematika
-    FaBookReader, // Membaca
-    FaPencilAlt, // Menulis
-    FaMosque, // PAI
-    FaBook, // B. Indonesia
-    FaLanguage, // B. Inggris
-    FaBalanceScale, // PKN
-    FaFlask, // IPA
-    FaGlobeAmericas, // IPS
-    FaPalette, // Kreatif/Umum
-    FaQuestionCircle, // Kuis/Umum
-    FaStar // Ikon default jika tidak ada yg cocok
+    FaCalculator, 
+    FaBookReader, 
+    FaPencilAlt,
+    FaMosque,
+    FaBook, 
+    FaLanguage,
+    FaBalanceScale,
+    FaFlask,
+    FaGlobeAmericas,
+    FaPalette,
+    FaQuestionCircle, 
+    FaStar,
 } from 'react-icons/fa';
 
-// Daftar 100 tantangan
 export const dailyChallengesData = [
-    // === BERHITUNG (10 Soal) ===
     {
         id: 'hitung_1', icon: FaCalculator, category: 'Berhitung', title: 'Hitung Jari',
         description: 'Ada berapa jari di satu tangan?', originalPoints: 0, completed: false,
@@ -68,7 +65,6 @@ export const dailyChallengesData = [
         quiz: { question: "Yang mana angka nol?", options: ["1", "0", "2", "3"], correctAnswer: "0" }
     },
 
-    // === MEMBACA (10 Soal) ===
     {
         id: 'baca_1', icon: FaBookReader, category: 'Membaca', title: 'Huruf Awal',
         description: 'Kata "Apel" dimulai huruf apa?', originalPoints: 0, completed: false,
@@ -120,7 +116,6 @@ export const dailyChallengesData = [
         quiz: { question: "Pilih yang termasuk huruf konsonan (mati).", options: ["A", "I", "K", "U"], correctAnswer: "K" }
     },
 
-    // === MENULIS (10 Soal) - Kebanyakan butuh cek manual ===
     {
         id: 'tulis_1', icon: FaPencilAlt, category: 'Menulis', title: 'Tulis Huruf A',
         description: 'Coba tulis huruf A besar.', originalPoints: 0, completed: false, quiz: null, type: 'manual_check'
@@ -131,7 +126,7 @@ export const dailyChallengesData = [
     },
     {
         id: 'tulis_3', icon: FaPencilAlt, category: 'Menulis', title: 'Tebalkan Garis',
-        description: 'Ikuti garis putus-putus.', originalPoints: 0, completed: false, quiz: null, type: 'manual_check' // Anggap ada worksheet
+        description: 'Ikuti garis putus-putus.', originalPoints: 0, completed: false, quiz: null, type: 'manual_check' 
     },
     {
         id: 'tulis_4', icon: FaPencilAlt, category: 'Menulis', title: 'Menyalin Kata',
@@ -141,11 +136,10 @@ export const dailyChallengesData = [
         id: 'tulis_5', icon: FaPencilAlt, category: 'Menulis', title: 'Gambar Lingkaran',
         description: 'Coba gambar bentuk lingkaran.', originalPoints: 0, completed: false, quiz: null, type: 'manual_check'
     },
-    // Soal Menulis yg bisa dicek (sangat sederhana)
     {
         id: 'tulis_6', icon: FaPencilAlt, category: 'Menulis', title: 'Huruf Pertama Namamu?',
         description: 'Apa huruf pertama namamu?', originalPoints: 0, completed: false,
-        quiz: { question: "Tulis huruf pertama namamu (contoh: B)", options: ["A", "B", "C", "Lainnya"], correctAnswer: "Lainnya" } // Butuh input sebenarnya
+        quiz: { question: "Tulis huruf pertama namamu (contoh: B)", options: ["A", "B", "C", "Lainnya"], correctAnswer: "Lainnya" }
     },
     {
         id: 'tulis_7', icon: FaPencilAlt, category: 'Menulis', title: 'Tulis Angka 5',
@@ -164,7 +158,6 @@ export const dailyChallengesData = [
         description: 'Salin angka 123.', originalPoints: 0, completed: false, quiz: null, type: 'manual_check'
     },
 
-    // === AGAMA ISLAM (10 Soal) ===
     {
         id: 'pai_1', icon: FaMosque, category: 'Agama Islam', title: 'Rukun Islam Pertama',
         description: 'Sebutkan Rukun Islam pertama.', originalPoints: 0, completed: false,
@@ -216,7 +209,6 @@ export const dailyChallengesData = [
         quiz: { question: "Kita harus ... kepada orang tua.", options: ["Marah", "Hormat", "Membantah", "Cuek"], correctAnswer: "Hormat" }
     },
 
-    // === BAHASA INDONESIA (10 Soal) ===
     {
         id: 'bindo_1', icon: FaBook, category: 'B. Indonesia', title: 'Warna Dasar',
         description: 'Apa warna matahari?', originalPoints: 0, completed: false,
@@ -268,7 +260,6 @@ export const dailyChallengesData = [
         quiz: { question: "Gula rasanya...", options: ["Asin", "Pahit", "Asam", "Manis"], correctAnswer: "Manis" }
     },
 
-    // === BAHASA INGGRIS (10 Soal) ===
     {
         id: 'bing_1', icon: FaLanguage, category: 'B. Inggris', title: 'Cat',
         description: 'Bahasa Inggris kucing.', originalPoints: 0, completed: false,
@@ -320,7 +311,6 @@ export const dailyChallengesData = [
         quiz: { question: "What do you say after receiving help?", options: ["Hello", "Goodbye", "Thank You", "Sorry"], correctAnswer: "Thank You" }
     },
 
-    // === PKN (10 Soal) ===
     {
         id: 'pkn_1', icon: FaBalanceScale, category: 'PKN', title: 'Bendera Indonesia',
         description: 'Warna bendera kita.', originalPoints: 0, completed: false,
@@ -372,7 +362,6 @@ export const dailyChallengesData = [
         quiz: { question: "Indonesia merdeka pada tanggal...", options: ["1 Juni", "17 Agustus", "2 Mei", "28 Oktober"], correctAnswer: "17 Agustus" }
     },
 
-    // === IPA (10 Soal) ===
     {
         id: 'ipa_1', icon: FaFlask, category: 'IPA', title: 'Makhluk Hidup',
         description: 'Mana yang makhluk hidup?', originalPoints: 0, completed: false,
@@ -424,7 +413,6 @@ export const dailyChallengesData = [
         quiz: { question: "Berikut ini yang merupakan benda padat adalah...", options: ["Air", "Buku", "Udara", "Asap"], correctAnswer: "Buku" }
     },
 
-    // === IPS (10 Soal) ===
     {
         id: 'ips_1', icon: FaGlobeAmericas, category: 'IPS', title: 'Keluarga Inti',
         description: 'Siapa saja keluarga inti?', originalPoints: 0, completed: false,
@@ -476,7 +464,6 @@ export const dailyChallengesData = [
         quiz: { question: "Contoh aturan saat di rumah adalah...", options: ["Membuang sampah sembarangan", "Tidur larut malam", "Merapikan mainan", "Makan sambil berlari"], correctAnswer: "Merapikan mainan" }
     },
 
-    // === KREATIF / UMUM (10 Soal) ===
     {
         id: 'umum_1', icon: FaPalette, category: 'Kreatif', title: 'Warna Pelangi',
         description: 'Warna pertama pelangi?', originalPoints: 0, completed: false,
@@ -527,10 +514,7 @@ export const dailyChallengesData = [
     },
 ];
 
-// Function to get a subset of challenges for the day
 export const getTodaysChallenges = (count = 3) => {
-    // Basic random selection. In a real app, you'd fetch this from the backend
-    // ensuring the user gets the *same* set for the whole day.
     const shuffled = [...dailyChallengesData].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, count);
 };

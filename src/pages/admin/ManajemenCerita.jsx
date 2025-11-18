@@ -5,7 +5,6 @@ import InteractiveStoryService from '../../services/interactiveStoryService';
 import StoryEditorModal from '../../components/admin/StoryEditorModal';
 import Notification from '../../components/ui/Notification';
 import PengerjaanCeritaModal from '../../components/admin/PengerjaanCeritaModal';
-// [PERBAIKAN] Impor API_BASE_URL
 import { API_BASE_URL } from '../../utils/apiClient';
 
 const ManajemenCerita = () => {
@@ -14,11 +13,7 @@ const ManajemenCerita = () => {
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingStory, setEditingStory] = useState(null);
-
     const [viewingSubmissions, setViewingSubmissions] = useState(null);
-
-    // [PERBAIKAN] Gunakan API_BASE_URL, hapus hardcode
-    // const API_URL = 'http://localhost:8080';
 
     const fetchStories = useCallback(async () => {
         setLoading(true);
@@ -41,7 +36,6 @@ const ManajemenCerita = () => {
         setIsEditorOpen(true);
     };
 
-    // [PERBAIKAN] handleSave sekarang menerima 'data' (FormData dari modal)
     const handleSave = async (data, id) => {
         try {
             const message = id ? "Cerita berhasil diperbarui!" : "Cerita baru berhasil dibuat!";
@@ -55,18 +49,17 @@ const ManajemenCerita = () => {
             fetchStories();
         } catch (error) {
             setNotif({ isOpen: true, message: error.response?.data?.message || "Gagal menyimpan.", success: false, title: "Gagal" });
-            throw error; // Lemparkan error agar modal tahu
+            throw error;
         }
     };
     
     const handleDelete = async (id, title) => {
-        // Logika konfirmasi notifikasi
         setNotif({
             isOpen: true,
             title: "Konfirmasi Hapus",
             message: `Yakin ingin menghapus cerita "${title}"?`,
             isConfirmation: true,
-            success: false, // Warna merah
+            success: false,
             onConfirm: () => confirmDelete(id, title),
             confirmText: "Ya, Hapus"
         });
@@ -85,7 +78,6 @@ const ManajemenCerita = () => {
         }
     };
     
-    // [PERBAIKAN] Menggunakan 'story' objek utuh
     const handleViewSubmissions = (story) => {
         setViewingSubmissions(story);
     };
@@ -97,7 +89,7 @@ const ManajemenCerita = () => {
                 {viewingSubmissions && (
                     <PengerjaanCeritaModal 
                         isOpen={!!viewingSubmissions}
-                        story={viewingSubmissions} // Kirim objek story utuh
+                        story={viewingSubmissions}
                         onClose={() => setViewingSubmissions(null)}
                     />
                 )}
@@ -128,7 +120,6 @@ const ManajemenCerita = () => {
                                 {stories.map(story => (
                                     <tr key={story.id} className="hover:bg-gray-50 border-b">
                                         <td className="px-6 py-4 font-bold text-gray-800 flex items-center gap-4">
-                                            {/* [PERBAIKAN] Gunakan API_BASE_URL untuk gambar */}
                                             <img src={story.cover_image ? `${API_BASE_URL}/${story.cover_image}` : `https://api.dicebear.com/7.x/shapes/svg?seed=${story.title}`} alt={story.title} className="w-16 h-10 rounded-md object-cover bg-gray-200"/>
                                             <span>{story.title}</span>
                                         </td>
@@ -137,7 +128,6 @@ const ManajemenCerita = () => {
                                         <td className="px-6 py-4 text-center">{story.creator_name}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex justify-center items-center gap-4">
-                                                {/* [PERBAIKAN] Kirim objek story utuh */}
                                                 <button onClick={() => handleViewSubmissions(story)} className="font-medium text-green-600 hover:text-green-800" title="Lihat Pengerjaan"><FiUsers /></button>
                                                 <button onClick={() => handleOpenEditor(story)} className="font-medium text-blue-600 hover:text-blue-800" title="Edit"><FiEdit/></button>
                                                 <button onClick={() => handleDelete(story.id, story.title)} className="font-medium text-red-600 hover:text-red-800" title="Hapus"><FiTrash2/></button>

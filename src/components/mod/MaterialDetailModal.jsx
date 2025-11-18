@@ -1,13 +1,10 @@
-// contoh-sesm-web/components/mod/MaterialDetailModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiExternalLink, FiHelpCircle, FiCheck, FiXCircle, FiFileText, FiSave, FiCheckCircle, FiLoader } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
 
-// Helper untuk mengubah indeks menjadi huruf
 const toAlpha = (num) => String.fromCharCode(65 + num);
 
-// Komponen internal untuk menampilkan soal yang lebih kompleks
 const TaskItem = ({ task, index, onAnswerChange, userAnswer, isSubmitted }) => {
     const { type, question, options = [] } = task;
 
@@ -15,15 +12,13 @@ const TaskItem = ({ task, index, onAnswerChange, userAnswer, isSubmitted }) => {
         if (!isSubmitted) {
             return userAnswer.mc === option ? 'bg-sesm-teal text-white border-sesm-teal' : 'bg-white hover:bg-gray-100 border-gray-300';
         }
-        // Logika setelah disubmit (jika ada penilaian otomatis)
-        return 'bg-white opacity-60 border-gray-300'; // Default disabled state
+        return 'bg-white opacity-60 border-gray-300';
     };
 
     return (
         <div className="bg-gray-50 p-4 rounded-lg border">
             <p className="font-semibold text-gray-800 mb-3">{index + 1}. {question}</p>
             
-            {/* Opsi Pilihan Ganda */}
             {(type === 'pilihan-ganda' || type === 'pilihan-ganda-esai') && (
                 <div className="space-y-2 mb-3">
                     {options.map((opt, optIndex) => (
@@ -40,7 +35,6 @@ const TaskItem = ({ task, index, onAnswerChange, userAnswer, isSubmitted }) => {
                 </div>
             )}
 
-            {/* Input Esai */}
             {(type === 'esai' || type === 'pilihan-ganda-esai') && (
                 <div>
                     <textarea
@@ -73,7 +67,6 @@ const MaterialDetailModal = ({ material, onClose }) => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-        // Gabungkan jawaban MC dan Esai menjadi satu string per soal
         const formattedAnswers = answers.map(ans => {
             if (ans.mc && ans.essay) return `${ans.mc} | ${ans.essay}`;
             return ans.mc || ans.essay || "";

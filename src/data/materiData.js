@@ -1,6 +1,3 @@
-// contoh-sesm-web/src/data/materiData.js
-
-// Kunci (e.g., 'pai_1') harus unik untuk setiap bab
 export const materiData = {
   pai_1: {
     judul: "Rukun Iman dan Rukun Islam",
@@ -15,7 +12,7 @@ export const materiData = {
       {
         type: 'essay',
         question: 'Sebutkan Rukun Islam yang pertama!',
-        correctAnswer: 'Syahadat' // Jawaban isian bisa diperiksa secara sederhana (opsional)
+        correctAnswer: 'Syahadat'
       },
       {
         type: 'multiple-choice',
@@ -35,7 +32,6 @@ export const materiData = {
     questions: [
     ]
   },
-  // Tambahkan data untuk mapel lain di sini, contoh:
   matematika_1: {
     judul: "Bilangan Sampai 10",
     mapel: "Matematika",

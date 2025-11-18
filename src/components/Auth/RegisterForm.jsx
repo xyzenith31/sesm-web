@@ -24,7 +24,6 @@ const RegisterForm = () => {
   const [usernameError, setUsernameError] = useState('');
   const [emailError, setEmailError] = useState('');
   
-  // State untuk modal notifikasi
   const [notif, setNotif] = useState({
     isOpen: false,
     message: '',

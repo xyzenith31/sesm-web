@@ -47,7 +47,7 @@ const CreativeZonePage = ({ onNavigate }) => {
     if (featureId === 'drawing') {
       onNavigate('drawing');
     } else if (featureId === 'writing') {
-      onNavigate('writing'); // Navigasi ke halaman menulis
+      onNavigate('writing');
     } else {
       alert(`Fitur '${featureTitle}' akan segera hadir!`);
     }
@@ -60,7 +60,7 @@ const CreativeZonePage = ({ onNavigate }) => {
           <FiArrowLeft size={24} className="text-gray-700" />
         </button>
         <h1 className="text-xl font-bold text-center flex-grow text-sesm-deep">Zona Kreatif</h1>
-        <div className="w-10"></div> {/* Spacer */}
+        <div className="w-10"></div>
       </header>
 
       <main className="flex-grow p-6">

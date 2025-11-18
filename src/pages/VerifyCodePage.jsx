@@ -3,10 +3,9 @@ import { motion } from 'framer-motion';
 import AuthLayout from '../layouts/AuthLayout';
 import Card from '../components/ui/Card';
 import AuthService from '../services/authService';
-import { useAuth } from '../hooks/useAuth'; // Impor useAuth
+import { useAuth } from '../hooks/useAuth';
 
-// --- Komponen Form Internal ---
-const VerifyCodeForm = ({ identifier }) => { // Hapus onVerified
+const VerifyCodeForm = ({ identifier }) => { 
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
@@ -15,7 +14,7 @@ const VerifyCodeForm = ({ identifier }) => { // Hapus onVerified
     const [resendLoading, setResendLoading] = useState(false);
     const [resendMessage, setResendMessage] = useState('');
 
-    const { loginWithOtp } = useAuth(); // Dapatkan fungsi loginWithOtp dari hook
+    const { loginWithOtp } = useAuth();
 
     const itemVariants = {
         hidden: { y: 20, opacity: 0 },
@@ -29,13 +28,11 @@ const VerifyCodeForm = ({ identifier }) => { // Hapus onVerified
         setMessage('');
         setSuccessful(false);
 
-        // Panggil fungsi loginWithOtp
         loginWithOtp(code, identifier)
             .then(response => {
                 setMessage("Verifikasi berhasil! Anda akan diarahkan...");
                 setSuccessful(true);
                 setLoading(false);
-                // Navigasi akan ditangani secara otomatis oleh NavigationContext
             })
             .catch(error => {
                 const resMessage = (error.response?.data?.message) || error.message || error.toString();
@@ -48,7 +45,6 @@ const VerifyCodeForm = ({ identifier }) => { // Hapus onVerified
     const handleResend = () => {
         setResendLoading(true);
         setResendMessage('');
-        // Ganti dengan endpoint yang sesuai jika ada, atau gunakan forgotPassword untuk mengirim ulang
         AuthService.forgotPassword(identifier) 
             .then(response => {
                 setResendMessage(response.data.message);
@@ -105,9 +101,7 @@ const VerifyCodeForm = ({ identifier }) => { // Hapus onVerified
     );
 };
 
-
-// --- Komponen Halaman Utama ---
-const VerifyCodePage = ({ identifier }) => { // Hapus onVerified
+const VerifyCodePage = ({ identifier }) => { 
     const itemContainerVariants = {
         hidden: { opacity: 0 },
         visible: { opacity: 1, transition: { staggerChildren: 0.15 } }

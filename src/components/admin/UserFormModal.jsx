@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiSave, FiLoader } from 'react-icons/fi';
-import CustomSelect from '../ui/CustomSelect'; // 1. Impor CustomSelect
+import CustomSelect from '../ui/CustomSelect'; 
 
-const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting: parentSubmitting }) => { // Rename isSubmitting prop
+const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting: parentSubmitting }) => { 
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -13,8 +13,6 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting: p
         password: '',
         confirmPassword: '',
     });
-    // Gunakan prop isSubmitting yang di-pass dari parent
-    // const [isSubmitting, setIsSubmitting] = useState(false); // Hapus state lokal ini
 
     const isEditMode = Boolean(initialData);
 
@@ -39,7 +37,6 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting: p
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // 2. Handler khusus untuk CustomSelect
     const handleRoleChange = (value) => {
         setFormData(prev => ({ ...prev, role: value }));
     };
@@ -52,16 +49,13 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting: p
             return;
         }
 
-        // Tidak perlu set isSubmitting(true) di sini karena sudah di-handle di parent
         await onSubmit(formData);
-        // Tidak perlu set isSubmitting(false)
     };
 
     if (!isOpen) return null;
 
     const inputStyle = "w-full p-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sesm-teal";
 
-    // 3. Opsi untuk CustomSelect Role
     const roleOptions = [
         { value: 'siswa', label: 'Siswa' },
         { value: 'guru', label: 'Guru' }
@@ -102,11 +96,10 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting: p
                         </div>
                         <div>
                             <label className="font-semibold text-sm mb-1 block">Role</label>
-                            {/* 4. Ganti <select> dengan <CustomSelect> */}
                             <CustomSelect
                                 options={roleOptions}
                                 value={formData.role}
-                                onChange={handleRoleChange} // Gunakan handler yang baru
+                                onChange={handleRoleChange} 
                             />
                         </div>
                         <div>
@@ -138,7 +131,6 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isSubmitting: p
                     <footer className="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t">
                         <button type="button" onClick={onClose} className="px-5 py-2 text-gray-800 rounded-lg font-semibold hover:bg-gray-200">Batal</button>
                         <button type="submit" disabled={parentSubmitting} className="px-5 py-2 bg-sesm-deep text-white rounded-lg font-semibold hover:bg-opacity-90 flex items-center gap-2 disabled:bg-gray-400">
-                            {/* Gunakan prop parentSubmitting */}
                             {parentSubmitting ? <FiLoader className="animate-spin" /> : <FiSave />}
                             <span>{parentSubmitting ? 'Menyimpan...' : 'Simpan'}</span>
                         </button>

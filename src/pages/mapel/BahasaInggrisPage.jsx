@@ -1,14 +1,11 @@
-// contoh-sesm-web/pages/mapel/BahasaInggrisPage.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiArrowLeft, FiLoader, FiAlertCircle, FiBookOpen, FiClipboard, FiX, FiAward, FiTarget, FiCheckCircle, FiBarChart2, FiUser } from 'react-icons/fi'; // <-- Tambah FiUser
 import { FaLanguage } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import DataService from '../../services/dataService';
-import StudentSubmissionDetailModal from '../../components/mod/StudentSubmissionDetailModal'; // <-- Impor modal siswa
+import StudentSubmissionDetailModal from '../../components/mod/StudentSubmissionDetailModal';
 
-// --- Komponen UI Umum ---
-// --- ⭐ Modifikasi ChapterButton ---
 const ChapterButton = ({ chapter, onClick, Icon, themeStyles, hasCompleted }) => {
     const API_URL = 'http://localhost:8080';
     const creatorNameSeed = encodeURIComponent(chapter.creator_name || 'Guru');

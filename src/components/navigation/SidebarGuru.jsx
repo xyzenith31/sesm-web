@@ -1,16 +1,14 @@
-// contoh-sesm-web/components/navigation/SidebarGuru.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { 
     FiBookOpen, FiLogOut, FiHelpCircle, FiAlertTriangle, FiUsers, 
     FiBookmark, FiBook, FiUser, FiChevronDown, FiSettings, 
-    FiClock, FiCalendar, FiTool // <-- Tambahkan FiTool
+    FiClock, FiCalendar, FiTool
 } from 'react-icons/fi'; 
 import Logo from '../../assets/logo.png';
 import { useAuth } from '../../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import CalenderModal from '../mod/CalenderModal';
 
-// Komponen Modal Konfirmasi Logout (tidak berubah)
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
     if (!isOpen) return null;
     return (
@@ -50,7 +48,6 @@ const NavLink = ({ icon, label, isActive, onClick }) => (
   </button>
 );
 
-// Komponen Profile Dropdown (tidak berubah)
 const ProfileDropdown = ({ user, onNavigate, onLogoutClick }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -169,19 +166,16 @@ const SidebarGuru = ({ activePage, onNavigate }) => {
             onClick={() => onNavigate('manajemenPengguna')}
           />
 
-          {/* === PERUBAHAN DI SINI === */}
           <NavLink
             icon={<FiTool size={20} />}
             label="Laporan Kendala"
             isActive={activePage === 'laporanKendala'}
             onClick={() => onNavigate('laporanKendala')}
           />
-          {/* === AKHIR PERUBAHAN === */}
 
         </nav>
         
         <div className="p-4 border-t space-y-3">
-            {/* --- DESAIN ULANG JAM & TANGGAL --- */}
             <div
                 onClick={() => setIsCalendarOpen(true)}
                 className="p-3 rounded-lg cursor-pointer bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
@@ -201,7 +195,6 @@ const SidebarGuru = ({ activePage, onNavigate }) => {
                 </div>
             </div>
 
-            {/* Profile Dropdown */}
             {user && (
                 <ProfileDropdown 
                     user={user} 

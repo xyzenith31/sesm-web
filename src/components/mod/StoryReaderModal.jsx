@@ -2,14 +2,11 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX } from 'react-icons/fi';
-// [PERBAIKAN] Impor API_BASE_URL
 import { API_BASE_URL } from '../../utils/apiClient';
 
 const StoryReaderModal = ({ storyData, onClose, onComplete }) => { 
   const [currentNodeKey, setCurrentNodeKey] = useState('start');
   const currentNode = storyData[currentNodeKey];
-  // [PERBAIKAN] Hapus hardcode API_URL
-  // const API_URL = 'http://localhost:8080';
 
   const handleChoice = (nextNodeKey) => {
     if (storyData[nextNodeKey]) {
@@ -27,7 +24,6 @@ const StoryReaderModal = ({ storyData, onClose, onComplete }) => {
     }
   };
 
-  // [PERBAIKAN] Buat URL gambar yang lengkap
   const getImageUrl = (path) => {
     if (!path || path.startsWith('blob:') || path.startsWith('http')) {
         return path;
@@ -66,7 +62,6 @@ const StoryReaderModal = ({ storyData, onClose, onComplete }) => {
             className="flex flex-col h-full"
           >
             <div className="w-full h-56 md:h-64 bg-gray-200 overflow-hidden">
-              {/* [PERBAIKAN] Tampilkan gambar menggunakan imageUrl */}
               {imageUrl && <img src={imageUrl} alt="Ilustrasi cerita" className="w-full h-full object-cover"/>}
             </div>
 

@@ -1,10 +1,8 @@
-// contoh-sesm-web/components/admin/SubmissionDetailBookmarkModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiCheckCircle, FiXCircle, FiLoader, FiSave, FiThumbsUp, FiThumbsDown } from 'react-icons/fi';
 import BookmarkService from '../../services/bookmarkService';
 
-// Helper untuk mengubah indeks menjadi huruf (A, B, C, ...)
 const toAlpha = (num) => String.fromCharCode(65 + num);
 
 const SubmissionDetailBookmarkModal = ({ submission, onClose, onGradeSubmitted }) => {
@@ -12,17 +10,14 @@ const SubmissionDetailBookmarkModal = ({ submission, onClose, onGradeSubmitted }
     const [loading, setLoading] = useState(true);
     const [score, setScore] = useState(submission.score ?? '');
     const [isSaving, setIsSaving] = useState(false);
-    
-    // State untuk menyimpan perubahan pada jawaban (status benar/salah dan teks koreksi)
     const [answerUpdates, setAnswerUpdates] = useState({});
 
     useEffect(() => {
         if (submission) {
             setLoading(true);
-            // Kita butuh 2 data: detail jawaban siswa, dan data asli materi (untuk kunci jawaban)
             Promise.all([
                 BookmarkService.getSubmissionDetails(submission.id),
-                BookmarkService.getAllBookmarks() // Asumsi ini cepat karena data mungkin sudah di-cache
+                BookmarkService.getAllBookmarks()
             ]).then(([answersRes, bookmarksRes]) => {
                 const bookmark = bookmarksRes.data.find(b => b.id === submission.bookmark_id);
                 setDetails({
@@ -30,7 +25,6 @@ const SubmissionDetailBookmarkModal = ({ submission, onClose, onGradeSubmitted }
                     questions: bookmark ? bookmark.tasks : []
                 });
 
-                // Inisialisasi state untuk update
                 const initialUpdates = {};
                 answersRes.data.forEach(ans => {
                     initialUpdates[ans.id] = {
@@ -64,7 +58,6 @@ const SubmissionDetailBookmarkModal = ({ submission, onClose, onGradeSubmitted }
         }
         setIsSaving(true);
 
-        // Siapkan payload jawaban yang diubah
         const answersPayload = Object.entries(answerUpdates).map(([id, data]) => ({ id: parseInt(id), ...data }));
 
         try {
@@ -113,13 +106,11 @@ const SubmissionDetailBookmarkModal = ({ submission, onClose, onGradeSubmitted }
                                             </div>
                                         </div>
 
-                                        {/* Jawaban Siswa */}
                                         <div className="mt-3 bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
                                             <p className="text-xs font-semibold text-blue-800">Jawaban Siswa:</p>
                                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{studentAnswer.answer_text || "(Tidak dijawab)"}</p>
                                         </div>
 
-                                        {/* Kunci Jawaban (jika ada) */}
                                         {(task.type.includes('pilihan-ganda') && task.correctAnswer) && (
                                             <div className="mt-2 bg-green-50 border-l-4 border-green-400 p-3 rounded-r-lg">
                                                 <p className="text-xs font-semibold text-green-800">Kunci Jawaban Sistem (PG):</p>
@@ -127,7 +118,6 @@ const SubmissionDetailBookmarkModal = ({ submission, onClose, onGradeSubmitted }
                                             </div>
                                         )}
                                         
-                                        {/* Area Penilaian Guru */}
                                         <div className="mt-4 pt-4 border-t">
                                             <label className="text-sm font-bold text-gray-600 mb-2 block">Umpan Balik / Pembenaran Esai</label>
                                             <textarea
