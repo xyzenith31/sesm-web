@@ -97,6 +97,9 @@ const DailyChallengePage = ({ onNavigate }) => {
   const [pointsAwarded, setPointsAwarded] = useState(0);
   const [totalPoints, setTotalPoints] = useState(0);
   const [loadingPoints, setLoadingPoints] = useState(true);
+  
+  const [bonusClaimed, setBonusClaimed] = useState(false);
+
   const { refreshUser } = useAuth();
   const { getPointsSummary } = useData();
 
@@ -193,9 +196,14 @@ const DailyChallengePage = ({ onNavigate }) => {
 
   const handleClaimReward = async () => {
      try {
+         setBonusClaimed(true);
          setShowRewardNotification(true);
+         setTotalPoints(prev => prev + 200);
+         
      } catch (error) {
+         console.error("Error claiming reward:", error);
          alert("Gagal mengklaim hadiah.");
+         setBonusClaimed(false); 
      }
   };
 
@@ -280,16 +288,31 @@ const DailyChallengePage = ({ onNavigate }) => {
             <FiGift size={40} className="mb-2"/>
             <h3 className="text-lg font-bold">Hadiah Spesial Hari Ini!</h3>
             <p className="text-sm opacity-90 mb-3">Selesaikan semua tantangan ({totalCount}) untuk mendapatkan 200 Poin bonus!</p>
-            <AnimatePresence>
+            
+            <AnimatePresence mode="wait">
             {allCompleted && ( 
               <motion.button
-                onClick={handleClaimReward}
+                key={bonusClaimed ? "claimed" : "claim"}
+                onClick={!bonusClaimed ? handleClaimReward : undefined}
+                disabled={bonusClaimed}
                 initial={{scale: 0.8, opacity: 0}}
                 animate={{scale: 1, opacity: 1}}
-                whileTap={{ scale: 0.95 }}
-                className={`mt-2 font-bold px-4 py-2 rounded-full flex items-center transition-colors bg-yellow-400 text-sesm-deep`}
+                exit={{scale: 0.8, opacity: 0}}
+                whileTap={!bonusClaimed ? { scale: 0.95 } : {}}
+                className={`mt-2 font-bold px-6 py-2 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
+                    bonusClaimed 
+                    ? 'bg-green-500 text-white cursor-default ring-2 ring-white' 
+                    : 'bg-yellow-400 text-sesm-deep hover:bg-yellow-300'
+                }`}
               >
-                   KLAIM HADIAH (+200 Poin)
+                {bonusClaimed ? (
+                    <>
+                        <FiCheckCircle size={20} className="mr-2" />
+                        <span>Terklaim</span>
+                    </>
+                ) : (
+                    <span>KLAIM HADIAH (+200 Poin)</span>
+                )}
               </motion.button>
             )}
             </AnimatePresence>
