@@ -6,22 +6,14 @@ import ConfirmationModal from '../components/mod/ConfirmationModal';
 import PointsNotification from '../components/ui/PointsNotification';
 
 const ImageLightbox = ({ imageUrl, onClose }) => (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4"
-      onClick={onClose} >
-      <motion.img initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}
-        src={imageUrl} alt="Lightbox" className="max-w-full max-h-full object-contain rounded-lg shadow-xl"
-        onClick={(e) => e.stopPropagation()} />
-      <button onClick={onClose} className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70">
-        <FiX size={24} />
-      </button>
+    <motion.div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4" onClick={onClose} >
+      <motion.img src={imageUrl} className="max-w-full max-h-full object-contain rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()} />
+      <button onClick={onClose} className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70"><FiX size={24} /></button>
     </motion.div>
 );
 
 const MediaViewer = ({ mediaUrls, onImageClick }) => {
-    const API_URL = 'http://localhost:8080'; 
-
+    const API_URL = 'http://localhost:8080';
     if (!mediaUrls || !Array.isArray(mediaUrls) || mediaUrls.length === 0) return null;
 
     return (
@@ -30,106 +22,70 @@ const MediaViewer = ({ mediaUrls, onImageClick }) => {
             const rawUrl = item.url || item.content || "";
             const typeString = (item.type || "").toLowerCase();
             const key = `media-${index}-${rawUrl}`;
-
             if (!rawUrl) return null;
 
-            const isYouTube = typeString.includes('link') || 
-                              typeString.includes('video') || 
-                              rawUrl.includes('youtube.com') || 
-                              rawUrl.includes('youtu.be');
-
+            const isYouTube = typeString.includes('link') || typeString.includes('video') || rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be');
             if (isYouTube) {
                 const cleanUrl = rawUrl.trim();
                 const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
                 const match = cleanUrl.match(regExp);
                 const videoId = (match && match[2].length === 11) ? match[2] : null;
-
                 if (videoId) {
-                    return (
-                        <div key={key} className="relative w-full pt-[56.25%] bg-black rounded-lg overflow-hidden shadow-md border border-gray-200">
-                            <iframe 
-                                src={`https://www.youtube.com/embed/${videoId}`} 
-                                title={`YouTube video ${index}`} 
-                                className="absolute top-0 left-0 w-full h-full" 
-                                frameBorder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                allowFullScreen
-                            ></iframe>
-                        </div>
-                    );
+                    return (<div key={key} className="relative w-full pt-[56.25%] bg-black rounded-lg overflow-hidden shadow-md border border-gray-200"><iframe src={`https://www.youtube.com/embed/${videoId}`} title={`YouTube video ${index}`} className="absolute top-0 left-0 w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe></div>);
                 }
-                if (typeString === 'link' || rawUrl.startsWith('http')) {
-                     return (
-                        <a key={key} href={rawUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 font-semibold hover:bg-blue-100 transition-colors">
-                            <FiLink /><span>Buka Tautan Video</span>
-                        </a>
-                    );
+                 if (typeString === 'link' || rawUrl.startsWith('http')) {
+                     return <a key={key} href={rawUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 font-semibold hover:bg-blue-100 transition-colors"><FiLink /><span>Buka Tautan Video</span></a>;
                 }
             }
 
-            let fileUrl = rawUrl;
-        
-            fileUrl = fileUrl.replace(/\\/g, '/'); 
-            fileUrl = fileUrl.replace(/^server\/|^\/server\//, ''); 
-            fileUrl = fileUrl.replace(/^public\/|^\/public\//, ''); 
-
+            let fileUrl = rawUrl.replace(/\\/g, '/').replace(/^server\/|^\/server\//, '').replace(/^public\/|^\/public\//, '');
             if (fileUrl.startsWith('uploads')) fileUrl = '/' + fileUrl;
-            
             const fullFileUrl = fileUrl.startsWith('http') ? fileUrl : `${API_URL}${fileUrl}`;
             const extension = fullFileUrl.split('.').pop().toLowerCase().split('?')[0];
 
-            const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
-            const videoExts = ['mp4', 'webm', 'ogg', 'mov'];
-
-            if (imageExts.includes(extension) || typeString === 'image') {
-                return (
-                    <div key={key} className="relative">
-                        <img 
-                            src={fullFileUrl} 
-                            alt={`Lampiran ${index + 1}`} 
-                            className="max-w-full mx-auto rounded-lg shadow-md cursor-pointer hover:opacity-95 transition-opacity border border-gray-200 bg-gray-100 min-h-[100px] object-cover" 
-                            onClick={() => onImageClick(fullFileUrl)} 
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                                const errSpan = document.createElement('span');
-                                errSpan.className = 'text-xs text-red-500 block text-center p-2';
-                                errSpan.innerText = 'Gagal memuat gambar. File mungkin hilang.';
-                                e.target.parentNode.appendChild(errSpan);
-                            }}
-                        />
-                    </div>
-                );
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(extension) || typeString === 'image') {
+                return ( <div key={key} className="relative"> <img src={fullFileUrl} alt={`Lampiran ${index + 1}`} className="max-w-full mx-auto rounded-lg shadow-md cursor-pointer hover:opacity-95 transition-opacity border border-gray-200 bg-gray-100 min-h-[100px] object-cover" onClick={() => onImageClick(fullFileUrl)} onError={(e) => { e.target.style.display = 'none'; }} /> </div> );
             }
-
-            if (videoExts.includes(extension)) {
-                return (
-                    <video key={key} src={fullFileUrl} controls playsInline className="w-full rounded-lg shadow-md bg-black border border-gray-300">
-                        Browser Anda tidak mendukung tag video.
-                    </video>
-                );
+            if (['mp4', 'webm', 'ogg', 'mov'].includes(extension)) {
+                return ( <video key={key} src={fullFileUrl} controls playsInline className="w-full rounded-lg shadow-md bg-black border border-gray-300">Browser Anda tidak mendukung tag video.</video> );
             }
-
             if (typeString === 'text') {
                  return <div key={key} className="p-3 bg-yellow-50 border-l-4 border-yellow-400 text-gray-700 text-sm rounded-r-md whitespace-pre-wrap">{item.content}</div>
             }
-
-            return (
-                <a key={key} href={fullFileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-gray-700 font-semibold hover:bg-gray-200 transition-colors border border-gray-200">
-                    <FiDownload /><span>Lihat Lampiran</span>
-                </a>
-            );
+            return ( <a key={key} href={fullFileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg text-gray-700 font-semibold hover:bg-gray-200 transition-colors border border-gray-200"><FiDownload /><span>Lihat Lampiran</span></a> );
         })}
       </div>
     );
 };
 
 const EssayInput = ({ answer, onChange, isReviewing }) => (<textarea value={answer} onChange={onChange} disabled={isReviewing} placeholder="Tulis jawaban esaimu di sini..." className={`w-full h-40 p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sesm-teal transition-colors ${isReviewing ? 'bg-gray-200' : ''}`}/>);
-const OptionButton = ({ option, userAnswer, correctAnswer, onClick, isReviewing }) => {
-    const isSelected = userAnswer === option;
+
+const OptionButton = ({ option, userAnswer, gradingResult, onClick, isReviewing }) => {
+    const normalize = (val) => String(val).trim().toLowerCase();
+    const isSelected = normalize(userAnswer) === normalize(option);
+    
+    const isServerCorrect = gradingResult?.isCorrect === true;
+    const isServerAnswerKey = gradingResult?.correctAnswer && normalize(option) === normalize(gradingResult.correctAnswer);
+
     let buttonClass = 'bg-white hover:bg-gray-100 border-gray-300';
-    if (isReviewing) { if (option === correctAnswer) buttonClass = 'bg-green-100 border-green-500 text-green-800'; else if (isSelected) buttonClass = 'bg-red-100 border-red-500 text-red-800'; else buttonClass = 'bg-gray-100 border-gray-200 text-gray-500'; }
-    else if (isSelected) buttonClass = 'bg-sesm-teal text-white border-sesm-teal';
-    return (<button onClick={onClick} disabled={isReviewing} className={`w-full text-left p-4 rounded-lg font-semibold transition-all duration-200 border-2 flex justify-between items-center ${buttonClass}`}><span>{option}</span>{isReviewing && option === correctAnswer && <FiCheckCircle className="text-green-600" />}</button>);
+    
+    if (isReviewing) { 
+        if (isServerAnswerKey) {
+            buttonClass = 'bg-green-100 border-green-500 text-green-800'; 
+        } else if (isSelected) {
+            if (isServerCorrect) {
+                buttonClass = 'bg-green-100 border-green-500 text-green-800';
+            } else {
+                buttonClass = 'bg-red-100 border-red-500 text-red-800';
+            }
+        } else {
+            buttonClass = 'bg-gray-100 border-gray-200 text-gray-500';
+        }
+    } else if (isSelected) {
+        buttonClass = 'bg-sesm-teal text-white border-sesm-teal';
+    }
+    
+    return (<button onClick={onClick} disabled={isReviewing} className={`w-full text-left p-4 rounded-lg font-semibold transition-all duration-200 border-2 flex justify-between items-center ${buttonClass}`}><span>{option}</span>{isReviewing && (isServerAnswerKey || (isSelected && isServerCorrect)) && <FiCheckCircle className="text-green-600" />}</button>);
 };
 
 const WorksheetPage = ({ onNavigate, chapterInfo }) => {
@@ -146,6 +102,7 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
     const [loading, setLoading] = useState(true);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [submissionResult, setSubmissionResult] = useState(null);
+    const [gradingResults, setGradingResults] = useState({}); 
     const [isNavOpen, setIsNavOpen] = useState(false);
     const [isExitModalOpen, setIsExitModalOpen] = useState(false);
     const [lightboxImage, setLightboxImage] = useState(null);
@@ -162,15 +119,10 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                     setChapterSettings(settings || {});
                     setCreatorInfo(fetchedCreatorInfo || { nama: null, avatar: null });
                     setInitialCompletionStatus(hasCompleted);
-
-                    let finalQuestions = fetchedQuestions;
-                    if (settings?.setting_randomize_questions) {
-                        finalQuestions = [...fetchedQuestions].sort(() => Math.random() - 0.5);
-                    }
-                    setQuestions(finalQuestions);
+                    setQuestions(fetchedQuestions || []);
 
                     const initialAnswers = {};
-                    finalQuestions.forEach(q => { initialAnswers[q.id] = ''; });
+                    (fetchedQuestions || []).forEach(q => { initialAnswers[q.id] = ''; });
                     setAnswers(initialAnswers);
                     setMarked({});
 
@@ -189,7 +141,17 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
         const answerPayload = Object.entries(answers).map(([questionId, answer]) => ({ questionId: parseInt(questionId), answer: answer || "" }));
         try {
             const response = await DataService.submitAnswers(materiKey, answerPayload);
+            
             setSubmissionResult(response.data);
+
+            if (response.data.results && Array.isArray(response.data.results)) {
+                const resultsMap = {};
+                response.data.results.forEach(res => {
+                    resultsMap[res.questionId] = res; 
+                });
+                setGradingResults(resultsMap);
+            }
+
             setIsSubmitted(true);
             setTimeLeft(null);
             if (!initialCompletionStatus && response.data.pointsAwarded > 0) {
@@ -216,21 +178,30 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
     const goToQuestion = (index) => { if (index >= 0 && index < questions.length) { setCurrentQuestionIndex(index); setIsNavOpen(false); } };
     const handleExit = () => { isSubmitted || isReviewing ? onNavigate(navigationKey || 'home') : setIsExitModalOpen(true); };
     const confirmExit = () => { setIsExitModalOpen(false); onNavigate(navigationKey || 'home'); };
-    const isQuestionCorrect = (question) => { if (!question || !question.correctAnswer) return false; const userAnswer = answers[question.id] || ''; return userAnswer.trim().toLowerCase() === question.correctAnswer.trim().toLowerCase(); };
+    
     const getNavButtonClass = (q, index) => {
         const isActive = index === currentQuestionIndex;
-        if (isReviewing) { const isCorrect = isQuestionCorrect(q); if(isActive) return isCorrect ? 'bg-green-700 text-white ring-2 ring-white' : 'bg-red-700 text-white ring-2 ring-white'; return isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'; }
+        if (isReviewing) { 
+            const result = gradingResults[q.id];
+            const isCorrect = result?.isCorrect === true;
+
+            if(isActive) return isCorrect ? 'bg-green-700 text-white ring-2 ring-white' : 'bg-red-700 text-white ring-2 ring-white'; 
+            return isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'; 
+        }
         const isMarked = marked[q.id]; const isAnswered = answers[q.id] && answers[q.id].trim() !== '';
         if (isActive) return 'bg-sesm-deep text-white'; if (isMarked) return 'bg-yellow-400 text-white'; if (isAnswered) return 'bg-green-500 text-white'; return 'bg-gray-200 text-gray-600 hover:bg-gray-300';
      };
+    
     const isAllAnswered = useMemo(() => { if (!chapterSettings.setting_require_all_answers) return true; return questions.every(q => answers[q.id] && answers[q.id].trim() !== ''); }, [answers, questions, chapterSettings]);
-    const correctAnswersCount = useMemo(() => { if (!isSubmitted) return 0; return questions.filter(q => isQuestionCorrect(q)).length; }, [isSubmitted, questions, answers]);
+    
+    const correctAnswersCount = useMemo(() => { 
+        if (!isSubmitted) return 0; 
+        return Object.values(gradingResults).filter(r => r.isCorrect === true).length; 
+    }, [isSubmitted, gradingResults]);
 
     const creatorNameSeed = encodeURIComponent(creatorInfo.nama || 'Guru');
     const defaultAvatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${creatorNameSeed}&backgroundColor=cccccc&fontSize=36`;
-    const creatorAvatarUrl = creatorInfo.avatar
-        ? (creatorInfo.avatar.startsWith('http') ? creatorInfo.avatar : `${API_URL}/${creatorInfo.avatar}`)
-        : defaultAvatarUrl;
+    const creatorAvatarUrl = creatorInfo.avatar ? (creatorInfo.avatar.startsWith('http') ? creatorInfo.avatar : `${API_URL}/${creatorInfo.avatar}`) : defaultAvatarUrl;
     const handleAvatarError = (e) => { e.target.onerror = null; e.target.src = defaultAvatarUrl; };
 
     if (loading) return <div className="min-h-screen bg-gray-100 flex justify-center items-center"><FiLoader className="animate-spin text-3xl text-sesm-teal"/></div>;
@@ -245,7 +216,11 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                         {submissionResult?.score !== null && submissionResult?.score !== undefined ? (
                             <>
                                 <p className="text-gray-600 mt-2">Skor akhir kamu:</p> <p className="text-5xl font-bold text-sesm-teal my-3">{submissionResult.score}</p>
-                                <div className="flex justify-around my-4 text-center"> <div><p className="font-bold text-xl text-green-600">{correctAnswersCount}</p><p className="text-xs text-gray-500">Benar</p></div> <div><p className="font-bold text-xl text-red-600">{questions.length - correctAnswersCount}</p><p className="text-xs text-gray-500">Salah</p></div> <div><p className="font-bold text-xl text-sesm-deep">{questions.length}</p><p className="text-xs text-gray-500">Total Soal</p></div> </div>
+                                <div className="flex justify-around my-4 text-center"> 
+                                    <div><p className="font-bold text-xl text-green-600">{correctAnswersCount}</p><p className="text-xs text-gray-500">Benar</p></div> 
+                                    <div><p className="font-bold text-xl text-red-600">{questions.length - correctAnswersCount}</p><p className="text-xs text-gray-500">Salah</p></div> 
+                                    <div><p className="font-bold text-xl text-sesm-deep">{questions.length}</p><p className="text-xs text-gray-500">Total Soal</p></div> 
+                                </div>
                                 {submissionResult.pointsAwarded > 0 && !initialCompletionStatus ? ( <p className="flex items-center justify-center font-semibold text-green-600 bg-green-100 px-3 py-1 rounded-full"><FiAward className="mr-2"/> +{submissionResult.pointsAwarded} Poin!</p> ) : ( <p className="text-sm text-gray-500 font-medium">(Anda sudah pernah mendapatkan poin untuk materi ini)</p> )}
                             </>
                         ) : ( <p className="text-gray-600 my-4">{submissionResult?.message || "Jawaban telah dikumpulkan."}</p> )}
@@ -314,7 +289,14 @@ const WorksheetPage = ({ onNavigate, chapterInfo }) => {
                                         <h2 className="text-xl md:text-2xl font-bold text-sesm-deep mb-8 text-left">{currentQuestion.pertanyaan}</h2>
                                         <div className="grid grid-cols-1 gap-4 text-left">
                                             {currentQuestion.tipe_soal.includes('pilihan-ganda') && currentQuestion.options.map((option, index) => (
-                                                <OptionButton key={option + index} option={option} userAnswer={answers[currentQuestion.id]} correctAnswer={currentQuestion.correctAnswer} onClick={() => handleAnswerChange(currentQuestion.id, option)} isReviewing={isReviewing} />
+                                                <OptionButton 
+                                                    key={option + index} 
+                                                    option={option} 
+                                                    userAnswer={answers[currentQuestion.id]} 
+                                                    gradingResult={gradingResults[currentQuestion.id]} 
+                                                    onClick={() => handleAnswerChange(currentQuestion.id, option)} 
+                                                    isReviewing={isReviewing} 
+                                                />
                                             ))}
                                             {currentQuestion.tipe_soal.includes('esai') && (
                                                 <EssayInput answer={answers[currentQuestion.id]} onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)} isReviewing={isReviewing}/>
