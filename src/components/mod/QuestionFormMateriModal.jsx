@@ -53,6 +53,8 @@ const QuestionFormMateriModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const [questions, setQuestions] = useState([]);
     const [linkInput, setLinkInput] = useState({ qIndex: null, value: '' });
     const [textInput, setTextInput] = useState({ qIndex: null, value: '' });
+    
+    // State status simpan
     const [saveStatus, setSaveStatus] = useState('Tersimpan');
 
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
@@ -60,21 +62,26 @@ const QuestionFormMateriModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     const getNewQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', media: [], links: [], texts: [], subQuestions: [], id: Date.now() + Math.random() });
     const getNewSubQuestion = () => ({ type: 'pilihan-ganda', question: '', options: ['', ''], correctAnswer: '', essayAnswer: '', id: Date.now() + Math.random() + '_sub' });
 
-    const debouncedQuestions = useDebounce(questions, 200);
+    // Ubah delay menjadi 1000ms (1 detik) agar tidak terlalu sering hit server saat mengetik
+    const debouncedQuestions = useDebounce(questions, 1000);
 
+    // Fungsi simpan ke backend (hanya dipanggil oleh Effect saat debounce selesai)
     const saveDraftToBackend = useCallback(async (draftData) => {
         if (!draftData || draftData.length === 0 || (draftData.length === 1 && draftData[0].question.trim() === '' && draftData[0].media.length === 0 && draftData[0].links.length === 0 && draftData[0].texts.length === 0 && draftData[0].subQuestions.length === 0)) {
             setSaveStatus('Tersimpan');
             return;
         }
-        setSaveStatus('Menyimpan...');
+        // Kita set status Menyimpan di sini juga untuk memastikan visual sinkron saat fungsi berjalan
+        setSaveStatus('Menyimpan...'); 
         try {
             const serializableData = draftData.map(({ media, ...rest }) => ({
                 ...rest,
                 subQuestions: rest.subQuestions?.map(({ media, ...subRest }) => subRest) || []
             }));
             await DataService.saveDraft(DRAFT_KEY, serializableData);
-            setSaveStatus('Tersimpan');
+            
+            // Beri jeda sedikit agar tulisan "Menyimpan..." terbaca, lalu ubah jadi Tersimpan
+            setTimeout(() => setSaveStatus('Tersimpan'), 500);
         } catch (error) {
             console.error("Gagal menyimpan draf ke server:", error);
             setSaveStatus('Gagal');
@@ -82,12 +89,14 @@ const QuestionFormMateriModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
     }, [DRAFT_KEY]);
 
 
+    // Effect: Jalan ketika user BERHENTI mengetik (debounce selesai)
     useEffect(() => {
         if (isOpen) {
             saveDraftToBackend(debouncedQuestions);
         }
     }, [debouncedQuestions, isOpen, saveDraftToBackend]);
 
+    // Load Draft saat Modal dibuka
     useEffect(() => {
         if (isOpen) {
             setSaveStatus('Memuat...');
@@ -163,24 +172,30 @@ const QuestionFormMateriModal = ({ isOpen, onClose, onSubmit, chapterId }) => {
         onClose();
     };
 
-    const handleQuestionChange = (index, field, value) => { const newQuestions = [...questions]; newQuestions[index][field] = value; setQuestions(newQuestions); };
-    const handleOptionChange = (qIndex, oIndex, value) => { const newQuestions = [...questions]; newQuestions[qIndex].options[oIndex] = value; if (newQuestions[qIndex].correctAnswer === questions[qIndex].options[oIndex]) { newQuestions[qIndex].correctAnswer = value; } setQuestions(newQuestions); };
-    const addOptionField = (qIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].options.push(''); setQuestions(newQuestions); };
-    const removeOptionField = (qIndex, oIndex) => { const newQuestions = [...questions]; const removedOption = newQuestions[qIndex].options[oIndex]; if (newQuestions[qIndex].correctAnswer === removedOption) { newQuestions[qIndex].correctAnswer = ''; } newQuestions[qIndex].options = newQuestions[qIndex].options.filter((_, i) => i !== oIndex); setQuestions(newQuestions); };
-    const handleMediaUpload = (qIndex, event) => { const files = Array.from(event.target.files); const newQuestions = [...questions]; newQuestions[qIndex].media = [...newQuestions[qIndex].media, ...files]; setQuestions(newQuestions); };
-    const removeMedia = (qIndex, mediaIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].media = newQuestions[qIndex].media.filter((_, i) => i !== mediaIndex); setQuestions(newQuestions); };
-    const addQuestionField = () => { setQuestions([...questions, getNewQuestion()]); };
-    const removeQuestionField = (index) => { if(questions.length > 1) setQuestions(questions.filter((_, i) => i !== index)); };
-    const handleAddLink = (qIndex) => { if (!linkInput.value.startsWith('http')) { alert('URL tidak valid.'); return; } const newQuestions = [...questions]; newQuestions[qIndex].links.push({ id: Date.now(), url: linkInput.value }); setQuestions(newQuestions); setLinkInput({ qIndex: null, value: '' }); };
-    const removeLink = (qIndex, linkId) => { const newQuestions = [...questions]; newQuestions[qIndex].links = newQuestions[qIndex].links.filter(link => link.id !== linkId); setQuestions(newQuestions); };
-    const handleAddText = (qIndex) => { if (textInput.value.trim() === '') { alert('Teks tidak boleh kosong.'); return; } const newQuestions = [...questions]; newQuestions[qIndex].texts.push({ id: Date.now(), content: textInput.value }); setQuestions(newQuestions); setTextInput({ qIndex: null, value: '' }); };
-    const removeText = (qIndex, textId) => { const newQuestions = [...questions]; newQuestions[qIndex].texts = newQuestions[qIndex].texts.filter(text => text.id !== textId); setQuestions(newQuestions); };
-    const addSubQuestion = (qIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions.push(getNewSubQuestion()); setQuestions(newQuestions); };
-    const removeSubQuestion = (qIndex, subQIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions = newQuestions[qIndex].subQuestions.filter((_, i) => i !== subQIndex); setQuestions(newQuestions); };
-    const handleSubQuestionChange = (qIndex, subQIndex, field, value) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions[subQIndex][field] = value; setQuestions(newQuestions); };
-    const handleSubOptionChange = (qIndex, subQIndex, oIndex, value) => { const newQuestions = [...questions]; const subQ = newQuestions[qIndex].subQuestions[subQIndex]; const oldOption = subQ.options[oIndex]; subQ.options[oIndex] = value; if (subQ.correctAnswer === oldOption) { subQ.correctAnswer = value; } setQuestions(newQuestions); };
-    const addSubOptionField = (qIndex, subQIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions[subQIndex].options.push(''); setQuestions(newQuestions); };
-    const removeSubOptionField = (qIndex, subQIndex, oIndex) => { const newQuestions = [...questions]; const subQ = newQuestions[qIndex].subQuestions[subQIndex]; const removedOption = subQ.options[oIndex]; if (subQ.correctAnswer === removedOption) { subQ.correctAnswer = ''; } subQ.options = subQ.options.filter((_, i) => i !== oIndex); setQuestions(newQuestions); };
+    // --- HELPER UNTUK UPDATE STATE DAN STATUS SIMPAN SECARA BERSAMAAN ---
+    const updateState = (newQuestions) => {
+        setSaveStatus('Menyimpan...'); // Feedback visual instan
+        setQuestions(newQuestions);
+    };
+
+    const handleQuestionChange = (index, field, value) => { const newQuestions = [...questions]; newQuestions[index][field] = value; updateState(newQuestions); };
+    const handleOptionChange = (qIndex, oIndex, value) => { const newQuestions = [...questions]; newQuestions[qIndex].options[oIndex] = value; if (newQuestions[qIndex].correctAnswer === questions[qIndex].options[oIndex]) { newQuestions[qIndex].correctAnswer = value; } updateState(newQuestions); };
+    const addOptionField = (qIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].options.push(''); updateState(newQuestions); };
+    const removeOptionField = (qIndex, oIndex) => { const newQuestions = [...questions]; const removedOption = newQuestions[qIndex].options[oIndex]; if (newQuestions[qIndex].correctAnswer === removedOption) { newQuestions[qIndex].correctAnswer = ''; } newQuestions[qIndex].options = newQuestions[qIndex].options.filter((_, i) => i !== oIndex); updateState(newQuestions); };
+    const handleMediaUpload = (qIndex, event) => { const files = Array.from(event.target.files); const newQuestions = [...questions]; newQuestions[qIndex].media = [...newQuestions[qIndex].media, ...files]; updateState(newQuestions); };
+    const removeMedia = (qIndex, mediaIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].media = newQuestions[qIndex].media.filter((_, i) => i !== mediaIndex); updateState(newQuestions); };
+    const addQuestionField = () => { updateState([...questions, getNewQuestion()]); };
+    const removeQuestionField = (index) => { if(questions.length > 1) updateState(questions.filter((_, i) => i !== index)); };
+    const handleAddLink = (qIndex) => { if (!linkInput.value.startsWith('http')) { alert('URL tidak valid.'); return; } const newQuestions = [...questions]; newQuestions[qIndex].links.push({ id: Date.now(), url: linkInput.value }); updateState(newQuestions); setLinkInput({ qIndex: null, value: '' }); };
+    const removeLink = (qIndex, linkId) => { const newQuestions = [...questions]; newQuestions[qIndex].links = newQuestions[qIndex].links.filter(link => link.id !== linkId); updateState(newQuestions); };
+    const handleAddText = (qIndex) => { if (textInput.value.trim() === '') { alert('Teks tidak boleh kosong.'); return; } const newQuestions = [...questions]; newQuestions[qIndex].texts.push({ id: Date.now(), content: textInput.value }); updateState(newQuestions); setTextInput({ qIndex: null, value: '' }); };
+    const removeText = (qIndex, textId) => { const newQuestions = [...questions]; newQuestions[qIndex].texts = newQuestions[qIndex].texts.filter(text => text.id !== textId); updateState(newQuestions); };
+    const addSubQuestion = (qIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions.push(getNewSubQuestion()); updateState(newQuestions); };
+    const removeSubQuestion = (qIndex, subQIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions = newQuestions[qIndex].subQuestions.filter((_, i) => i !== subQIndex); updateState(newQuestions); };
+    const handleSubQuestionChange = (qIndex, subQIndex, field, value) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions[subQIndex][field] = value; updateState(newQuestions); };
+    const handleSubOptionChange = (qIndex, subQIndex, oIndex, value) => { const newQuestions = [...questions]; const subQ = newQuestions[qIndex].subQuestions[subQIndex]; const oldOption = subQ.options[oIndex]; subQ.options[oIndex] = value; if (subQ.correctAnswer === oldOption) { subQ.correctAnswer = value; } updateState(newQuestions); };
+    const addSubOptionField = (qIndex, subQIndex) => { const newQuestions = [...questions]; newQuestions[qIndex].subQuestions[subQIndex].options.push(''); updateState(newQuestions); };
+    const removeSubOptionField = (qIndex, subQIndex, oIndex) => { const newQuestions = [...questions]; const subQ = newQuestions[qIndex].subQuestions[subQIndex]; const removedOption = subQ.options[oIndex]; if (subQ.correctAnswer === removedOption) { subQ.correctAnswer = ''; } subQ.options = subQ.options.filter((_, i) => i !== oIndex); updateState(newQuestions); };
 
     const handleCloseNotif = () => setNotif({ ...notif, isOpen: false });
 

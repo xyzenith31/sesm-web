@@ -180,10 +180,12 @@ const AddQuestionQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
     const DRAFT_KEY = `quiz_${quizId}`;
     const [questions, setQuestions] = useState([getNewQuestion()]);
     const [saveStatus, setSaveStatus] = useState('Tersimpan');
-    const debouncedQuestions = useDebounce(questions, 200);
+    
+    // Ubah delay menjadi 1000ms (1 detik) agar simpan server tidak terlalu sering
+    const debouncedQuestions = useDebounce(questions, 1000);
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
 
-
+    // Fungsi Simpan Draft (dijalankan oleh Effect setelah debounce selesai)
     const saveDraft = useCallback(async (data) => {
         if (!data || (data.length === 1 && data[0].question.trim() === '' && data[0].media.length === 0)) {
             setSaveStatus('Tersimpan');
@@ -196,19 +198,22 @@ const AddQuestionQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
                 media: media.filter(m => m.type === 'link')
             }));
             await DataService.saveDraft(DRAFT_KEY, serializableData);
-            setSaveStatus('Tersimpan');
+            // Jeda visual
+            setTimeout(() => setSaveStatus('Tersimpan'), 500);
         } catch (error) {
             console.error("Gagal menyimpan draf kuis:", error);
             setSaveStatus('Gagal');
         }
     }, [DRAFT_KEY]);
 
+    // Effect Auto Save saat berhenti mengetik
     useEffect(() => {
         if (isOpen) {
             saveDraft(debouncedQuestions);
         }
     }, [debouncedQuestions, isOpen, saveDraft]);
 
+    // Load Draft
     useEffect(() => {
         if (isOpen) {
             setSaveStatus('Memuat...');
@@ -234,15 +239,24 @@ const AddQuestionQuizModal = ({ isOpen, onClose, onSubmit, quizId }) => {
         }
     }, [isOpen, DRAFT_KEY]);
 
+    // Helper update state & status visual instan
+    const updateQuestionsState = (newState) => {
+        setSaveStatus('Menyimpan...'); 
+        setQuestions(newState);
+    }
+
     const handleUpdateQuestion = (index, updatedQuestion) => {
-        setQuestions(prev => prev.map((q, i) => i === index ? updatedQuestion : q));
+        const newState = questions.map((q, i) => i === index ? updatedQuestion : q);
+        updateQuestionsState(newState);
     };
-    const handleAddQuestionField = () => setQuestions(prev => [...prev, getNewQuestion()]);
+    const handleAddQuestionField = () => {
+        updateQuestionsState([...questions, getNewQuestion()]);
+    };
     const handleRemoveQuestionField = (index) => {
         if (questions.length > 1) { 
-            setQuestions(prev => prev.filter((_, i) => i !== index));
+            updateQuestionsState(questions.filter((_, i) => i !== index));
         } else {
-            setQuestions([getNewQuestion()]);
+            updateQuestionsState([getNewQuestion()]);
         }
     };
 
