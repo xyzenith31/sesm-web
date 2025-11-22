@@ -68,6 +68,37 @@ const ToggleSwitch = ({ enabled, onToggle }) => (
     </button>
 );
 
+// Komponen Modal Rename Sederhana
+const RenameModal = ({ isOpen, onClose, onSubmit, initialValue }) => {
+    const [value, setValue] = useState(initialValue);
+
+    useEffect(() => {
+        setValue(initialValue);
+    }, [initialValue]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Ubah Nama Materi</h3>
+                <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    className="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-sesm-teal focus:outline-none"
+                    autoFocus
+                    onKeyDown={(e) => { if(e.key === 'Enter') onSubmit(value); }}
+                />
+                <div className="flex justify-end gap-2 mt-4">
+                    <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-semibold">Batal</button>
+                    <button onClick={() => onSubmit(value)} className="px-4 py-2 bg-sesm-teal text-white rounded-lg font-semibold hover:bg-opacity-90">Simpan</button>
+                </div>
+            </motion.div>
+        </div>
+    );
+};
+
 const ManagementMateri = ({ onNavigate }) => {
     const { user } = useAuth();
     const API_URL = 'http://localhost:8080';
@@ -89,12 +120,16 @@ const ManagementMateri = ({ onNavigate }) => {
     const [showDraftsNotification, setShowDraftsNotification] = useState(false);
     const [hasDismissedDraftNotif, setHasDismissedDraftNotif] = useState(false);
 
+    // State untuk Rename
+    const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+    const [renameData, setRenameData] = useState({ key: null, currentTitle: '' });
+
     const [notif, setNotif] = useState({ isOpen: false, message: '', success: true, title: '' });
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {},
+        onConfirm: () => { },
     });
 
     const handleCloseNotif = () => setNotif(prev => ({ ...prev, isOpen: false }));
@@ -111,13 +146,13 @@ const ManagementMateri = ({ onNavigate }) => {
             setMateriList(res.data)
             if (selectKeyAfterFetch) {
                 setSelectedKey(selectKeyAfterFetch);
-                 const materiInfo = Object.values(res.data).flatMap(m => m.chapters).find(m => m.materiKey === selectKeyAfterFetch);
-                 if (materiInfo) {
+                const materiInfo = Object.values(res.data).flatMap(m => m.chapters).find(m => m.materiKey === selectKeyAfterFetch);
+                if (materiInfo) {
                     setSelectedMateri(prev => ({ ...prev, ...materiInfo }));
-                 }
+                }
             }
         }).catch(err => {
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Gagal Memuat",
                 message: err.response?.data?.message || "Gagal memuat data materi.",
@@ -144,7 +179,7 @@ const ManagementMateri = ({ onNavigate }) => {
             }
         } catch (error) {
             console.error("Gagal mengambil draft:", error);
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Gagal Memuat Draf",
                 message: "Tidak dapat mengambil data draf dari server.",
@@ -169,7 +204,7 @@ const ManagementMateri = ({ onNavigate }) => {
                 message: "Gagal memuat detail soal untuk materi ini.",
                 success: false
             });
-             setSelectedMateri(prev => ({ ...prev, questions: [] }));
+            setSelectedMateri(prev => ({ ...prev, questions: [] }));
         }).finally(() => setIsDetailLoading(false));
     }, [selectedKey, materiList]);
 
@@ -186,7 +221,7 @@ const ManagementMateri = ({ onNavigate }) => {
             await DataService.addChapter(data);
             fetchMateriList();
             setIsAddChapterModalOpen(false);
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Berhasil",
                 message: `Materi "${data.judul}" berhasil ditambahkan.`,
@@ -202,9 +237,63 @@ const ManagementMateri = ({ onNavigate }) => {
         }
     };
 
+    // --- Logic Rename Materi ---
+    const handleRenameClick = (materi) => {
+        setRenameData({ key: materi.materiKey, currentTitle: materi.judul });
+        setIsRenameModalOpen(true);
+    };
+
+    const handleSubmitRename = async (newTitle) => {
+        if (!newTitle.trim()) return;
+
+        try {
+            // Mencoba menggunakan DataService jika tersedia, atau fetch manual
+            if (DataService.renameChapter) {
+                await DataService.renameChapter(renameData.key, newTitle);
+            } else {
+                // Fallback jika DataService belum diupdate
+                const response = await fetch(`${API_URL}/api/admin/materi/chapters/${renameData.key}/rename`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-access-token': user?.accessToken || localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).accessToken : ''
+                    },
+                    body: JSON.stringify({ judul: newTitle })
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.message || "Gagal update");
+                }
+            }
+
+            setNotif({
+                isOpen: true,
+                title: "Berhasil",
+                message: "Nama materi berhasil diubah.",
+                success: true
+            });
+            setIsRenameModalOpen(false);
+            fetchMateriList(selectedKey); // Refresh sidebar dan detail jika perlu
+            
+            // Update selectedMateri judul jika yang diedit adalah yang sedang dibuka
+            if (selectedMateri && selectedMateri.materiKey === renameData.key) {
+                setSelectedMateri(prev => ({...prev, judul: newTitle}));
+            }
+
+        } catch (error) {
+            setNotif({
+                isOpen: true,
+                title: "Gagal",
+                message: error.message || "Gagal mengubah nama materi.",
+                success: false
+            });
+        }
+    };
+    // --------------------------
+
     const handleQuestionsFromBankAdded = (targetMateriKey) => {
         setIsBankSoalOpen(false);
-         setNotif({
+        setNotif({
             isOpen: true,
             title: "Berhasil",
             message: "Soal berhasil ditambahkan dari bank!",
@@ -255,7 +344,7 @@ const ManagementMateri = ({ onNavigate }) => {
             for (const q of newQuestions) {
                 await DataService.addQuestion(selectedKey, q);
             }
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Berhasil",
                 message: `${newQuestions.length} soal berhasil dipublikasikan!`,
@@ -264,7 +353,7 @@ const ManagementMateri = ({ onNavigate }) => {
             fetchDetailMateri();
             fetchMateriList(selectedKey);
         } catch (e) {
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Gagal Publikasi",
                 message: e.response?.data?.message || "Terjadi kesalahan saat publikasi soal.",
@@ -283,7 +372,7 @@ const ManagementMateri = ({ onNavigate }) => {
             await DataService.updateQuestion(questionId, updatedData);
             setIsEditModalOpen(false);
             setEditingQuestion(null);
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Berhasil",
                 message: "Soal berhasil diperbarui!",
@@ -291,7 +380,7 @@ const ManagementMateri = ({ onNavigate }) => {
             });
             fetchDetailMateri();
         } catch (error) {
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Gagal",
                 message: error.response?.data?.message || "Gagal memperbarui soal.",
@@ -302,7 +391,7 @@ const ManagementMateri = ({ onNavigate }) => {
     };
 
     const handleDeleteQuestion = (questionId, questionText) => {
-         setConfirmModal({
+        setConfirmModal({
             isOpen: true,
             title: "Konfirmasi Hapus Soal",
             message: `Yakin ingin menghapus soal "${questionText.substring(0, 30)}..."?`,
@@ -314,9 +403,9 @@ const ManagementMateri = ({ onNavigate }) => {
         handleCloseConfirmModal();
         await new Promise(resolve => setTimeout(resolve, 300));
 
-         try {
+        try {
             await DataService.deleteQuestion(questionId);
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Berhasil",
                 message: "Soal berhasil dihapus.",
@@ -348,13 +437,13 @@ const ManagementMateri = ({ onNavigate }) => {
         });
     };
 
-     const confirmDeleteAllQuestions = async () => {
+    const confirmDeleteAllQuestions = async () => {
         handleCloseConfirmModal();
         await new Promise(resolve => setTimeout(resolve, 300));
         setIsDetailLoading(true);
         try {
             await Promise.all(selectedMateri.questions.map(q => DataService.deleteQuestion(q.id)));
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Berhasil",
                 message: "Semua soal berhasil dihapus.",
@@ -375,7 +464,7 @@ const ManagementMateri = ({ onNavigate }) => {
         const newMode = currentMode === 'manual' ? 'otomatis' : 'manual';
         try {
             await DataService.updateGradingMode(chapterId, newMode);
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Berhasil",
                 message: `Mode penilaian diubah ke ${newMode}.`,
@@ -400,7 +489,7 @@ const ManagementMateri = ({ onNavigate }) => {
     const handleSaveSettings = async (chapterId, newSettings) => {
         try {
             await DataService.updateChapterSettings(chapterId, newSettings);
-             setNotif({
+            setNotif({
                 isOpen: true,
                 title: "Berhasil",
                 message: "Pengaturan berhasil disimpan!",
@@ -447,7 +536,7 @@ const ManagementMateri = ({ onNavigate }) => {
                     />
                 )}
                 {confirmModal.isOpen && (
-                     <Notification
+                    <Notification
                         isOpen={confirmModal.isOpen}
                         onClose={handleCloseConfirmModal}
                         onConfirm={confirmModal.onConfirm}
@@ -480,7 +569,7 @@ const ManagementMateri = ({ onNavigate }) => {
 
             <AnimatePresence>
                 {isAddChapterModalOpen && <AddChapterModal isOpen onClose={() => setIsAddChapterModalOpen(false)} onSubmit={handleAddChapterSubmit} mapelList={currentMapelList} jenjang={selectedFilterKey} />}
-                 {isDraftsModalOpen && (
+                {isDraftsModalOpen && (
                     <DraftsModal
                         isOpen={isDraftsModalOpen}
                         onClose={() => setIsDraftsModalOpen(false)}
@@ -490,14 +579,23 @@ const ManagementMateri = ({ onNavigate }) => {
                         onDraftDeleted={fetchDrafts}
                     />
                 )}
-                 {isBankSoalOpen && <BankSoalMateriModal isOpen onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
-                 {isEditModalOpen && <EditQuestionModal isOpen onClose={() => setIsEditModalOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
-                 {isSettingsModalOpen && (
+                {isBankSoalOpen && <BankSoalMateriModal isOpen onClose={() => setIsBankSoalOpen(false)} onQuestionsAdded={handleQuestionsFromBankAdded} />}
+                {isEditModalOpen && <EditQuestionModal isOpen onClose={() => setIsEditModalOpen(false)} onSubmit={handleUpdateQuestion} questionData={editingQuestion} />}
+                {isSettingsModalOpen && (
                     <ChapterSettingsModal
                         isOpen={isSettingsModalOpen}
                         onClose={() => setIsSettingsModalOpen(false)}
                         onSave={handleSaveSettings}
                         chapterData={selectedChapterForSettings}
+                    />
+                )}
+                {/* MODAL RENAME */}
+                {isRenameModalOpen && (
+                    <RenameModal 
+                        isOpen={isRenameModalOpen}
+                        onClose={() => setIsRenameModalOpen(false)}
+                        onSubmit={handleSubmitRename}
+                        initialValue={renameData.currentTitle}
                     />
                 )}
             </AnimatePresence>
@@ -515,22 +613,36 @@ const ManagementMateri = ({ onNavigate }) => {
                             />
                         </div>
                         <div className="flex-grow overflow-y-auto p-2">
-                             {isLoading ? (
-                                <div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl text-sesm-teal"/></div>
+                            {isLoading ? (
+                                <div className="p-10 flex justify-center"><FiLoader className="animate-spin text-2xl text-sesm-teal" /></div>
                             ) : Object.keys(materiList).length > 0 ? (
                                 Object.keys(materiList).sort().map(mapel => (
                                     <div key={mapel}>
                                         <h3 className="font-bold text-sesm-teal mt-4 px-2 text-sm uppercase">{mapel}</h3>
                                         <div className="space-y-1 mt-1">
-                                            {materiList[mapel].chapters.sort((a,b) => a.judul.localeCompare(b.judul)).map(m => (
+                                            {materiList[mapel].chapters.sort((a, b) => a.judul.localeCompare(b.judul)).map(m => (
                                                 <div key={m.materiKey} className={`group w-full p-2 rounded-md flex items-center ${selectedKey === m.materiKey ? 'bg-sesm-teal/20' : 'hover:bg-gray-100'}`}>
                                                     <button onClick={() => setSelectedKey(m.materiKey)} className={`flex-grow flex justify-between items-center text-left pr-2 text-sm overflow-hidden ${selectedKey === m.materiKey ? 'font-bold text-sesm-deep' : 'text-gray-700'}`}>
                                                         <span className="truncate">{m.judul}</span>
-                                                        <FiChevronRight className="flex-shrink-0"/>
+                                                        <FiChevronRight className="flex-shrink-0" />
                                                     </button>
-                                                    <button onClick={e => { e.stopPropagation(); handleDeleteChapter(m.materiKey, m.judul); }} className="p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 flex-shrink-0" title="Hapus"> {/* Tambah flex-shrink-0 */}
-                                                        <FiTrash2 size={14} />
-                                                    </button>
+                                                    {/* AREA TOMBOL AKSI: EDIT & DELETE */}
+                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); handleRenameClick(m); }} 
+                                                            className="p-1.5 rounded-md text-gray-400 hover:bg-blue-100 hover:text-blue-600 transition-colors" 
+                                                            title="Ubah Nama"
+                                                        >
+                                                            <FiEdit size={14} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={e => { e.stopPropagation(); handleDeleteChapter(m.materiKey, m.judul); }} 
+                                                            className="p-1.5 rounded-md text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors" 
+                                                            title="Hapus"
+                                                        >
+                                                            <FiTrash2 size={14} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -563,7 +675,7 @@ const ManagementMateri = ({ onNavigate }) => {
                                         )}
                                     </motion.button>
 
-                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiBookOpen/> Bank Soal</motion.button>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsBankSoalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-sesm-teal text-sesm-deep rounded-lg font-semibold hover:bg-sesm-teal/10 shadow-sm" title="Buka Bank Soal"><FiBookOpen /> Bank Soal</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => onNavigate('manajemenNilai')} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm"><FiTrendingUp /> Manajemen Nilai</motion.button>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsAddChapterModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-sesm-teal text-white rounded-lg font-semibold shadow-sm"><FiPlus /> Buat Materi</motion.button>
                                 </div>
@@ -581,7 +693,7 @@ const ManagementMateri = ({ onNavigate }) => {
                                                         <h2 className="text-2xl font-bold text-sesm-deep">{selectedMateri.judul}</h2>
                                                         <div className="flex-shrink-0 flex gap-2">
                                                             <button onClick={() => handleOpenSettingsModal(selectedMateri)} className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold text-sm hover:bg-gray-300">
-                                                                <FiSettings/> Pengaturan
+                                                                <FiSettings /> Pengaturan
                                                             </button>
                                                             <button onClick={() => setIsQuestionModalOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-sesm-deep text-white rounded-lg font-semibold text-sm">
                                                                 <FiPlus /> Tambah Soal
@@ -601,7 +713,7 @@ const ManagementMateri = ({ onNavigate }) => {
                                                     <button onClick={handleDeleteAllQuestions} disabled={!selectedMateri.questions || selectedMateri.questions.length === 0} className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-semibold text-xs hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"><FiTrash2 /> Hapus Semua Soal</button>
                                                 </div>
                                                 <div className="space-y-3 pr-2">
-                                                     {selectedMateri.questions && selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, i) => {
+                                                    {selectedMateri.questions && selectedMateri.questions.length > 0 ? selectedMateri.questions.map((q, i) => {
                                                         const creatorAvatar = q.creator_avatar
                                                             ? (q.creator_avatar.startsWith('http') ? q.creator_avatar : `${API_URL}/${q.creator_avatar}`)
                                                             : `https://api.dicebear.com/7.x/initials/svg?seed=${q.creator_name || 'G'}`;
@@ -611,7 +723,7 @@ const ManagementMateri = ({ onNavigate }) => {
                                                                 <div className="flex justify-between items-start">
                                                                     <div className="flex-grow">
                                                                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                                                                            <img src={creatorAvatar} alt={q.creator_name} className="w-6 h-6 rounded-full object-cover"/>
+                                                                            <img src={creatorAvatar} alt={q.creator_name} className="w-6 h-6 rounded-full object-cover" />
                                                                             <span>Dibuat oleh <strong>{q.creator_name || 'Guru'}</strong></span>
                                                                         </div>
                                                                         <p className="font-semibold text-gray-800">{i + 1}. {q.pertanyaan}</p>
@@ -636,7 +748,7 @@ const ManagementMateri = ({ onNavigate }) => {
                                                                         )}
                                                                     </div>
                                                                     <div className="flex-shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        <button onClick={() => handleOpenEditModal(q)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg" title="Edit Soal"><FiEdit size={16}/></button>
+                                                                        <button onClick={() => handleOpenEditModal(q)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg" title="Edit Soal"><FiEdit size={16} /></button>
                                                                         <button onClick={() => handleDeleteQuestion(q.id, q.pertanyaan)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg" title="Hapus Soal"><FiTrash2 size={16} /></button>
                                                                     </div>
                                                                 </div>
