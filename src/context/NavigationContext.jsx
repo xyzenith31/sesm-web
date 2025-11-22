@@ -5,10 +5,24 @@ export const NavigationContext = createContext();
 
 export const NavigationProvider = ({ children }) => {
   const { user, loading } = useAuth();
+  
   const [currentView, setCurrentView] = useState(() => {
     return localStorage.getItem('lastView') || null;
   });
   const [viewProps, setViewProps] = useState({});
+
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state && event.state.view) {
+        setCurrentView(event.state.view);
+        setViewProps(event.state.props || {});
+        localStorage.setItem('lastView', event.state.view);
+      } 
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     if (loading) return; 
@@ -56,6 +70,7 @@ export const NavigationProvider = ({ children }) => {
 
     if (targetView !== currentView || !currentView) {
       setCurrentView(targetView);
+      window.history.replaceState({ view: targetView, props: {} }, "", `#${targetView}`);
     }
 
   }, [user, loading]);
@@ -64,16 +79,21 @@ export const NavigationProvider = ({ children }) => {
     if (view === 'login') {
       localStorage.setItem('hasSeenWelcome', 'true');
     }
+    
     localStorage.setItem('lastView', view);
     setViewProps(props);
     setCurrentView(view);
+
+    window.history.pushState({ view, props }, "", `#${view}`);
   };
 
   useEffect(() => {
-    if (currentView) {
-      localStorage.setItem('lastView', currentView);
+    if (currentView && !loading) {
+       if (!window.history.state || window.history.state.view !== currentView) {
+           window.history.replaceState({ view: currentView, props: viewProps }, "", `#${currentView}`);
+       }
     }
-  }, [currentView]);
+  }, [currentView, loading]);
 
 
   const value = {
