@@ -92,7 +92,7 @@ const LoginForm = ({ onNavigate }) => {
             onClick={() => onNavigate('forgotPassword')}
             className="font-semibold hover:underline"
           >
-            Forget Password?
+            Lupa Password?
           </button>
         </div>
 
@@ -102,7 +102,7 @@ const LoginForm = ({ onNavigate }) => {
             className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95 disabled:bg-gray-400"
             disabled={loading}
           >
-            {loading ? 'Mengirim Kode...' : 'SIGN IN'}
+            {loading ? 'Mengirim Kode...' : 'LOGIN'}
           </button>
         </div>
       </form>

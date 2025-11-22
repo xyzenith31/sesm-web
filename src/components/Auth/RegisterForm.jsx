@@ -127,7 +127,7 @@ const RegisterForm = () => {
         
         <div className="pt-2">
           <button type="submit" className="w-full px-5 py-3 text-base font-bold text-sesm-deep bg-white rounded-full shadow-lg transition-all duration-300 hover:bg-gray-200 active:scale-95 disabled:bg-gray-400" disabled={loading}>
-            {loading ? 'Mendaftar...' : 'REGISTER'}
+            {loading ? 'Mendaftar...' : 'REGISTRASI'}
           </button>
         </div>
       </form>

@@ -39,7 +39,7 @@ const RegisterPage = ({ onSwitchToLogin }) => {
             variants={itemVariants}
             className="text-3xl font-bold text-white text-center mb-6"
           >
-            Create Account
+            Buat Akun
           </motion.h1>
 
           <motion.div variants={itemVariants} className="w-full">
@@ -50,7 +50,7 @@ const RegisterPage = ({ onSwitchToLogin }) => {
             variants={itemVariants}
             className="mt-6 text-sm text-center text-white/80"
           >
-            Already have an account?{' '}
+            Sudah punya akun?{' '}
             <motion.button
               onClick={onSwitchToLogin}
               className="font-bold text-white py-1 px-3 rounded-full"
@@ -58,7 +58,7 @@ const RegisterPage = ({ onSwitchToLogin }) => {
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.2 }}
             >
-              Sign In
+              Login
             </motion.button>
           </motion.p>
         </motion.div>
